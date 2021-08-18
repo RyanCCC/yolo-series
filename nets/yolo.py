@@ -146,7 +146,7 @@ class YOLO(object):
         #---------------------------------------------------------#
         #   设置字体
         #---------------------------------------------------------#
-        font = ImageFont.truetype(font='model_data/simhei.ttf', size=np.floor(3e-2 * image.size[1] + 0.5).astype('int32'))
+        font = ImageFont.truetype(font='./data/simhei.ttf', size=np.floor(3e-2 * image.size[1] + 0.5).astype('int32'))
         thickness = max((image.size[0] + image.size[1]) // 300, 1)
         
         for i, c in list(enumerate(out_classes)):

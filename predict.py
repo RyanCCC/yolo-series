@@ -14,7 +14,7 @@ tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
 if __name__ == "__main__":
     yolo = YOLO(
-        model_path='./model_data/village.h5',
+        model_path='./model/village.h5',
         anchors_path='./data/yolo_anchors.txt',
         classes_path='./villages/village.names',
         score=0.5,

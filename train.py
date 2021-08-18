@@ -189,7 +189,7 @@ if __name__ == "__main__":
     log_dir = 'logs/'
     classes_path = './villages/village.names'    
     anchors_path = './data/yolo_anchors.txt'
-    weights_path = './model_data/yolo4tf2_weight.h5'
+    weights_path = './model/yolo4tf2_weight.h5'
     save_model_name = 'village_tf2.h5'
     input_shape = (416,416)
     eager = False

@@ -32,7 +32,7 @@ for image_id in image_ids:
             # 这一部分是当xml有无关的类的时候，可以取消下面代码的注释
             # 利用对应的classes.txt来进行筛选！！！！！！！！！！！！
             '''
-            # classes_path = 'model_data/voc_classes.txt'
+            # classes_path = './data/voc_classes.txt'
             # class_names = get_classes(classes_path)
             # if obj_name not in class_names:
             #     continue

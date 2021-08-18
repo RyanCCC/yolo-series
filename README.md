@@ -6,9 +6,11 @@
 
 +---logs：存放训练日志的文档
 |---method：一些基础方法，如划分数据集训练集，生成训练集文档等
-|---model_data：基础配置
+|---data：基础配置
 |   +---simhei.ttf：字体
 |   +---yolo_anchors.txt：预设置的anchorbox
+|   \---voc.names：存放类别名称，同理可换成customer类别名称
+|---model：存放模型和权重
 |   +---yolo4_voc_weights.h5：VOC预训练权重
 |   \---yolo4_weight.h5：COCO预训练权重
 |---nets：Yolov4网络代码
@@ -49,8 +51,8 @@ class_file = './villages/village.names'
 annotation_path = './villages/train.txt'
 log_dir = 'logs/'
 classes_path = 'villages/village.names'    
-anchors_path = './model_data/yolo_anchors.txt'
-weights_path = './model_data/yolo4_weight.h5'
+anchors_path = './data/yolo_anchors.txt'
+weights_path = './data/yolo4_weight.h5'
 save_model_name = 'village.h5'
 input_shape = (416,416)
 ```
