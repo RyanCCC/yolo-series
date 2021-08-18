@@ -1,8 +1,8 @@
-import numpy as np
 import tensorflow as tf
-from keras import backend as K
+from tensorflow.keras import backend as K
 
 from nets.ious import box_ciou
+
 
 #---------------------------------------------------#
 #   平滑标签
@@ -11,7 +11,7 @@ def _smooth_labels(y_true, label_smoothing):
     num_classes = tf.cast(K.shape(y_true)[-1], dtype=K.floatx())
     label_smoothing = K.constant(label_smoothing, dtype=K.floatx())
     return y_true * (1.0 - label_smoothing) + label_smoothing / num_classes
-    
+
 #---------------------------------------------------#
 #   将预测值的每个特征层调成真实值
 #---------------------------------------------------#
@@ -26,7 +26,7 @@ def yolo_head(feats, anchors, num_classes, input_shape, calc_loss=False):
     #   获得x，y的网格
     #   (13, 13, 1, 2)
     #---------------------------------------------------#
-    grid_shape = K.shape(feats)[1:3]
+    grid_shape = K.shape(feats)[1:3] # height, width
     grid_y = K.tile(K.reshape(K.arange(0, stop=grid_shape[0]), [-1, 1, 1, 1]),
         [1, grid_shape[1], 1, 1])
     grid_x = K.tile(K.reshape(K.arange(0, stop=grid_shape[1]), [1, -1, 1, 1]),
@@ -48,8 +48,8 @@ def yolo_head(feats, anchors, num_classes, input_shape, calc_loss=False):
     #   box_xy对应框的中心点
     #   box_wh对应框的宽和高
     #---------------------------------------------------#
-    box_xy = (K.sigmoid(feats[..., :2]) + grid) / K.cast(grid_shape[::-1], K.dtype(feats))
-    box_wh = K.exp(feats[..., 2:4]) * anchors_tensor / K.cast(input_shape[::-1], K.dtype(feats))
+    box_xy = (K.sigmoid(feats[..., :2]) + grid) / K.cast(grid_shape[...,::-1], K.dtype(feats))
+    box_wh = K.exp(feats[..., 2:4]) * anchors_tensor / K.cast(input_shape[...,::-1], K.dtype(feats))
     box_confidence = K.sigmoid(feats[..., 4:5])
     box_class_probs = K.sigmoid(feats[..., 5:])
 
@@ -60,7 +60,6 @@ def yolo_head(feats, anchors, num_classes, input_shape, calc_loss=False):
     if calc_loss == True:
         return grid, feats, box_xy, box_wh
     return box_xy, box_wh, box_confidence, box_class_probs
-
 
 #---------------------------------------------------#
 #   用于计算每个预测框与真实框的iou
@@ -95,10 +94,12 @@ def box_iou(b1, b2):
 
     return iou
 
+
 #---------------------------------------------------#
 #   loss值计算
 #---------------------------------------------------#
 def yolo_loss(args, anchors, num_classes, ignore_thresh=.5, label_smoothing=0.1, print_loss=False, normalize=True):
+
     # 一共有三层
     num_layers = len(anchors)//3 
 
@@ -122,6 +123,7 @@ def yolo_loss(args, anchors, num_classes, ignore_thresh=.5, label_smoothing=0.1,
 
     loss = 0
     num_pos = 0
+
     #-----------------------------------------------------------#
     #   取出每一张图片
     #   m的值就是batch_size
@@ -203,7 +205,7 @@ def yolo_loss(args, anchors, num_classes, ignore_thresh=.5, label_smoothing=0.1,
         #-----------------------------------------------------------#
         #   在这个地方进行一个循环、循环是对每一张图片进行的
         #-----------------------------------------------------------#
-        _, ignore_mask = K.control_flow_ops.while_loop(lambda b,*args: b<m, loop_body, [0, ignore_mask])
+        _, ignore_mask = tf.while_loop(lambda b,*args: b<m, loop_body, [0, ignore_mask])
 
         #-----------------------------------------------------------#
         #   ignore_mask用于提取出作为负样本的特征点
@@ -246,9 +248,9 @@ def yolo_loss(args, anchors, num_classes, ignore_thresh=.5, label_smoothing=0.1,
         #-----------------------------------------------------------#
         num_pos += tf.maximum(K.sum(K.cast(object_mask, tf.float32)), 1)
         loss += location_loss + confidence_loss + class_loss
-        # if print_loss:
-        #   loss = tf.Print(loss, [loss, location_loss, confidence_loss, class_loss, K.sum(ignore_mask)], message='loss: ')
-        
+
+    loss = K.expand_dims(loss, axis=-1)
+    
     if normalize:
         loss = loss / num_pos
     else:

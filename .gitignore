@@ -3,5 +3,5 @@
 __pycache__
 villages
 logs
-model_data
 result
+*.h5

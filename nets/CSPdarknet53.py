@@ -1,10 +1,11 @@
 from functools import wraps
 
-from keras import backend as K
-from keras.initializers import random_normal
-from keras.layers import Add, Concatenate, Conv2D, Layer, ZeroPadding2D
-from keras.layers.normalization import BatchNormalization
-from keras.regularizers import l2
+from tensorflow.keras import backend as K
+from tensorflow.keras.initializers import RandomNormal
+from tensorflow.keras.layers import (Add, BatchNormalization, Concatenate,
+                                     Conv2D, Layer, LeakyReLU, MaxPooling2D,
+                                     UpSampling2D, ZeroPadding2D)
+from tensorflow.keras.regularizers import l2
 from utils.utils import compose
 
 
@@ -31,11 +32,11 @@ class Mish(Layer):
 @wraps(Conv2D)
 def DarknetConv2D(*args, **kwargs):
     # darknet_conv_kwargs = {'kernel_regularizer': l2(5e-4)}
-    darknet_conv_kwargs = {'kernel_initializer' : random_normal(stddev=0.02)}
+    darknet_conv_kwargs = {'kernel_initializer' : RandomNormal(stddev=0.02)}
     darknet_conv_kwargs['padding'] = 'valid' if kwargs.get('strides')==(2,2) else 'same'
     darknet_conv_kwargs.update(kwargs)
     return Conv2D(*args, **darknet_conv_kwargs)
-
+  
 #---------------------------------------------------#
 #   卷积块 -> 卷积 + 标准化 + 激活函数
 #   DarknetConv2D + BatchNormalization + Mish
@@ -102,4 +103,3 @@ def darknet_body(x):
     x = resblock_body(x, 1024, 4)
     feat3 = x
     return feat1,feat2,feat3
-
