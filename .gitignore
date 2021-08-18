@@ -1,0 +1,7 @@
+.history
+*.png
+__pycache__
+villages
+logs
+model_data
+result
