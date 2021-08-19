@@ -4,7 +4,7 @@
 
 #### YOLOV4介绍
 
-Yolov4论文的abstract可以看出Yolov4结合了前人的好处，用了大量技巧提高目标检测的效率。其中包括：加权残差链接（WRC），跨阶段部分链接（CSP），跨小批量标准化（CmBN），自对抗训练（SAT），Mish激活，马赛克数据增强，DropBlock正则化，CIoU Loss等等。
+Yolov4论文的abstract可以看出Yolov4结合了前人的好处，用了大量技巧提高目标检测的效率。其中包括：加权残差链接（WRC），跨阶段部分链接（CSP），跨小批量标准化（CmBN），自对抗训练（SAT），Mish激活，马赛克数据增强，DropBlock正则化，CIoU Loss等等。可以看成一篇目标检测的综述，里面用到的Tricks需要查阅相关的论文才知道。技巧类的论文可以查看：[Bag of Freebies for Training Object Detection Neural Networks](https://arxiv.org/abs/1902.04103)和[Bag of Tricks for Image Classification with Convolutional Neural Networks](https://arxiv.org/abs/1812.01187)。
 
 ![image](https://user-images.githubusercontent.com/27406337/130028721-43e82cf5-fff6-4830-b33a-33536d80afb6.png)
 
@@ -61,11 +61,60 @@ Yolov4对Darknet53进行改进，借鉴CSPNet(Cross Stage Partial Networks:跨�
 
 ![image](https://user-images.githubusercontent.com/27406337/130034254-8d15727e-a23c-4c1c-8c19-974cd8ded3f7.png)
 
+考虑到几方面的平衡：输入网络分辨率/卷积层数量/参数数量/输出维度。一个模型的分类效果好不见得其检测效果就好，想要检测效果好需要以下几点：
+- 更大的网络输入分辨率——用于检测小目标
+- 更深的网络层——能够覆盖更大面积的感受野
+- 更多的参数——更好的检测同一图像内不同size的目标
+
+![image](https://user-images.githubusercontent.com/27406337/130037996-f045edf3-b5ea-41b5-8dcb-671a378735e8.png)
+
+
+论文中给出CSPResNext50([CSPNET: A NEW BACKBONE THAT CAN ENHANCE LEARNING CAPABILITY OF CNN](https://arxiv.org/pdf/1911.11929v1.pdf))和CSPDarknet53对比：
+
+![image](https://user-images.githubusercontent.com/27406337/130037751-cf9b3e42-cf0a-4ce5-b6f9-a939005eabc4.png)
+
+- Up to the object size - allows viewing the entire object
+- Up to network size - allows viewing the context around the object
+- Exceeding the network size - increases the number of connections between the image point and the final activation
+
+![image](https://user-images.githubusercontent.com/27406337/130041283-7a895d72-6d76-4d43-8244-89aaff4c577f.png)
+
+###### SPP结构
+
+![image](https://user-images.githubusercontent.com/27406337/130041428-1ecf089e-be02-494e-9963-57ed00a8ecc9.png)
+
+###### PAN结构
+
+![image](https://user-images.githubusercontent.com/27406337/130041568-f2167a7e-cc0f-4c93-8f38-8365ec490c69.png)
 
 
 #### Backbone训练策略
 
+1. 数据增强
+
+  ![image](https://user-images.githubusercontent.com/27406337/130042785-76cd53c5-8d3e-4993-94bd-b2163dce2b82.png)
+
+  - CutMix：[CutMix: Regularization Strategy to Train Strong Classifiers with Localizable Features](https://arxiv.org/pdf/1905.04899v2.pdf)
+  - Mosaic
+  
+    ![image](https://user-images.githubusercontent.com/27406337/130042452-d2f40134-ba53-4761-9635-77df71aa9212.png)
+2. [DropBlock正则化](https://arxiv.org/pdf/1810.12890.pdf)
+   DropBlock方法的引入是为了克服Dropout随机丢弃特征的主要缺点，Dropout被证明是全连接网络的有效策略，但在特征空间相关的卷积层中效果不佳。DropBlock技术在称为块的相邻相关区域中丢弃特征。这样既可以实现生成更简单模型的目的，又可以在每次训练迭代中引入学习部分网络权值的概念，对权值矩阵进行补偿，从而减少过拟合。如下图：
+   
+   ![image](https://user-images.githubusercontent.com/27406337/130042912-57be2631-4e9f-40bc-9007-a7f765a25108.png)
+
+3. 类标签平滑
+  
+   对于分类问题，特别是多分类问题，常常把向量转换成one-hot-vector，而one-hot带来的问题： 对于损失函数，我们需要用预测概率去拟合真实概率，而拟合one-hot的真实概率函数会带来两个问题：
+   - 无法保证模型的泛化能力，容易造成过拟合；
+   - 全概率和0概率鼓励所属类别和其他类别之间的差距尽可能加大，而由梯度有界可知，这种情况很难适应。会造成模型过于相信预测的类别。
+
+   对预测有100%的信心可能表明模型是在记忆数据，而不是在学习。标签平滑调整预测的目标上限为一个较低的值，比如0.9。它将使用这个值而不是1.0来计算损失。这个概念缓解了过度拟合。说白了，这个平滑就是一定程度缩小label中min和max的差距，label平滑可以减小过拟合。所以，适当调整label，让两端的极值往中间凑凑，可以增加泛化性能。
+
 #### Backbone推理策略
+
+1. [Mish激活函数](https://arxiv.org/pdf/1908.08681.pdf)
+2. MiWRC策略
 
 #### 检测头训练策略
 
