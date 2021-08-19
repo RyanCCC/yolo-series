@@ -20,6 +20,11 @@ Yolov4的贡献如下：
 
 **YOLOv4模型 = CSPDarkNet53 + SPP + PANet(path-aggregation neck) + YOLOv3-head**
 
+- SPP来源于Kaiming He的SPP Net，主要因为它显著增加了感受野，分离出最重要的上下文功能，并且几乎不降低网络操作速度。
+- [PANet](https://arxiv.org/abs/1803.01534)主要是特征融合的改进。
+- YOLOv3-head，因为是anchor-base方法，因此分类、回归分支没有改变。
+
+
 #### Yolov4框架原理
 
 Yolov4框架主要从以下几个方面展开：目标检测`通用检测框架`，`CSPDarknet53`，`SPP结构`，`PAN结构`和`Yolov3`。
