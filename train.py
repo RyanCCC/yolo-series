@@ -219,17 +219,9 @@ if __name__ == "__main__":
     h, w = input_shape
     print('Create YOLOv4 model with {} anchors and {} classes.'.format(num_anchors, num_classes))
     model_body = yolo_body(image_input, num_anchors//3, num_classes)
-    
-    #------------------------------------------------------#
-    #   载入预训练权重
-    #------------------------------------------------------#
     print('Load weights {}.'.format(weights_path))
     model_body.load_weights(weights_path, by_name=True, skip_mismatch=True)
     
-    #------------------------------------------------------#
-    #   在这个地方设置损失，将网络的输出结果传入loss函数
-    #   把整个模型的输出作为loss
-    #------------------------------------------------------#
     y_true = [Input(shape=(h//{0:32, 1:16, 2:8}[l], w//{0:32, 1:16, 2:8}[l], \
         num_anchors//3, num_classes+5)) for l in range(3)]
     loss_input = [*model_body.output, *y_true]
@@ -238,22 +230,10 @@ if __name__ == "__main__":
 
     model = Model([model_body.input, *y_true], model_loss)
 
-    #-------------------------------------------------------------------------------#
-    #   训练参数的设置
-    #   logging表示tensorboard的保存地址
-    #   checkpoint用于设置权值保存的细节，period用于修改多少epoch保存一次
-    #   reduce_lr用于设置学习率下降的方式
-    #   early_stopping用于设定早停，val_loss多次不下降自动结束训练，表示模型基本收敛
-    #-------------------------------------------------------------------------------#
     logging = TensorBoard(log_dir=log_dir)
     checkpoint = ModelCheckpoint(log_dir+"/ep{epoch:03d}-loss{loss:.3f}-val_loss{val_loss:.3f}.h5", save_weights_only=True, save_best_only=False, period=1)
     early_stopping = EarlyStopping(min_delta=0, patience=10, verbose=1)
 
-    #----------------------------------------------------------------------#
-    #   验证集的划分在train.py代码里面进行
-    #   2007_test.txt和2007_val.txt里面没有内容是正常的。训练不会使用到。
-    #   当前划分方式下，验证集和训练集的比例为1:9
-    #----------------------------------------------------------------------#
     val_split = 0.1
     with open(annotation_path) as f:
         lines = f.readlines()
@@ -263,26 +243,10 @@ if __name__ == "__main__":
     num_val = int(len(lines)*val_split)
     num_train = len(lines) - num_val
     
-    #------------------------------------------------------#
-    #   主干特征提取网络特征通用，冻结训练可以加快训练速度
-    #   也可以在训练初期防止权值被破坏。
-    #   Init_Epoch为起始世代
-    #   Freeze_Epoch为冻结训练的世代
-    #   Epoch总训练世代
-    #   提示OOM或者显存不足请调小Batch_size
-    #------------------------------------------------------#
     freeze_layers = 249
     for i in range(freeze_layers): model_body.layers[i].trainable = False
     print('Freeze the first {} layers of total {} layers.'.format(freeze_layers, len(model_body.layers)))
 
-    #------------------------------------------------------#
-    #   主干特征提取网络特征通用，冻结训练可以加快训练速度
-    #   也可以在训练初期防止权值被破坏。
-    #   Init_Epoch为起始世代
-    #   Freeze_Epoch为冻结训练的世代
-    #   Epoch总训练世代
-    #   提示OOM或者显存不足请调小Batch_size
-    #------------------------------------------------------#
     if True:
         Init_epoch          = 0
         Freeze_epoch        = 50
