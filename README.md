@@ -18,6 +18,8 @@ Yolov4的贡献如下：
 2. Verify the influence of state-of-the-art Bag-of-Freebies and Bag-of-Specials methods of object detection during the detector training
 3. Modify state-of-the-art methods and make them more effecient and suitable for single GPU training, including CBN(Cross-iteration batch normalization), PAN(Path aggregation network for instance segmentation), Sam(CBAM: Convolutional block attention module).(即一些即插即用的模块，后面需要学习)
 
+**YOLOv4模型 = CSPDarkNet53 + SPP + PANet(path-aggregation neck) + YOLOv3-head**
+
 #### Yolov4框架原理
 
 Yolov4框架主要从以下几个方面展开：目标检测`通用检测框架`，`CSPDarknet53`，`SPP结构`，`PAN结构`和`Yolov3`。
