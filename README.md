@@ -58,6 +58,7 @@ Yolov4的网络结构图（来源：https://cloud.tencent.com/developer/article/
 Yolov4介绍两种训练推理的套路：
 
 1.**Bag of freebies**：在训练上增加一些策略，达到更高的精度并且在测试的时候不会增加额外的时间策略，如图像增强，网络正则化，类别不平衡的处理方法。我的理解是提高检测速度。
+
 2. **Bag og specials**：降低检测速度，提高精度。如增加模型感受野SPP，ASPP，RFB等，引入注意力机制Squeeze-and-Excitation(SE)、S怕条例SWISH等。
 
 ![image](https://user-images.githubusercontent.com/27406337/130035306-d5a3ffc1-b080-4de3-bfbc-589804f0a613.png)
@@ -102,10 +103,14 @@ Yolov4对Darknet53进行改进，借鉴CSPNet(Cross Stage Partial Networks:跨�
   ![image](https://user-images.githubusercontent.com/27406337/130042785-76cd53c5-8d3e-4993-94bd-b2163dce2b82.png)
 
   - CutMix：[CutMix: Regularization Strategy to Train Strong Classifiers with Localizable Features](https://arxiv.org/pdf/1905.04899v2.pdf)
+
   - Mosaic
+    Mosaic是一种将4张训练图像合并成一张进行训练的数据增强方式。这增强了对正常背景之外的对象的检测，丰富检测物体的背景。此外，每个小批包含一个大的变化图像。
   
     ![image](https://user-images.githubusercontent.com/27406337/130042452-d2f40134-ba53-4761-9635-77df71aa9212.png)
+    
 2. [DropBlock正则化](https://arxiv.org/pdf/1810.12890.pdf)
+
    DropBlock方法的引入是为了克服Dropout随机丢弃特征的主要缺点，Dropout被证明是全连接网络的有效策略，但在特征空间相关的卷积层中效果不佳。DropBlock技术在称为块的相邻相关区域中丢弃特征。这样既可以实现生成更简单模型的目的，又可以在每次训练迭代中引入学习部分网络权值的概念，对权值矩阵进行补偿，从而减少过拟合。如下图：
    
    ![image](https://user-images.githubusercontent.com/27406337/130042912-57be2631-4e9f-40bc-9007-a7f765a25108.png)
@@ -121,13 +126,71 @@ Yolov4对Darknet53进行改进，借鉴CSPNet(Cross Stage Partial Networks:跨�
 #### Backbone推理策略
 
 1. [Mish激活函数](https://arxiv.org/pdf/1908.08681.pdf)
-2. MiWRC策略
+  
+  Mish激活函数的公式如下：
+  
+  ![image](https://user-images.githubusercontent.com/27406337/130162581-ca2599f4-47d6-4fad-a019-55a875739973.png)
+  
+  Mish是一个平滑的曲线，平滑的激活函数允许更好的信息深入神经网络，，从而得到更好的准确性和泛化；在负值的时候并不是完全截断，允许比较小的负梯度流入。
+  
+  ![image](https://user-images.githubusercontent.com/27406337/130162756-45fafde5-66a0-4366-afc9-cd636267a78f.png)
+
+  
+2. MiWRC策略（[BiFPN](https://arxiv.org/pdf/1911.09070.pdf)）
+
+  ![image](https://user-images.githubusercontent.com/27406337/130162814-cd0e3977-220c-44e6-9ff5-cbecc67a5199.png)
+
 
 #### 检测头训练策略
 
+1. CIoU-loss
+   
+   - 经典IoU loss:
+   
+     ![image](https://user-images.githubusercontent.com/27406337/130163483-da5468a8-4d29-4593-a8e2-c845d0dde0b0.png)
+
+   - GIoU：[Generalized Intersection over Union: A Metric and A Loss for Bounding Box Regression](https://arxiv.org/abs/1902.09630)
+
+      经典IoU loss存在以下两个问题：
+      
+          - 预测框bbox和ground truth bbox如果没有重叠，IOU就始终为0并且无法优化。也就是说损失函数失去了可导的性质。
+
+          - IOU无法分辨不同方式的对齐，例如方向不一致等，如下图所示，可以看到三种方式拥有相同的IOU值，但空间却完全不同。
+      
+      ![image](https://user-images.githubusercontent.com/27406337/130163539-1408c7f8-f095-45b6-afdb-c4dec07345ff.png)
+      
+      ![image](https://user-images.githubusercontent.com/27406337/130163934-bfbc8dbf-605e-4b83-8dd3-e4291619ec5c.png)
+      
+      ![image](https://user-images.githubusercontent.com/27406337/130164063-8ba4a846-507f-4813-8c53-b9a0e48a8e9d.png)
+      
+      算法流程：
+      
+      ![image](https://user-images.githubusercontent.com/27406337/130164340-9db81cac-0df0-427d-8bc0-885c3441a0f6.png)
+
+      
+   - DIoU：[dinstance IoU](https://arxiv.org/pdf/1911.08287.pdf)
+      
+      解决预测框与GT重叠时，GIoU退化成IoU，导致在预测框bbox和ground truth bbox包含的时候优化变得非常困难，特别是在水平和垂直方向收敛难。
+
+      ![image](https://user-images.githubusercontent.com/27406337/130164616-9623c343-96e3-4e4b-bb4f-1819f4dd3f8d.png)
+
+      
+      ![image](https://user-images.githubusercontent.com/27406337/130163623-ecbd910c-824b-4307-9063-87891b758643.png)
+      
+      ![image](https://user-images.githubusercontent.com/27406337/130164637-e665e02f-23ae-4bba-b80b-86852013531f.png)
+      
+      ![image](https://user-images.githubusercontent.com/27406337/130164709-3c277681-d824-4fe8-8bf3-fbb91b43f081.png)
+
+      
+   - CIou：Complete IoU
+      
+      一个好的目标框回归损失应该考虑三个重要的几何因素：重叠面积，中心点距离，长宽比。GIoU为了归一化坐标尺度，利用IOU并初步解决了IoU为0无法优化的问题。然后DIoU损失在GIoU Loss的基础上考虑了边界框的重叠面积和中心点距离。所以还有最后一个点上面的Loss没有考虑到，即Anchor的长宽比和目标框之间的长宽比的一致性。
+      
+      ![image](https://user-images.githubusercontent.com/27406337/130163658-39269df9-12d9-4e96-9b34-dbbdb0c7142f.png)
+
 #### 检测头推理策略
 
-### 目标检测评价指标
+### 目标检测评价指标(https://github.com/rafaelpadilla/Object-Detection-Metrics)
 
 ### 仓库说明
 
