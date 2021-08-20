@@ -57,11 +57,11 @@ Yolov4的网络结构图（来源：https://cloud.tencent.com/developer/article/
 
 Yolov4介绍两种训练推理的套路：
 
-1.**Bag of freebies**：在训练上增加一些策略，达到更高的精度并且在测试的时候不会增加额外的时间策略，如图像增强，网络正则化，类别不平衡的处理方法。我的理解是提高检测速度。
+  1.**Bag of freebies**：在训练上增加一些策略，达到更高的精度并且在测试的时候不会增加额外的时间策略，如图像增强，网络正则化，类别不平衡的处理方法。我的理解是提高检测速度。
 
-2. **Bag og specials**：降低检测速度，提高精度。如增加模型感受野SPP，ASPP，RFB等，引入注意力机制Squeeze-and-Excitation(SE)、S怕条例SWISH等。
+  2. **Bag og specials**：降低检测速度，提高精度。如增加模型感受野SPP，ASPP，RFB等，引入注意力机制Squeeze-and-Excitation(SE)、S怕条例SWISH等。
 
-![image](https://user-images.githubusercontent.com/27406337/130035306-d5a3ffc1-b080-4de3-bfbc-589804f0a613.png)
+  ![image](https://user-images.githubusercontent.com/27406337/130035306-d5a3ffc1-b080-4de3-bfbc-589804f0a613.png)
 
 ###### CSPDarknet53
 
@@ -117,28 +117,28 @@ Yolov4对Darknet53进行改进，借鉴CSPNet(Cross Stage Partial Networks:跨�
 
 3. 类标签平滑
   
-   对于分类问题，特别是多分类问题，常常把向量转换成one-hot-vector，而one-hot带来的问题： 对于损失函数，我们需要用预测概率去拟合真实概率，而拟合one-hot的真实概率函数会带来两个问题：
-   - 无法保证模型的泛化能力，容易造成过拟合；
-   - 全概率和0概率鼓励所属类别和其他类别之间的差距尽可能加大，而由梯度有界可知，这种情况很难适应。会造成模型过于相信预测的类别。
+    对于分类问题，特别是多分类问题，常常把向量转换成one-hot-vector，而one-hot带来的问题： 对于损失函数，我们需要用预测概率去拟合真实概率，而拟合one-hot的真实概率函数会带来两个问题：
+    - 无法保证模型的泛化能力，容易造成过拟合；
+    - 全概率和0概率鼓励所属类别和其他类别之间的差距尽可能加大，而由梯度有界可知，这种情况很难适应。会造成模型过于相信预测的类别。
 
-   对预测有100%的信心可能表明模型是在记忆数据，而不是在学习。标签平滑调整预测的目标上限为一个较低的值，比如0.9。它将使用这个值而不是1.0来计算损失。这个概念缓解了过度拟合。说白了，这个平滑就是一定程度缩小label中min和max的差距，label平滑可以减小过拟合。所以，适当调整label，让两端的极值往中间凑凑，可以增加泛化性能。
+    对预测有100%的信心可能表明模型是在记忆数据，而不是在学习。标签平滑调整预测的目标上限为一个较低的值，比如0.9。它将使用这个值而不是1.0来计算损失。这个概念缓解了过度拟合。说白了，这个平滑就是一定程度缩小label中min和max的差距，label平滑可以减小过拟合。所以，适当调整label，让两端的极值往中间凑凑，可以增加泛化性能。
 
 #### Backbone推理策略
 
 1. [Mish激活函数](https://arxiv.org/pdf/1908.08681.pdf)
   
-  Mish激活函数的公式如下：
+    Mish激活函数的公式如下：
   
-  ![image](https://user-images.githubusercontent.com/27406337/130162581-ca2599f4-47d6-4fad-a019-55a875739973.png)
+   ![image](https://user-images.githubusercontent.com/27406337/130162581-ca2599f4-47d6-4fad-a019-55a875739973.png)
   
-  Mish是一个平滑的曲线，平滑的激活函数允许更好的信息深入神经网络，，从而得到更好的准确性和泛化；在负值的时候并不是完全截断，允许比较小的负梯度流入。
+   Mish是一个平滑的曲线，平滑的激活函数允许更好的信息深入神经网络，，从而得到更好的准确性和泛化；在负值的时候并不是完全截断，允许比较小的负梯度流入。
   
-  ![image](https://user-images.githubusercontent.com/27406337/130162756-45fafde5-66a0-4366-afc9-cd636267a78f.png)
+   ![image](https://user-images.githubusercontent.com/27406337/130162756-45fafde5-66a0-4366-afc9-cd636267a78f.png)
 
   
 2. MiWRC策略（[BiFPN](https://arxiv.org/pdf/1911.09070.pdf)）
 
-  ![image](https://user-images.githubusercontent.com/27406337/130162814-cd0e3977-220c-44e6-9ff5-cbecc67a5199.png)
+    ![image](https://user-images.githubusercontent.com/27406337/130162814-cd0e3977-220c-44e6-9ff5-cbecc67a5199.png)
 
 
 #### 检测头训练策略
@@ -188,7 +188,28 @@ Yolov4对Darknet53进行改进，借鉴CSPNet(Cross Stage Partial Networks:跨�
       
       ![image](https://user-images.githubusercontent.com/27406337/130163658-39269df9-12d9-4e96-9b34-dbbdb0c7142f.png)
 
+2. CmBN策略
+  
+  CBN在计算当前时刻统计量时考虑前K个时刻统计量，以此扩大batch size操作。
+  
+  ![image](https://user-images.githubusercontent.com/27406337/130165308-7866b06d-700c-48c1-9352-dd0593572e67.png)
+
+3. 自对抗训练(SAT)
+
+  ![image](https://user-images.githubusercontent.com/27406337/130165514-1de0a146-bfc1-434d-9738-a88674eb13de.png)
+
+4. [遗传算法优化超参](https://arxiv.org/pdf/2004.10934.pdf)
+
 #### 检测头推理策略
+
+1. SAM模块
+
+  ![image](https://user-images.githubusercontent.com/27406337/130165696-052d75f7-9513-45fe-bd05-3b1698a13640.png)
+
+2. DIoU-NMS
+
+  ![image](https://user-images.githubusercontent.com/27406337/130165726-e09bc6a1-df33-4588-8a9e-895ec51b8667.png)
+
 
 ### 目标检测评价指标(https://github.com/rafaelpadilla/Object-Detection-Metrics)
 
