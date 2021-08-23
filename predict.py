@@ -1,41 +1,35 @@
 import time
-
 import cv2
 import numpy as np
 import tensorflow as tf
 from PIL import Image
 from nets.yolo import YOLO
 import os
-
-physical_devices = tf.config.experimental.list_physical_devices('GPU')
-tf.config.experimental.set_memory_growth(physical_devices[0], True)
-
-
+import config as sys_config
 
 if __name__ == "__main__":
     yolo = YOLO(
-        model_path='./model/village.h5',
-        anchors_path='./data/yolo_anchors.txt',
-        classes_path='./villages/village.names',
-        score=0.5,
-        iou=0.3,
-        max_boxes=100,
-        model_image_size=(416, 416),
-        letterbox_image=False,
-        onnx=False
+        model_path=sys_config.model_path,
+        anchors_path=sys_config.anchors_path,
+        classes_path=sys_config.classes_path,
+        score=sys_config.score,
+        iou=sys_config.iou,
+        max_boxes=sys_config.max_boxes,
+        model_image_size=(sys_config.imagesize, sys_config.imagesize),
+        letterbox_image=sys_config.letterbox_image
     )
-    mode = "testset"
-    video_path      = 0
-    video_save_path = ""
-    video_fps       = 25.0
+    mode = sys_config.mode
+    video_path      = sys_config.video_path
+    video_save_path = sys_config.video_save_path
+    video_fps       = sys_config.video_fps
 
     if mode == "predict":
-        img = './villages/JPEGImages/20210817115750.jpg'
+        img = sys_config.image
         image = Image.open(img)
         r_image = yolo.detect_image(image)
         r_image.show()
     elif mode == 'testset':
-        testfile = './villages/test.txt'
+        testfile = sys_config.test_txt_file
         with open(testfile, 'r') as f:
             testset = f.readlines()
         for img in testset:

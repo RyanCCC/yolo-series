@@ -14,7 +14,7 @@ from nets.yolo4 import yolo_body
 from utils.utils import (ModelCheckpoint,
                          WarmUpCosineDecayScheduler, get_random_data,
                          get_random_data_with_Mosaic)
-
+import config as sys_config
 
 def get_classes(classes_path):
     '''loads the classes'''
@@ -185,43 +185,42 @@ gpus = tf.config.experimental.list_physical_devices(device_type='GPU')
 for gpu in gpus:
     tf.config.experimental.set_memory_growth(gpu, True)
 if __name__ == "__main__":
-    annotation_path = './villages/train.txt'
-    log_dir = 'logs/'
-    classes_path = './villages/village.names'    
-    anchors_path = './data/yolo_anchors.txt'
-    weights_path = './model/yolo4tf2_weight.h5'
-    save_model_name = 'village_tf2.h5'
-    input_shape = (416,416)
-    eager = False
-    #------------------------------------------------------#
-    #   是否对损失进行归一化，用于改变loss的大小
-    #   用于决定计算最终loss是除上batch_size还是除上正样本数量
-    #------------------------------------------------------#
-    normalize = False
+    annotation_path = sys_config.annotation_path
+    log_dir = sys_config.logdir
+    classes_path = sys_config.classes_path
+    anchors_path = sys_config.anchors_path
+    weights_path = sys_config.pretrain_weight
+    save_model_name = sys_config.save_model_name
+    input_shape = (sys_config.imagesize,sys_config.imagesize)
+    eager = sys_config.eager
+    normalize = sys_config.normalize
 
     class_names = get_classes(classes_path)
     anchors     = get_anchors(anchors_path)
     num_classes = len(class_names)
     num_anchors = len(anchors)
-    #------------------------------------------------------#
-    #   Yolov4的tricks应用
-    #   实际测试时mosaic数据增强并不稳定，所以默认为False
-    #   Cosine_scheduler 余弦退火学习率 True or False
-    #   label_smoothing 标签平滑 0.01以下一般 如0.01、0.005
-    #------------------------------------------------------#
-    mosaic = False
-    Cosine_scheduler = False
-    label_smoothing = 0
 
-    regularization = True
+    mosaic = sys_config.mosaic
+    Cosine_scheduler = sys_config.Cosine_scheduler
+    label_smoothing = sys_config.label_smoothing
+
+    regularization = sys_config.regularization
 
     image_input = Input(shape=(None, None, 3))
     h, w = input_shape
     print('Create YOLOv4 model with {} anchors and {} classes.'.format(num_anchors, num_classes))
     model_body = yolo_body(image_input, num_anchors//3, num_classes)
+    
+    #------------------------------------------------------#
+    #   载入预训练权重
+    #------------------------------------------------------#
     print('Load weights {}.'.format(weights_path))
     model_body.load_weights(weights_path, by_name=True, skip_mismatch=True)
     
+    #------------------------------------------------------#
+    #   在这个地方设置损失，将网络的输出结果传入loss函数
+    #   把整个模型的输出作为loss
+    #------------------------------------------------------#
     y_true = [Input(shape=(h//{0:32, 1:16, 2:8}[l], w//{0:32, 1:16, 2:8}[l], \
         num_anchors//3, num_classes+5)) for l in range(3)]
     loss_input = [*model_body.output, *y_true]
@@ -230,10 +229,22 @@ if __name__ == "__main__":
 
     model = Model([model_body.input, *y_true], model_loss)
 
+    #-------------------------------------------------------------------------------#
+    #   训练参数的设置
+    #   logging表示tensorboard的保存地址
+    #   checkpoint用于设置权值保存的细节，period用于修改多少epoch保存一次
+    #   reduce_lr用于设置学习率下降的方式
+    #   early_stopping用于设定早停，val_loss多次不下降自动结束训练，表示模型基本收敛
+    #-------------------------------------------------------------------------------#
     logging = TensorBoard(log_dir=log_dir)
-    checkpoint = ModelCheckpoint(log_dir+"/ep{epoch:03d}-loss{loss:.3f}-val_loss{val_loss:.3f}.h5", save_weights_only=True, save_best_only=False, period=1)
+    checkpoint = ModelCheckpoint(log_dir+"/village_tf2.h5", save_weights_only=True, save_best_only=True, period=1)
     early_stopping = EarlyStopping(min_delta=0, patience=10, verbose=1)
 
+    #----------------------------------------------------------------------#
+    #   验证集的划分在train.py代码里面进行
+    #   2007_test.txt和2007_val.txt里面没有内容是正常的。训练不会使用到。
+    #   当前划分方式下，验证集和训练集的比例为1:9
+    #----------------------------------------------------------------------#
     val_split = 0.1
     with open(annotation_path) as f:
         lines = f.readlines()
@@ -243,15 +254,15 @@ if __name__ == "__main__":
     num_val = int(len(lines)*val_split)
     num_train = len(lines) - num_val
     
-    freeze_layers = 249
+    freeze_layers = sys_config.freeze_layers
     for i in range(freeze_layers): model_body.layers[i].trainable = False
     print('Freeze the first {} layers of total {} layers.'.format(freeze_layers, len(model_body.layers)))
 
     if True:
-        Init_epoch          = 0
-        Freeze_epoch        = 50
-        batch_size          = 2
-        learning_rate_base  = 1e-3
+        Init_epoch          = sys_config.Init_epoch
+        Freeze_epoch        = sys_config.freeze_layers
+        batch_size          = sys_config.batch_size
+        learning_rate_freeze  = sys_config.learning_rate_freeze
         
         epoch_size      = num_train // batch_size
         epoch_size_val  = num_val // batch_size
@@ -270,10 +281,10 @@ if __name__ == "__main__":
 
             if Cosine_scheduler:
                 lr_schedule = tf.keras.experimental.CosineDecayRestarts(
-                    initial_learning_rate = learning_rate_base, first_decay_steps = 5 * epoch_size, t_mul = 1.0, alpha = 1e-2)
+                    initial_learning_rate = learning_rate_freeze, first_decay_steps = 5 * epoch_size, t_mul = 1.0, alpha = 1e-2)
             else:
                 lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
-                    initial_learning_rate=learning_rate_base, decay_steps=epoch_size, decay_rate=0.92, staircase=True)
+                    initial_learning_rate=learning_rate_freeze, decay_steps=epoch_size, decay_rate=0.92, staircase=True)
             
             optimizer = tf.keras.optimizers.Adam(learning_rate=lr_schedule)
         else:
@@ -285,13 +296,13 @@ if __name__ == "__main__":
                 # 预热步长
                 warmup_steps    = int(warmup_epoch * num_train / batch_size)
                 # 学习率
-                reduce_lr       = WarmUpCosineDecayScheduler(learning_rate_base=learning_rate_base, total_steps=total_steps,
+                reduce_lr       = WarmUpCosineDecayScheduler(learning_rate_base=learning_rate_freeze, total_steps=total_steps,
                                                             warmup_learning_rate=1e-4, warmup_steps=warmup_steps,
                                                             hold_base_rate_steps=num_train, min_learn_rate=1e-6)
                 model.compile(optimizer=Adam(), loss={'yolo_loss': lambda y_true, y_pred: y_pred})
             else:
                 reduce_lr       = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=3, verbose=1)
-                model.compile(optimizer=Adam(learning_rate_base), loss={'yolo_loss': lambda y_true, y_pred: y_pred})
+                model.compile(optimizer=Adam(learning_rate_freeze), loss={'yolo_loss': lambda y_true, y_pred: y_pred})
 
         print('Train on {} samples, val on {} samples, with batch size {}.'.format(num_train, num_val, batch_size))
         if eager:
@@ -311,10 +322,10 @@ if __name__ == "__main__":
 
     # 解冻后训练
     if True:
-        Freeze_epoch        = 50
-        Epoch               = 100
-        batch_size          = 2
-        learning_rate_base  = 1e-4
+        Freeze_epoch        = sys_config.freeze_layers
+        Epoch               = sys_config.epoch
+        batch_size          = sys_config.batch_size
+        learning_rate_unfreeze  = sys_config.learning_rate_unfreeze
 
         epoch_size      = num_train // batch_size
         epoch_size_val  = num_val // batch_size
@@ -333,10 +344,10 @@ if __name__ == "__main__":
 
             if Cosine_scheduler:
                 lr_schedule = tf.keras.experimental.CosineDecayRestarts(
-                    initial_learning_rate = learning_rate_base, first_decay_steps = 5 * epoch_size, t_mul = 1.0, alpha = 1e-2)
+                    initial_learning_rate = learning_rate_unfreeze, first_decay_steps = 5 * epoch_size, t_mul = 1.0, alpha = 1e-2)
             else:
                 lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
-                    initial_learning_rate=learning_rate_base, decay_steps=epoch_size, decay_rate=0.92, staircase=True)
+                    initial_learning_rate=learning_rate_unfreeze, decay_steps=epoch_size, decay_rate=0.92, staircase=True)
             
             optimizer = tf.keras.optimizers.Adam(learning_rate=lr_schedule)
         else:
@@ -348,13 +359,13 @@ if __name__ == "__main__":
                 # 预热步长
                 warmup_steps    = int(warmup_epoch * num_train / batch_size)
                 # 学习率
-                reduce_lr       = WarmUpCosineDecayScheduler(learning_rate_base=learning_rate_base, total_steps=total_steps,
+                reduce_lr       = WarmUpCosineDecayScheduler(learning_rate_base=learning_rate_unfreeze, total_steps=total_steps,
                                                             warmup_learning_rate=1e-4, warmup_steps=warmup_steps,
                                                             hold_base_rate_steps=num_train, min_learn_rate=1e-6)
                 model.compile(optimizer=Adam(), loss={'yolo_loss': lambda y_true, y_pred: y_pred})
             else:
                 reduce_lr       = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=3, verbose=1)
-                model.compile(optimizer=Adam(learning_rate_base), loss={'yolo_loss': lambda y_true, y_pred: y_pred})
+                model.compile(optimizer=Adam(learning_rate_unfreeze), loss={'yolo_loss': lambda y_true, y_pred: y_pred})
 
         print('Train on {} samples, val on {} samples, with batch size {}.'.format(num_train, num_val, batch_size))
         if eager:
