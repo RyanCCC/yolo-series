@@ -1,7 +1,7 @@
 # train
 logdir = './logs/'
-classes_path = './villages/train.txt'
-annotation_path='./village/village.names'
+annotation_path = './villages/train.txt'
+classes_path='./village/village.names'
 nchors_path = './model_data/yolo_anchors.txt'
 pretrain_weight = './model_data/yolo4tf2_weight.h5'
 save_model_name = 'village_tf2.h5'

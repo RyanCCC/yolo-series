@@ -260,7 +260,7 @@ if __name__ == "__main__":
 
     if True:
         Init_epoch          = sys_config.Init_epoch
-        Freeze_epoch        = sys_config.freeze_layers
+        Freeze_epoch        = sys_config.Freeze_epoch
         batch_size          = sys_config.batch_size
         learning_rate_freeze  = sys_config.learning_rate_freeze
         
