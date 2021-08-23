@@ -41,7 +41,6 @@ learning_rate_unfreeze  = 1e-4
 # predict
 model_path='./model_data/village_tf2.h5'
 anchors_path='./model_data/yolo_anchors.txt'
-classes_path='./villages/village.names'
 score=0.02
 iou=0.3
 max_boxes=100
