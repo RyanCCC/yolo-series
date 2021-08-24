@@ -63,3 +63,5 @@ result = os.path.join(os.getcwd(), 'result', 'map')
 gt_folder_name = 'gt'
 pr_folder_name = 'pr'
 image_optional = 'images-optional'
+map_socre = 0.1
+map_iou = 0.3
