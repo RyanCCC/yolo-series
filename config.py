@@ -1,7 +1,11 @@
+import os
+
 # train
 logdir = './logs/'
-annotation_path = './villages/train.txt'
-classes_path='./village/village.names'
+dataset_base_path = './village'
+classes_path = os.path.join(dataset_base_path, 'village.names') 
+train_txt= os.path.join(dataset_base_path, 'train.txt')
+test_txt = os.path.join(dataset_base_path, 'ImageSets/Main')
 nchors_path = './model_data/yolo_anchors.txt'
 pretrain_weight = './model_data/yolo4tf2_weight.h5'
 save_model_name = 'village_tf2.h5'
@@ -41,7 +45,7 @@ learning_rate_unfreeze  = 1e-4
 # predict
 model_path='./model_data/village_tf2.h5'
 anchors_path='./model_data/yolo_anchors.txt'
-score=0.02
+score=0.3
 iou=0.3
 max_boxes=100
 letterbox_image=False
@@ -53,3 +57,9 @@ test_txt_file = './villages/test.txt'
 video_path      = 0
 video_save_path = ""
 video_fps       = 25.0
+
+# calculate map
+result = os.path.join(os.getcwd(), 'result', 'map')
+gt_folder_name = 'gt'
+pr_folder_name = 'pr'
+image_optional = 'images-optional'

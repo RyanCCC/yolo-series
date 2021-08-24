@@ -12,6 +12,8 @@ from tensorflow.keras.models import Model
 from nets.yolo4 import yolo_body, yolo_eval
 from utils.utils import letterbox_image
 
+import config as sys_config
+
 
 #--------------------------------------------#
 #   使用自己训练好的模型预测需要修改2个参数
@@ -113,40 +115,22 @@ class YOLO(object):
         out_boxes, out_scores, out_classes = self.yolo_model([image_data, input_image_shape], training=False)
         return out_boxes, out_scores, out_classes
 
-    #---------------------------------------------------#
-    #   检测图片
-    #---------------------------------------------------#
-    def detect_image(self, image):
-        #---------------------------------------------------------#
-        #   在这里将图像转换成RGB图像，防止灰度图在预测时报错。
-        #---------------------------------------------------------#
-        image = image.convert('RGB')
+
+    def get_dr_txt(self, image):
         
-        #---------------------------------------------------------#
-        #   给图像增加灰条，实现不失真的resize
-        #   也可以直接resize进行识别
-        #---------------------------------------------------------#
+        image = image.convert('RGB')
         if self.letterbox_image:
             boxed_image = letterbox_image(image, (self.model_image_size[1],self.model_image_size[0]))
         else:
             boxed_image = image.resize((self.model_image_size[1],self.model_image_size[0]), Image.BICUBIC)
         image_data = np.array(boxed_image, dtype='float32')
         image_data /= 255.
-        #---------------------------------------------------------#
-        #   添加上batch_size维度
-        #---------------------------------------------------------#
         image_data = np.expand_dims(image_data, 0)  # Add batch dimension.
-        #---------------------------------------------------------#
-        #   将图像输入网络当中进行预测！
-        #---------------------------------------------------------#
         input_image_shape = np.expand_dims(np.array([image.size[1], image.size[0]], dtype='float32'), 0)
         out_boxes, out_scores, out_classes = self.get_pred(image_data, input_image_shape) 
         
         print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
-        #---------------------------------------------------------#
-        #   设置字体
-        #---------------------------------------------------------#
-        font = ImageFont.truetype(font='./data/simhei.ttf', size=np.floor(3e-2 * image.size[1] + 0.5).astype('int32'))
+        font = ImageFont.truetype(font='model_data/simhei.ttf', size=np.floor(3e-2 * image.size[1] + 0.5).astype('int32'))
         thickness = max((image.size[0] + image.size[1]) // 300, 1)
         
         for i, c in list(enumerate(out_classes)):
@@ -187,12 +171,46 @@ class YOLO(object):
             del draw
 
         return image
+    
+    def get_dr_txt(self, image_id,  image):
+        
+        image = image.convert('RGB')
+        if self.letterbox_image:
+            boxed_image = letterbox_image(image, (self.model_image_size[1],self.model_image_size[0]))
+        else:
+            boxed_image = image.resize((self.model_image_size[1],self.model_image_size[0]), Image.BICUBIC)
+        image_data = np.array(boxed_image, dtype='float32')
+        image_data /= 255.
+        image_data = np.expand_dims(image_data, 0)  # Add batch dimension.
+        input_image_shape = np.expand_dims(np.array([image.size[1], image.size[0]], dtype='float32'), 0)
+        out_boxes, out_scores, out_classes = self.get_pred(image_data, input_image_shape) 
+        
+        print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
+        
+        for i, c in list(enumerate(out_classes)):
+            predicted_class = self.class_names[c]
+            box = out_boxes[i]
+            score = out_scores[i]
+
+            top, left, bottom, right = box
+            top = top - 5
+            left = left - 5
+            bottom = bottom + 5
+            right = right + 5
+            top = max(0, np.floor(top + 0.5).astype('int32'))
+            left = max(0, np.floor(left + 0.5).astype('int32'))
+            bottom = min(image.size[1], np.floor(bottom + 0.5).astype('int32'))
+            right = min(image.size[0], np.floor(right + 0.5).astype('int32'))
+
+            dr_txt_path = os.path.join(sys_config.result, sys_config.pr_folder_name, image_id+'.txt')
+            with open(dr_txt_path, 'w') as f:
+                f.write("%s %s %s %s %s %s\n" % (predicted_class, str(score.numpy()), str(int(left)), str(int(top)), str(int(right)),str(int(bottom))))
+            
+
+        return image
 
     def get_FPS(self, image, test_interval):
-        #---------------------------------------------------------#
-        #   给图像增加灰条，实现不失真的resize
-        #   也可以直接resize进行识别
-        #---------------------------------------------------------#
+
         if self.letterbox_image:
             boxed_image = letterbox_image(image, (self.model_image_size[1],self.model_image_size[0]))
         else:

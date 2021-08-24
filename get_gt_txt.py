@@ -1,7 +1,9 @@
 import sys
 import os
+sys.path.append(os.getcwd())
 import glob
 import xml.etree.ElementTree as ET
+import config as sys_config
 
 def get_classes(classes_path):
     '''loads the classes'''
@@ -10,16 +12,15 @@ def get_classes(classes_path):
     class_names = [c.strip() for c in class_names]
     return class_names
 
-image_ids = open('VOCdevkit/VOC2007/ImageSets/Main/test.txt').read().strip().split()
+image_ids = open(os.path.join(sys_config.test_txt, 'test.txt')).read().strip().split()
 
-if not os.path.exists("./input"):
-    os.makedirs("./input")
-if not os.path.exists("./input/ground-truth"):
-    os.makedirs("./input/ground-truth")
+gt_folder = os.path.join(sys_config.result, sys_config.gt_folder_name)
+if not os.path.exists(gt_folder):
+    os.makedirs(gt_folder)
 
 for image_id in image_ids:
-    with open("./input/ground-truth/"+image_id+".txt", "w") as new_f:
-        root = ET.parse("VOCdevkit/VOC2007/Annotations/"+image_id+".xml").getroot()
+    with open(os.path.join(gt_folder, image_id+".txt"), "w") as new_f:
+        root = ET.parse( os.path.join(sys_config.dataset_base_path, "Annotations", image_id+".xml")).getroot()
         for obj in root.findall('object'):
             difficult_flag = False
             if obj.find('difficult')!=None:
@@ -27,12 +28,7 @@ for image_id in image_ids:
                 if int(difficult)==1:
                     difficult_flag = True
             obj_name = obj.find('name').text
-            '''
-            ！！！！！！！！！！！！注意事项！！！！！！！！！！！！
-            # 这一部分是当xml有无关的类的时候，可以取消下面代码的注释
-            # 利用对应的classes.txt来进行筛选！！！！！！！！！！！！
-            '''
-            # classes_path = './data/voc_classes.txt'
+            # classes_path = 'model_data/voc_classes.txt'
             # class_names = get_classes(classes_path)
             # if obj_name not in class_names:
             #     continue
