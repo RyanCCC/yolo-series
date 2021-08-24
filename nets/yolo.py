@@ -116,7 +116,7 @@ class YOLO(object):
         return out_boxes, out_scores, out_classes
 
 
-    def get_dr_txt(self, image):
+    def detect_image(self, image):
         
         image = image.convert('RGB')
         if self.letterbox_image:
