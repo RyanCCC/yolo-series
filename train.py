@@ -322,7 +322,7 @@ if __name__ == "__main__":
 
     # 解冻后训练
     if True:
-        Freeze_epoch        = sys_config.freeze_layers
+        Freeze_epoch        = sys_config.Freeze_epoch
         Epoch               = sys_config.epoch
         batch_size          = sys_config.batch_size
         learning_rate_unfreeze  = sys_config.learning_rate_unfreeze
