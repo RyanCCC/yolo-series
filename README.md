@@ -56,3 +56,29 @@ weights_path = './data/yolo4_weight.h5'
 save_model_name = 'village.h5'
 input_shape = (416,416)
 ```
+
+#### MAP计算步骤
+
+1. 统计测试集的groundtrue
+
+```python
+
+python get_gt_txt.py
+
+```
+
+2. 计算模型推理测试集的结果
+
+```python
+
+python get_dr_txt.py
+
+```
+
+3. 计算map的性能指标
+
+```python
+
+python get_map.py
+
+```
