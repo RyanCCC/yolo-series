@@ -15,11 +15,6 @@ from utils.utils import compose
 from nets.CSPdarknet53 import darknet_body
 
 
-#--------------------------------------------------#
-#   单次卷积DarknetConv2D
-#   如果步长为2则自己设定padding方式。
-#   测试中发现没有l2正则化效果更好，所以去掉了l2正则化
-#--------------------------------------------------#
 @wraps(Conv2D)
 def DarknetConv2D(*args, **kwargs):
     # darknet_conv_kwargs = {'kernel_regularizer': l2(5e-4)}
@@ -29,7 +24,6 @@ def DarknetConv2D(*args, **kwargs):
     return Conv2D(*args, **darknet_conv_kwargs)
 
 #---------------------------------------------------#
-#   卷积块 -> 卷积 + 标准化 + 激活函数
 #   DarknetConv2D + BatchNormalization + LeakyReLU
 #---------------------------------------------------#
 def DarknetConv2D_BN_Leaky(*args, **kwargs):

@@ -15,12 +15,6 @@ from utils.utils import letterbox_image
 import config as sys_config
 
 
-#--------------------------------------------#
-#   使用自己训练好的模型预测需要修改2个参数
-#   model_path和classes_path都需要修改！
-#   如果出现shape不匹配，一定要注意
-#   训练时的model_path和classes_path参数的修改
-#--------------------------------------------#
 class YOLO(object):
 
     @classmethod
