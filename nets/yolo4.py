@@ -34,11 +34,7 @@ def DarknetConv2D_BN_Leaky(*args, **kwargs):
         BatchNormalization(),
         LeakyReLU(alpha=0.1))
 
-#---------------------------------------------------#
-#   进行五次卷积
-#---------------------------------------------------#
 def make_five_convs(x, num_filters):
-    # 五次卷积
     x = DarknetConv2D_BN_Leaky(num_filters, (1, 1))(x)
     x = DarknetConv2D_BN_Leaky(num_filters * 2, (3, 3))(x)
     x = DarknetConv2D_BN_Leaky(num_filters, (1, 1))(x)
@@ -132,9 +128,6 @@ def yolo_body(inputs, num_anchors, num_classes):
     return Model(inputs, [P5_output, P4_output, P3_output])
 
 
-#---------------------------------------------------#
-#   将预测值的每个特征层调成真实值
-#---------------------------------------------------#
 def yolo_head(feats, anchors, num_classes, input_shape, calc_loss=False):
     num_anchors = len(anchors)
     #---------------------------------------------------#
@@ -174,10 +167,6 @@ def yolo_head(feats, anchors, num_classes, input_shape, calc_loss=False):
     box_confidence = K.sigmoid(feats[..., 4:5])
     box_class_probs = K.sigmoid(feats[..., 5:])
 
-    #---------------------------------------------------------------------#
-    #   在计算loss的时候返回grid, feats, box_xy, box_wh
-    #   在预测的时候返回box_xy, box_wh, box_confidence, box_class_probs
-    #---------------------------------------------------------------------#
     if calc_loss == True:
         return grid, feats, box_xy, box_wh
     return box_xy, box_wh, box_confidence, box_class_probs
@@ -197,10 +186,6 @@ def yolo_correct_boxes(box_xy, box_wh, input_shape, image_shape):
     image_shape = K.cast(image_shape, K.dtype(box_yx))
 
     new_shape = K.round(image_shape * K.min(input_shape/image_shape))
-    #-----------------------------------------------------------------#
-    #   这里求出来的offset是图像有效区域相对于图像左上角的偏移情况
-    #   new_shape指的是宽高缩放情况
-    #-----------------------------------------------------------------#
     offset = (input_shape - new_shape) / 2. / input_shape
     scale = input_shape / new_shape
 
@@ -263,9 +248,6 @@ def yolo_boxes_and_scores(feats, anchors, num_classes, input_shape, image_shape,
     box_scores = K.reshape(box_scores, [-1, num_classes])
     return boxes, box_scores
 
-# ---------------------------------------------------#
-#   图片预测
-# ---------------------------------------------------#
 def yolo_eval(yolo_outputs,
               anchors,
               num_classes,
@@ -290,36 +272,30 @@ def yolo_eval(yolo_outputs,
     #   52x52的特征层对应的anchor是[12, 16], [19, 36], [40, 28]
     #-----------------------------------------------------------#
     anchor_mask = [[6, 7, 8], [3, 4, 5], [0, 1, 2]]
-
-    #-----------------------------------------------------------#
-    #   这里获得的是输入图片的大小，一般是416x416
-    #-----------------------------------------------------------#
     input_shape = K.shape(yolo_outputs[0])[1:3] * 32
     boxes = []
     box_scores = []
-    #-----------------------------------------------------------#
-    #   对每个特征层进行处理
-    #-----------------------------------------------------------#
     for l in range(num_layers):
         _boxes, _box_scores = yolo_boxes_and_scores(yolo_outputs[l], anchors[anchor_mask[l]], num_classes, input_shape,
                                                     image_shape, letterbox_image)
         boxes.append(_boxes)
         box_scores.append(_box_scores)
-    #-----------------------------------------------------------#
-    #   将每个特征层的结果进行堆叠
-    #-----------------------------------------------------------#
     boxes = K.concatenate(boxes, axis=0)
     box_scores = K.concatenate(box_scores, axis=0)
 
-    mask = box_scores >= score_threshold
+    
     max_boxes_tensor = K.constant(max_boxes, dtype='int32')
     boxes_ = []
     scores_ = []
     classes_ = []
     for c in range(num_classes):
-        #-----------------------------------------------------------#
-        #   取出所有box_scores >= score_threshold的框，和成绩
-        #-----------------------------------------------------------#
+
+        # 对小目标的阈值进行调整
+        if c =='0':
+            mask = box_scores >= score_threshold
+        else:
+            mask = box_scores >= score_threshold
+
         class_boxes = tf.boolean_mask(boxes, mask[:, c])
         class_box_scores = tf.boolean_mask(box_scores[:, c], mask[:, c])
 
