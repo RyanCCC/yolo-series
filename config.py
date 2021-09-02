@@ -45,6 +45,7 @@ learning_rate_freeze  = 1e-3
 learning_rate_unfreeze  = 1e-4
 
 # predict
+ISTINY=True
 model_path='./model_data/village_tf2.h5'
 anchors_path='./model_data/yolo_anchors.txt'
 score=0.3

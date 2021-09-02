@@ -2,17 +2,18 @@
 import colorsys
 import os
 import time
-
+import config as sys_config
 import numpy as np
 import tensorflow as tf
 from PIL import Image, ImageDraw, ImageFont
 from tensorflow.keras.layers import Input, Lambda
 from tensorflow.keras.models import Model
 
-from nets.yolo4 import yolo_body, yolo_eval
+if not sys_config.ISTINY:
+    from nets.yolo4 import yolo_body, yolo_eval
+else:
+    from nets.yolo4_tiny import yolo_body, yolo_eval
 from utils.utils import letterbox_image
-
-import config as sys_config
 
 
 class YOLO(object):
@@ -49,9 +50,7 @@ class YOLO(object):
         class_names = [c.strip() for c in class_names]
         return class_names
 
-    #---------------------------------------------------#
-    #   获得所有的先验框
-    #---------------------------------------------------#
+
     def _get_anchors(self):
         anchors_path = os.path.expanduser(self.anchors_path)
         with open(anchors_path) as f:
@@ -59,23 +58,17 @@ class YOLO(object):
         anchors = [float(x) for x in anchors.split(',')]
         return np.array(anchors).reshape(-1, 2)
 
-    #---------------------------------------------------#
-    #   载入模型
-    #---------------------------------------------------#
+
     def generate(self):
         model_path = os.path.expanduser(self.model_path)
         assert model_path.endswith('.h5'), 'Keras model or weights must be a .h5 file.'
         
-        #---------------------------------------------------#
-        #   计算先验框的数量和种类的数量
-        #---------------------------------------------------#
         num_anchors = len(self.anchors)
         num_classes = len(self.class_names)
-
-        #---------------------------------------------------------#
-        #   载入模型
-        #---------------------------------------------------------#
-        self.yolo_model = yolo_body(Input(shape=(None,None,3)), num_anchors//3, num_classes)
+        if not sys_config.ISTINY:
+            self.yolo_model = yolo_body(Input(shape=(None,None,3)), num_anchors//3, num_classes, phi=sys_config.ATTENTION)
+        else:
+            self.yolo_model = yolo_body(Input(shape=(None,None,3)), num_anchors//2, num_classes, phi=sys_config.ATTENTION)
         self.yolo_model.load_weights(self.model_path)
 
         print('{} model, anchors, and classes loaded.'.format(model_path))
@@ -93,10 +86,7 @@ class YOLO(object):
         np.random.shuffle(self.colors)
         np.random.seed(None)
 
-        #---------------------------------------------------------#
-        #   在yolo_eval函数中，我们会对预测结果进行后处理
-        #   后处理的内容包括，解码、非极大抑制、门限筛选等
-        #---------------------------------------------------------#
+
         self.input_image_shape = Input([2,],batch_size=1)
         inputs = [*self.yolo_model.output, self.input_image_shape]
         outputs = Lambda(yolo_eval, output_shape=(1,), name='yolo_eval',
@@ -179,8 +169,14 @@ class YOLO(object):
         input_image_shape = np.expand_dims(np.array([image.size[1], image.size[0]], dtype='float32'), 0)
         out_boxes, out_scores, out_classes = self.get_pred(image_data, input_image_shape) 
         
-        print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
+        # print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
         
+        if len(out_boxes) == 0:
+            print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
+            dr_txt_path = os.path.join(sys_config.result, sys_config.pr_folder_name, image_id+'.txt')
+            with open(dr_txt_path, 'w') as f:
+                f.write(" ")
+
         for i, c in list(enumerate(out_classes)):
             predicted_class = self.class_names[c]
             box = out_boxes[i]
