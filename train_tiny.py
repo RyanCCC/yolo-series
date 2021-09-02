@@ -191,7 +191,7 @@ if __name__ == "__main__":
     log_dir = sys_config.logdir
     classes_path = sys_config.classes_path
     anchors_path = sys_config.anchors_tiny_path
-    weights_path = sys_config.pretrain_weight
+    weights_path = sys_config.pretrain_weight_tiny
     save_model_name = sys_config.save_model_name
     input_shape = (sys_config.imagesize,sys_config.imagesize)
     eager = sys_config.eager
