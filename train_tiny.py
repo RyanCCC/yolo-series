@@ -211,7 +211,7 @@ if __name__ == "__main__":
     image_input = Input(shape=(None, None, 3))
     h, w = input_shape
     print('Create YOLOv4-Tiny model with {} anchors and {} classes.'.format(num_anchors, num_classes))
-    model_body = yolo_body(image_input, num_anchors//2, num_classes)
+    model_body = yolo_body(image_input, num_anchors//2, num_classes, sys_config.ATTENTION)
     
     #------------------------------------------------------#
     #   载入预训练权重
