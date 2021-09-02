@@ -65,3 +65,6 @@ pr_folder_name = 'pr'
 image_optional = 'images-optional'
 map_socre = 0.1
 map_iou = 0.3
+MINOVERLAP = 0.75
+
+ATTENTION=0
