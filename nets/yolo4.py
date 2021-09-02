@@ -52,7 +52,7 @@ def make_five_convs(x, num_filters):
 #---------------------------------------------------#
 #   Panet网络的构建，并且获得预测结果
 #---------------------------------------------------#
-def yolo_body(inputs, num_anchors, num_classes, phi=1):
+def yolo_body(inputs, num_anchors, num_classes, phi=0):
     if phi >=4:
         raise AssertionError("Phi must be less than or equal to 3. ")
     #---------------------------------------------------#   
