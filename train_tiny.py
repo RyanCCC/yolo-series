@@ -16,6 +16,13 @@ from utils.utils import (ModelCheckpoint,
                          get_random_data_with_Mosaic)
 import config as sys_config
 
+
+# 设置GPU自增长
+gpus = tf.config.experimental.list_physical_devices('GPU')
+for gpu in gpus:
+    tf.config.experimental.set_memory_growth(gpu, True)
+
+
 def get_classes(classes_path):
     '''loads the classes'''
     with open(classes_path) as f:
@@ -57,7 +64,7 @@ def data_generator(annotation_lines, batch_size, input_shape, anchors, num_class
         box_data = np.array(box_data)
         y_true = preprocess_true_boxes(box_data, input_shape, anchors, num_classes)
         if eager:
-            yield image_data, y_true[0], y_true[1], y_true[2]
+            yield image_data, y_true[0], y_true[1]
         else:
             yield [image_data, *y_true], np.zeros(batch_size)
 
@@ -120,8 +127,8 @@ def get_train_step_fn():
     def train_step(imgs, yolo_loss, targets, net, optimizer, regularization, normalize):
         with tf.GradientTape() as tape:
             # 计算loss
-            P5_output, P4_output, P3_output = net(imgs, training=True)
-            args = [P5_output, P4_output, P3_output] + targets
+            P5_output, P4_output = net(imgs, training=True)
+            args = [P5_output, P4_output] + targets
             loss_value = yolo_loss(args,anchors,num_classes,label_smoothing=label_smoothing,normalize=normalize)
             if regularization:
                 # 加入正则化损失
@@ -140,8 +147,8 @@ def fit_one_epoch(net, yolo_loss, optimizer, epoch, epoch_size, epoch_size_val, 
         for iteration, batch in enumerate(gen):
             if iteration>=epoch_size:
                 break
-            images, target0, target1, target2 = batch[0], batch[1], batch[2], batch[3]
-            targets = [target0, target1, target2]
+            images, target0, target1 = batch[0], batch[1], batch[2], batch[3]
+            targets = [target0, target1]
             targets = [tf.convert_to_tensor(target) for target in targets]
             loss_value = train_step(images, yolo_loss, targets, net, optimizer, regularization, normalize)
             loss = loss + loss_value
@@ -203,8 +210,8 @@ if __name__ == "__main__":
 
     image_input = Input(shape=(None, None, 3))
     h, w = input_shape
-    print('Create YOLOv4 model with {} anchors and {} classes.'.format(num_anchors, num_classes))
-    model_body = yolo_body(image_input, num_anchors//3, num_classes)
+    print('Create YOLOv4-Tiny model with {} anchors and {} classes.'.format(num_anchors, num_classes))
+    model_body = yolo_body(image_input, num_anchors//2, num_classes)
     
     #------------------------------------------------------#
     #   载入预训练权重
@@ -265,9 +272,9 @@ if __name__ == "__main__":
 
         if eager:
             gen     = tf.data.Dataset.from_generator(partial(data_generator, annotation_lines = lines[:num_train], batch_size = batch_size,
-                input_shape = input_shape, anchors = anchors, num_classes = num_classes, mosaic=mosaic, random=True), (tf.float32, tf.float32, tf.float32, tf.float32))
+                input_shape = input_shape, anchors = anchors, num_classes = num_classes, mosaic=mosaic, random=True), (tf.float32, tf.float32, tf.float32))
             gen_val = tf.data.Dataset.from_generator(partial(data_generator, annotation_lines = lines[num_train:], batch_size = batch_size, 
-                input_shape = input_shape, anchors = anchors, num_classes = num_classes, mosaic=False, random=False), (tf.float32, tf.float32, tf.float32, tf.float32))
+                input_shape = input_shape, anchors = anchors, num_classes = num_classes, mosaic=False, random=False), (tf.float32, tf.float32, tf.float32))
 
             gen     = gen.shuffle(buffer_size=batch_size).prefetch(buffer_size=batch_size)
             gen_val = gen_val.shuffle(buffer_size=batch_size).prefetch(buffer_size=batch_size)
@@ -328,9 +335,9 @@ if __name__ == "__main__":
 
         if eager:
             gen     = tf.data.Dataset.from_generator(partial(data_generator, annotation_lines = lines[:num_train], batch_size = batch_size,
-                input_shape = input_shape, anchors = anchors, num_classes = num_classes, mosaic=mosaic, random=True), (tf.float32, tf.float32, tf.float32, tf.float32))
+                input_shape = input_shape, anchors = anchors, num_classes = num_classes, mosaic=mosaic, random=True), (tf.float32, tf.float32, tf.float32))
             gen_val = tf.data.Dataset.from_generator(partial(data_generator, annotation_lines = lines[num_train:], batch_size = batch_size, 
-                input_shape = input_shape, anchors = anchors, num_classes = num_classes, mosaic=False, random=False), (tf.float32, tf.float32, tf.float32, tf.float32))
+                input_shape = input_shape, anchors = anchors, num_classes = num_classes, mosaic=False, random=False), (tf.float32, tf.float32, tf.float32))
 
             gen     = gen.shuffle(buffer_size=batch_size).prefetch(buffer_size=batch_size)
             gen_val = gen_val.shuffle(buffer_size=batch_size).prefetch(buffer_size=batch_size)
