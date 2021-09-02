@@ -237,7 +237,7 @@ if __name__ == "__main__":
     #   early_stopping用于设定早停，val_loss多次不下降自动结束训练，表示模型基本收敛
     #-------------------------------------------------------------------------------#
     logging = TensorBoard(log_dir=log_dir)
-    checkpoint = ModelCheckpoint(log_dir+"/village_tf2.h5", save_weights_only=True, save_best_only=True, period=1)
+    checkpoint = ModelCheckpoint(log_dir+save_model_name, save_weights_only=True, save_best_only=True, period=1)
     early_stopping = EarlyStopping(min_delta=0, patience=10, verbose=1)
 
     #----------------------------------------------------------------------#
