@@ -9,7 +9,7 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
 from tqdm import tqdm
 
-from nets.loss import yolo_loss
+from nets.loss_tiny import yolo_loss
 from nets.yolo4_tiny import yolo_body
 from utils.utils import (ModelCheckpoint,
                          WarmUpCosineDecayScheduler, get_random_data,
@@ -183,7 +183,7 @@ if __name__ == "__main__":
     train_txt = sys_config.train_txt
     log_dir = sys_config.logdir
     classes_path = sys_config.classes_path
-    anchors_path = sys_config.anchors_path
+    anchors_path = sys_config.anchors_tiny_path
     weights_path = sys_config.pretrain_weight
     save_model_name = sys_config.save_model_name
     input_shape = (sys_config.imagesize,sys_config.imagesize)
@@ -216,12 +216,10 @@ if __name__ == "__main__":
     #   在这个地方设置损失，将网络的输出结果传入loss函数
     #   把整个模型的输出作为loss
     #------------------------------------------------------#
-    y_true = [Input(shape=(h//{0:32, 1:16, 2:8}[l], w//{0:32, 1:16, 2:8}[l], \
-        num_anchors//3, num_classes+5)) for l in range(3)]
+    y_true = [Input(shape=(h//{0:32, 1:16}[l], w//{0:32, 1:16}[l], num_anchors//2, num_classes+5)) for l in range(2)]
     loss_input = [*model_body.output, *y_true]
     model_loss = Lambda(yolo_loss, output_shape=(1,), name='yolo_loss',
-        arguments={'anchors': anchors, 'num_classes': num_classes, 'ignore_thresh': 0.5, 'label_smoothing': label_smoothing})(loss_input)
-
+        arguments={'anchors': anchors, 'num_classes': num_classes, 'ignore_thresh': 0.5, 'label_smoothing': label_smoothing, 'normalize':normalize})(loss_input)
     model = Model([model_body.input, *y_true], model_loss)
 
     #-------------------------------------------------------------------------------#
@@ -249,7 +247,7 @@ if __name__ == "__main__":
     num_val = int(len(lines)*val_split)
     num_train = len(lines) - num_val
     
-    freeze_layers = sys_config.freeze_layers
+    freeze_layers = sys_config.freeze_layers_tiny
     for i in range(freeze_layers): model_body.layers[i].trainable = False
     print('Freeze the first {} layers of total {} layers.'.format(freeze_layers, len(model_body.layers)))
 

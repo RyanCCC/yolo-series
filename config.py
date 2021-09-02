@@ -2,14 +2,15 @@ import os
 
 # train
 logdir = './logs/'
-dataset_base_path = './village'
+dataset_base_path = r'D:\Code\AGCIMAIGit\Dataset_Object_Detection\village'
 classes_path = os.path.join(dataset_base_path, 'village.names') 
 train_txt= os.path.join(dataset_base_path, 'train.txt')
 test_txt = os.path.join(dataset_base_path, 'ImageSets/Main')
-nchors_path = './model_data/yolo_anchors.txt'
-pretrain_weight = './model_data/yolo4tf2_weight.h5'
+anchors_path = './data/yolo_anchors.txt'
+anchors_tiny_path = './data/yolo_anchors_tiny.txt'
+pretrain_weight = './model/yolo4tf2_weight.h5'
 save_model_name = 'village_tf2.h5'
-imagesize=416
+imagesize=512
 eager=False
 '''
 是否对损失进行归一化，用于改变loss的大小
@@ -38,6 +39,7 @@ Init_epoch          = 0
 Freeze_epoch        = 50
 epoch = 100
 freeze_layers = 249
+freeze_layers_tiny = 60
 batch_size          = 2
 learning_rate_freeze  = 1e-3
 learning_rate_unfreeze  = 1e-4
