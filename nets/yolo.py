@@ -156,6 +156,47 @@ class YOLO(object):
 
         return image
     
+    def deep_sort_track(self, image):
+        
+        image = image.convert('RGB')
+        if self.letterbox_image:
+            boxed_image = letterbox_image(image, (self.model_image_size[1],self.model_image_size[0]))
+        else:
+            boxed_image = image.resize((self.model_image_size[1],self.model_image_size[0]), Image.BICUBIC)
+        image_data = np.array(boxed_image, dtype='float32')
+        image_data /= 255.
+        image_data = np.expand_dims(image_data, 0)  # Add batch dimension.
+        input_image_shape = np.expand_dims(np.array([image.size[1], image.size[0]], dtype='float32'), 0)
+        out_boxes, out_scores, out_classes = self.get_pred(image_data, input_image_shape) 
+        
+        print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
+        boxes = []
+        for i, c in list(enumerate(out_classes)):
+            box_tmp = []
+            predicted_class = self.class_names[c]
+            box = out_boxes[i]
+            score = out_scores[i]
+            top, left, bottom, right = box
+            top = top - 5
+            left = left - 5
+            bottom = bottom + 5
+            right = right + 5
+            top = max(0, np.floor(top + 0.5).astype('int32'))
+            left = max(0, np.floor(left + 0.5).astype('int32'))
+            bottom = min(image.size[1], np.floor(bottom + 0.5).astype('int32'))
+            right = min(image.size[0], np.floor(right + 0.5).astype('int32'))
+
+            # change left top right bottom to center_x, center_y, width, height
+            width = right-left
+            height = bottom-top
+            box_tmp.append(left)
+            box_tmp.append(top)
+            box_tmp.append(width)
+            box_tmp.append(height)
+            
+            boxes.append(box_tmp)
+        return boxes, out_scores, out_classes
+    
     def get_dr_txt(self, image_id,  image):
         
         image = image.convert('RGB')
