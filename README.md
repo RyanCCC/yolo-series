@@ -33,7 +33,7 @@ class_file = './villages/village.names'
 
 数据集的文件结构：
 
-|---villages
+|---train_datasets
     +---Annotations
     +---ImageSets
         |---Main
@@ -48,9 +48,9 @@ class_file = './villages/village.names'
 2. 运行train.py文件，要注意一些路径的设置
 
 ```python
-annotation_path = './villages/train.txt'
+annotation_path = './train_datasets/train.txt'
 log_dir = 'logs/'
-classes_path = 'villages/village.names'    
+classes_path = 'train_datasets/village.names'    
 anchors_path = './data/yolo_anchors.txt'
 weights_path = './data/yolo4_weight.h5'
 save_model_name = 'village.h5'
