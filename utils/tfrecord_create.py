@@ -10,7 +10,7 @@ from .dataloader import get_classes
 IMAGE_FEATURE_MAP = {
     # 'image/width': tf.io.FixedLenFeature([], tf.int64),
     # 'image/height': tf.io.FixedLenFeature([], tf.int64),
-    # 'image/filename': tf.io.FixedLenFeature([], tf.string),
+    'image/filename': tf.io.FixedLenFeature([], tf.string),
     # 'image/source_id': tf.io.FixedLenFeature([], tf.string),
     # 'image/key/sha256': tf.io.FixedLenFeature([], tf.string),
     'image/encoded': tf.io.FixedLenFeature([], tf.string),
@@ -109,11 +109,12 @@ def parse_tfrecord(tfrecord, class_table, size, max_boxes=100):
                         tf.sparse.to_dense(x['image/object/bbox/xmax']),
                         tf.sparse.to_dense(x['image/object/bbox/ymax']),
                         labels], axis=1)
+    filenames = tf.stack([x['image/filename']])
 
     # paddings = [[0, max_boxes - tf.shape(y_train)[0]], [0, 0]]
     # y_train = tf.pad(y_train, paddings)
 
-    return x_train, y_train
+    return x_train, y_train,filenames
 
 def load_tfrecord_dataset(file_pattern, class_file, size=416):
     LINE_NUMBER = -1  # TODO: use tf.lookup.TextFileIndex.LINE_NUMBER
@@ -141,7 +142,7 @@ def load_tfrecord_dataset(file_pattern, class_file, size=416):
 def visual_dataset(tfrecord_file,class_path, size, class_names):
     dataset = load_tfrecord_dataset(tfrecord_file, class_path, size)
     dataset = dataset.shuffle(512)
-    for image, labels in dataset:
+    for image, labels,filename in dataset:
         boxes = []
         scores = []
         classes = []
