@@ -191,6 +191,7 @@ if __name__ == "__main__":
                 fit_one_epoch(model_body, yolo_loss, optimizer, epoch, epoch_size, epoch_size_val,gen, gen_val, 
                             Freeze_epoch, anchors, num_classes, label_smoothing, regularization, get_train_step_fn())
         else:
+            # lines表示训练txt中的数据
             model.fit(data_generator(lines[:num_train], batch_size, input_shape, anchors, num_classes, mosaic=mosaic, random=True, eager=False),
                     steps_per_epoch=epoch_size,
                     validation_data=data_generator(lines[num_train:], batch_size, input_shape, anchors, num_classes, mosaic=False, random=False, eager=False),

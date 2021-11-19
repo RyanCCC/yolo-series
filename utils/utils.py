@@ -121,9 +121,7 @@ def get_random_data_with_Mosaic(annotation_line, input_shape, max_boxes=100, hue
         # 打开图片
         image = Image.open(line_content[0])
         image = image.convert("RGB") 
-        # 图片的大小
         iw, ih = image.size
-        # 保存框的位置
         box = np.array([np.array(list(map(int,box.split(',')))) for box in line_content[1:]])
         
         # 是否翻转图片
@@ -285,16 +283,20 @@ def get_random_data(annotation_line, input_shape, max_boxes=100, jitter=.3, hue=
     box_data = np.zeros((max_boxes,5))
     if len(box)>0:
         np.random.shuffle(box)
+        # 对box的左上角x坐标以及右下角x坐标进行调整，nw表示新的resize原图的width，iw表示原图的width，nm/iw表示它的尺度
         box[:, [0,2]] = box[:, [0,2]]*nw/iw + dx
         box[:, [1,3]] = box[:, [1,3]]*nh/ih + dy
         if flip: box[:, [0,2]] = w - box[:, [2,0]]
+        # 对box进行修正
         box[:, 0:2][box[:, 0:2]<0] = 0
         box[:, 2][box[:, 2]>w] = w
         box[:, 3][box[:, 3]>h] = h
         box_w = box[:, 2] - box[:, 0]
         box_h = box[:, 3] - box[:, 1]
-        box = box[np.logical_and(box_w>1, box_h>1)] # discard invalid box
-        if len(box)>max_boxes: box = box[:max_boxes]
+        # discard invalid box
+        box = box[np.logical_and(box_w>1, box_h>1)] 
+        if len(box)>max_boxes: 
+            box = box[:max_boxes]
         box_data[:len(box)] = box
     
     return image_data, box_data

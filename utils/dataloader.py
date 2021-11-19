@@ -10,6 +10,7 @@ def data_generator(annotation_lines, batch_size, input_shape, anchors, num_class
         box_data = []
         for b in range(batch_size):
             if i==0:
+                # 随机打乱训练集
                 np.random.shuffle(annotation_lines)
             if mosaic:
                 if flag and (i+4) < n:

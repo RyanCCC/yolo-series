@@ -213,9 +213,6 @@ if __name__ == "__main__":
     print('Create YOLOv4-Tiny model with {} anchors and {} classes.'.format(num_anchors, num_classes))
     model_body = yolo_body(image_input, num_anchors//2, num_classes, sys_config.ATTENTION)
     
-    #------------------------------------------------------#
-    #   载入预训练权重
-    #------------------------------------------------------#
     print('Load weights {}.'.format(weights_path))
     model_body.load_weights(weights_path, by_name=True, skip_mismatch=True)
     
@@ -228,23 +225,9 @@ if __name__ == "__main__":
     model_loss = Lambda(yolo_loss, output_shape=(1,), name='yolo_loss',
         arguments={'anchors': anchors, 'num_classes': num_classes, 'ignore_thresh': 0.5, 'label_smoothing': label_smoothing, 'normalize':normalize})(loss_input)
     model = Model([model_body.input, *y_true], model_loss)
-
-    #-------------------------------------------------------------------------------#
-    #   训练参数的设置
-    #   logging表示tensorboard的保存地址
-    #   checkpoint用于设置权值保存的细节，period用于修改多少epoch保存一次
-    #   reduce_lr用于设置学习率下降的方式
-    #   early_stopping用于设定早停，val_loss多次不下降自动结束训练，表示模型基本收敛
-    #-------------------------------------------------------------------------------#
     logging = TensorBoard(log_dir=log_dir)
     checkpoint = ModelCheckpoint(log_dir+save_model_name, save_weights_only=True, save_best_only=True, period=1)
     early_stopping = EarlyStopping(min_delta=0, patience=10, verbose=1)
-
-    #----------------------------------------------------------------------#
-    #   验证集的划分在train.py代码里面进行
-    #   2007_test.txt和2007_val.txt里面没有内容是正常的。训练不会使用到。
-    #   当前划分方式下，验证集和训练集的比例为1:9
-    #----------------------------------------------------------------------#
     val_split = 0.1
     with open(train_txt) as f:
         lines = f.readlines()
@@ -289,13 +272,9 @@ if __name__ == "__main__":
             optimizer = tf.keras.optimizers.Adam(learning_rate=lr_schedule)
         else:
             if Cosine_scheduler:
-                # 预热期
                 warmup_epoch    = int((Freeze_epoch-Init_epoch)*0.2)
-                # 总共的步长
                 total_steps     = int((Freeze_epoch-Init_epoch) * num_train / batch_size)
-                # 预热步长
                 warmup_steps    = int(warmup_epoch * num_train / batch_size)
-                # 学习率
                 reduce_lr       = WarmUpCosineDecayScheduler(learning_rate_base=learning_rate_freeze, total_steps=total_steps,
                                                             warmup_learning_rate=1e-4, warmup_steps=warmup_steps,
                                                             hold_base_rate_steps=num_train, min_learn_rate=1e-6)
@@ -320,7 +299,6 @@ if __name__ == "__main__":
 
     for i in range(freeze_layers): model_body.layers[i].trainable = True
 
-    # 解冻后训练
     if True:
         Freeze_epoch        = sys_config.Freeze_epoch
         Epoch               = sys_config.epoch
@@ -352,13 +330,9 @@ if __name__ == "__main__":
             optimizer = tf.keras.optimizers.Adam(learning_rate=lr_schedule)
         else:
             if Cosine_scheduler:
-                # 预热期
                 warmup_epoch    = int((Epoch-Freeze_epoch)*0.2)
-                # 总共的步长
                 total_steps     = int((Epoch-Freeze_epoch) * num_train / batch_size)
-                # 预热步长
                 warmup_steps    = int(warmup_epoch * num_train / batch_size)
-                # 学习率
                 reduce_lr       = WarmUpCosineDecayScheduler(learning_rate_base=learning_rate_unfreeze, total_steps=total_steps,
                                                             warmup_learning_rate=1e-4, warmup_steps=warmup_steps,
                                                             hold_base_rate_steps=num_train, min_learn_rate=1e-6)
