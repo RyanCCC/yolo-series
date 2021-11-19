@@ -85,7 +85,7 @@ gpus = tf.config.experimental.list_physical_devices(device_type='GPU')
 for gpu in gpus:
     tf.config.experimental.set_memory_growth(gpu, True)
 if __name__ == "__main__":
-    annotation_path = sys_config.annotation_path
+    train_txt = sys_config.train_txt
     log_dir = sys_config.logdir
     classes_path = sys_config.classes_path
     anchors_path = sys_config.anchors_path
@@ -131,7 +131,7 @@ if __name__ == "__main__":
     early_stopping = EarlyStopping(min_delta=0, patience=10, verbose=1)
 
     val_split = 0.1
-    with open(annotation_path) as f:
+    with open(train_txt) as f:
         lines = f.readlines()
     np.random.seed(10101)
     np.random.shuffle(lines)
@@ -174,13 +174,9 @@ if __name__ == "__main__":
             optimizer = tf.keras.optimizers.Adam(learning_rate=lr_schedule)
         else:
             if Cosine_scheduler:
-                # 预热期
                 warmup_epoch    = int((Freeze_epoch-Init_epoch)*0.2)
-                # 总共的步长
                 total_steps     = int((Freeze_epoch-Init_epoch) * num_train / batch_size)
-                # 预热步长
                 warmup_steps    = int(warmup_epoch * num_train / batch_size)
-                # 学习率
                 reduce_lr       = WarmUpCosineDecayScheduler(learning_rate_base=learning_rate_freeze, total_steps=total_steps,
                                                             warmup_learning_rate=1e-4, warmup_steps=warmup_steps,
                                                             hold_base_rate_steps=num_train, min_learn_rate=1e-6)
@@ -237,13 +233,9 @@ if __name__ == "__main__":
             optimizer = tf.keras.optimizers.Adam(learning_rate=lr_schedule)
         else:
             if Cosine_scheduler:
-                # 预热期
                 warmup_epoch    = int((Epoch-Freeze_epoch)*0.2)
-                # 总共的步长
                 total_steps     = int((Epoch-Freeze_epoch) * num_train / batch_size)
-                # 预热步长
                 warmup_steps    = int(warmup_epoch * num_train / batch_size)
-                # 学习率
                 reduce_lr       = WarmUpCosineDecayScheduler(learning_rate_base=learning_rate_unfreeze, total_steps=total_steps,
                                                             warmup_learning_rate=1e-4, warmup_steps=warmup_steps,
                                                             hold_base_rate_steps=num_train, min_learn_rate=1e-6)

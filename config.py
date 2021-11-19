@@ -2,15 +2,15 @@ import os
 
 # train
 logdir = './logs/'
-dataset_base_path = r'.\village'
+dataset_base_path = r'.\villages'
 
 classes_path = os.path.join(dataset_base_path, 'village.names') 
 train_txt= os.path.join(dataset_base_path, 'train.txt')
 test_txt = os.path.join(dataset_base_path, 'ImageSets/Main')
-anchors_path = './model_data/yolo_anchors.txt'
-anchors_tiny_path = './model_data/yolo_anchors_tiny.txt'
-pretrain_weight = './model_data/yolov4tf2_weight.h5'
-pretrain_weight_tiny = './model_data/yolov4_tiny_weights_coco.h5'
+anchors_path = './data/yolo_anchors.txt'
+anchors_tiny_path = './data/yolo_anchors_tiny.txt'
+pretrain_weight = './model/yolo4tf2_weight.h5'
+pretrain_weight_tiny = './model/yolo4_tiny_weights_coco.h5'
 save_model_name = 'village_tf2.h5'
 imagesize=512
 eager=False
@@ -49,7 +49,6 @@ learning_rate_unfreeze  = 1e-4
 # predict
 ISTINY=True
 model_path='./model_data/village_tf2.h5'
-anchors_path='./model_data/yolo_anchors.txt'
 score=0.3
 iou=0.3
 max_boxes=100
