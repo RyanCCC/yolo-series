@@ -5,6 +5,7 @@ import hashlib
 import os
 import cv2
 import numpy as np
+from .dataloader import get_classes
 
 IMAGE_FEATURE_MAP = {
     # 'image/width': tf.io.FixedLenFeature([], tf.int64),
@@ -24,13 +25,6 @@ IMAGE_FEATURE_MAP = {
     # 'image/object/truncated': tf.io.VarLenFeature(tf.int64),
     # 'image/object/view': tf.io.VarLenFeature(tf.string),
 }
-
-def get_classes(classes_path):
-    '''loads the classes'''
-    with open(classes_path) as f:
-        class_names = f.readlines()
-    class_names = [c.strip() for c in class_names]
-    return class_names
 
 # 解析xml
 def parse_xml(xml):
@@ -105,7 +99,7 @@ def create_tfrecord(annotation, class_map, data_dir, sub_folder='JPEGImages'):
 def parse_tfrecord(tfrecord, class_table, size, max_boxes=100):
     x = tf.io.parse_single_example(tfrecord, IMAGE_FEATURE_MAP)
     x_train = tf.image.decode_jpeg(x['image/encoded'], channels=3)
-    x_train = tf.image.resize(x_train, (size, size))
+    # x_train = tf.image.resize(x_train, (size, size))
 
     class_text = tf.sparse.to_dense(
         x['image/object/class/text'], default_value='')
@@ -116,8 +110,8 @@ def parse_tfrecord(tfrecord, class_table, size, max_boxes=100):
                         tf.sparse.to_dense(x['image/object/bbox/ymax']),
                         labels], axis=1)
 
-    paddings = [[0, max_boxes - tf.shape(y_train)[0]], [0, 0]]
-    y_train = tf.pad(y_train, paddings)
+    # paddings = [[0, max_boxes - tf.shape(y_train)[0]], [0, 0]]
+    # y_train = tf.pad(y_train, paddings)
 
     return x_train, y_train
 
@@ -147,7 +141,7 @@ def load_tfrecord_dataset(file_pattern, class_file, size=416):
 def visual_dataset(tfrecord_file,class_path, size, class_names):
     dataset = load_tfrecord_dataset(tfrecord_file, class_path, size)
     dataset = dataset.shuffle(512)
-    for image, labels in dataset.take(4):
+    for image, labels in dataset:
         boxes = []
         scores = []
         classes = []
@@ -196,8 +190,8 @@ def draw_outputs(img, outputs, class_names):
         # 检查box的问题
         max_x = img.shape[0]
         max_y = img.shape[1]
-        x1y1 = checkBox(x1y1, max_x, max_y)
-        x2y2 = checkBox(x2y2, max_x, max_y)
+        # x1y1 = checkBox(x1y1, max_x, max_y)
+        # x2y2 = checkBox(x2y2, max_x, max_y)
 
 
         img = cv2.rectangle(img, x1y1, x2y2, (255, 0, 0), 2)
@@ -206,18 +200,20 @@ def draw_outputs(img, outputs, class_names):
             x1y1, cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (0, 0, 255), 2)
     return img
 
-if __name__ == '__main__':
-    tfrecord_path = './test.tfrecord'
-    writer = tf.io.TFRecordWriter(tfrecord_path)
-    xml_path = './villages/Annotations/20210703_IMG_0201.xml'
-    annotation_xml = lxml.etree.fromstring(open(xml_path).read().encode('utf-8'))
-    annotation = parse_xml(annotation_xml)['annotation']
-    class_path = './villages/village.names'
+def main_create_tfrecord(tfrecord_save_path, dataset_root, class_path, dataset_type):
+    writer = tf.io.TFRecordWriter(tfrecord_save_path)
     classes_name = get_classes(classes_path=class_path)
     class_map = {name:id for id, name in enumerate(classes_name)}
-    # 创建example
-    tf_example = create_tfrecord(annotation, class_map, data_dir='./villages')
-    writer.write(tf_example.SerializeToString())
+    image_list = open(os.path.join(
+        dataset_root, 'ImageSets', 'Main', f'{dataset_type}.txt')).read().splitlines()
+    for name in tqdm.tqdm(image_list):
+        xml_path = os.path.join(
+            dataset_root, 'Annotations', name + '.xml')
+        annotation_xml = lxml.etree.fromstring(open(xml_path).read().encode('utf-8'))
+        annotation = parse_xml(annotation_xml)['annotation']
+        # 创建example
+        tf_example = create_tfrecord(annotation, class_map, data_dir='./villages')
+        writer.write(tf_example.SerializeToString())
     writer.close()
-    visual_dataset(tfrecord_path, class_path, 416, classes_name)
+    visual_dataset(tfrecord_save_path, class_path, 416, classes_name)
     print('finish')
