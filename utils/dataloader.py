@@ -37,7 +37,7 @@ def data_generator(annotation_lines, batch_size, input_shape, anchors, num_class
 
 #  详解：https://blog.csdn.net/weixin_38145317/article/details/95349201
 def preprocess_true_boxes(true_boxes, input_shape, anchors, num_classes):
-    assert (true_boxes[..., 4]<num_classes).numpy().all()
+    assert (true_boxes[..., 4]<num_classes).all()
     num_layers = len(anchors)//3
     anchor_mask = config.ANCHOR_MASK
 
