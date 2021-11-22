@@ -13,8 +13,8 @@ def iou(box, clusters):
     """
     x = np.minimum(clusters[:, 0], box[0])
     y = np.minimum(clusters[:, 1], box[1])
-    if np.count_nonzero(x == 0) > 0 or np.count_nonzero(y == 0) > 0:
-        raise ValueError("Box has no area")
+    # if np.count_nonzero(x == 0) > 0 or np.count_nonzero(y == 0) > 0:
+    #     raise ValueError("Box has no area")
     interp = x * y
     box_area = box[0] * box[1]
     cluster_area = clusters[:, 0] * clusters[:, 1]
@@ -93,10 +93,9 @@ def load_dataset(path):
  
 if __name__ == '__main__':
     
-    ANNOTATIONS_PATH = "F:\Annotations" #xml文件所在文件夹
+    ANNOTATIONS_PATH = "./villages/Annotations/" #xml文件所在文件夹
     CLUSTERS = 9 #聚类数量，anchor数量
     INPUTDIM = 416 #输入网络大小
- 
     data = load_dataset(ANNOTATIONS_PATH)
     out = kmeans(data, k=CLUSTERS)
     print('Boxes:')
@@ -105,3 +104,4 @@ if __name__ == '__main__':
     final_anchors = np.around(out[:, 0] / out[:, 1], decimals=2).tolist()
     print("Before Sort Ratios:\n {}".format(final_anchors))
     print("After Sort Ratios:\n {}".format(sorted(final_anchors)))
+    print('='*8+'这是一条分割线'+'='*8)

@@ -37,6 +37,8 @@ def data_generator(annotation_lines, batch_size, input_shape, anchors, num_class
 
 #  详解：https://blog.csdn.net/weixin_38145317/article/details/95349201
 def preprocess_true_boxes(true_boxes, input_shape, anchors, num_classes):
+    # 该函数得到detectors_mask（最佳预测的anchor boxes，每一个true boxes都对应一个anchor boxes）
+    # true_boxes：实际框的位置和类别
     assert (true_boxes[..., 4]<num_classes).all()
     num_layers = len(anchors)//3
     anchor_mask = config.ANCHOR_MASK
