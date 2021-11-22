@@ -99,7 +99,7 @@ def create_tfrecord(annotation, class_map, data_dir, sub_folder='JPEGImages'):
 def parse_tfrecord(tfrecord, class_table, size, max_boxes=100):
     x = tf.io.parse_single_example(tfrecord, IMAGE_FEATURE_MAP)
     x_train = tf.image.decode_jpeg(x['image/encoded'], channels=3)
-    x_train = tf.image.resize(x_train, (size, size))
+    x_train = tf.image.resize(x_train, size)
     # x_train = tf.image.resize_with_pad(x_train, size, size, 'nearest', antialias=True)
 
     class_text = tf.sparse.to_dense(
@@ -117,9 +117,9 @@ def parse_tfrecord(tfrecord, class_table, size, max_boxes=100):
     paddings = [[0, max_boxes - tf.shape(y_train)[0]], [0, 0]]
     y_train = tf.pad(y_train, paddings)
 
-    return x_train, y_train,filenames
+    return x_train, y_train
 
-def load_tfrecord_dataset(file_pattern, class_file, size=416):
+def load_tfrecord_dataset(file_pattern, class_file, size=(416, 416)):
     LINE_NUMBER = -1  # TODO: use tf.lookup.TextFileIndex.LINE_NUMBER
     '''
     tf.lookup.StaticHashTable：建立类别与数字的关联关系
@@ -222,5 +222,16 @@ def main_create_tfrecord(tfrecord_save_path, dataset_root, class_path, dataset_t
         tf_example = create_tfrecord(annotation, class_map, data_dir='./villages')
         writer.write(tf_example.SerializeToString())
     writer.close()
-    visual_dataset(tfrecord_save_path, class_path, 416, classes_name)
+    # visual_dataset(tfrecord_save_path, class_path, 416, classes_name)
     print('finish')
+
+
+# 对图像数据进行处理
+def transform_dataset(x_train, size):
+    x_train = tf.image.resize(x_train, size)
+    x_train = x_train/255
+    return x_train
+
+# 标签进行处理
+# def transform_targets(true_boxes, input_shape, anchors, num_classes):
+

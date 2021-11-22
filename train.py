@@ -14,8 +14,9 @@ from nets.yolo4 import yolo_body
 from utils.utils import (ModelCheckpoint,
                          WarmUpCosineDecayScheduler)
 import config as sys_config
-from utils.dataloader import data_generator, get_classes, get_anchors
-
+from utils.dataloader import data_generator, get_classes, get_anchors, preprocess_true_boxes_tf, transform_targets
+from utils.tfrecord_create import load_tfrecord_dataset, transform_dataset
+from tqdm import tqdm
 
 # 防止bug
 def get_train_step_fn():
@@ -92,6 +93,7 @@ if __name__ == "__main__":
     weights_path = sys_config.pretrain_weight
     save_model_name = sys_config.save_model_name
     input_shape = (sys_config.imagesize,sys_config.imagesize)
+    anchor_mask = sys_config.ANCHOR_MASK
     eager = sys_config.eager
     normalize = sys_config.normalize
 
@@ -108,15 +110,12 @@ if __name__ == "__main__":
 
     image_input = Input(shape=(None, None, 3))
     h, w = input_shape
-    print('Create YOLOv4 model with {} anchors and {} classes.'.format(num_anchors, num_classes))
     model_body = yolo_body(image_input, num_anchors//3, num_classes, sys_config.ATTENTION)
-    print('Load weights {}.'.format(weights_path))
+    print('加载权重')
     model_body.load_weights(weights_path, by_name=True, skip_mismatch=True)
     
-    #------------------------------------------------------#
-    #   在这个地方设置损失，将网络的输出结果传入loss函数
-    #   把整个模型的输出作为loss
-    #------------------------------------------------------#
+
+    # 将模型的输出作为loss
     y_true = [Input(shape=(h//{0:32, 1:16, 2:8}[l], w//{0:32, 1:16, 2:8}[l], \
         num_anchors//3, num_classes+5)) for l in range(3)]
     loss_input = [*model_body.output, *y_true]
@@ -154,6 +153,37 @@ if __name__ == "__main__":
 
         if epoch_size == 0 or epoch_size_val == 0:
             raise ValueError("数据集过小，无法进行训练，请扩充数据集。")
+
+
+        # # 加载训练集、验证集
+        # train_dataset = load_tfrecord_dataset('./train.tfrecord', classes_path, input_shape)
+        # # 对数据集进行打乱
+        # train_dataset = train_dataset.shuffle(buffer_size=512)
+        # # 设置batch size
+        # train_dataset = train_dataset.batch(batch_size)
+        # # 数据预处理
+        # # for x, y in tqdm(train_dataset):
+        # #     transform_dataset(x, input_shape),
+        # #     preprocess_true_boxes(y, input_shape, anchors, num_classes)
+        # train_dataset = train_dataset.map(lambda x, y:(
+        #     transform_dataset(x, input_shape),
+        #     preprocess_true_boxes_tf(y, input_shape, anchors, num_classes)
+        # ))
+        # # 管道
+        # train_dataset = train_dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+
+        # # 加载训练集、验证集
+        # val_dataset = load_tfrecord_dataset('./validate.tfrecord', classes_path, input_shape)
+        # # 对数据集进行打乱
+        # val_dataset = val_dataset.shuffle(buffer_size=512)
+        # # 设置batch size
+        # val_dataset = val_dataset.batch(batch_size)
+        # # 数据预处理
+        # val_dataset = val_dataset.map(lambda x, y:(
+        #     transform_dataset(x, input_shape),
+        #     preprocess_true_boxes_tf(y, input_shape, anchors, num_classes)
+        # ))
+        
 
         if eager:
             gen     = tf.data.Dataset.from_generator(partial(data_generator, annotation_lines = lines[:num_train], batch_size = batch_size,

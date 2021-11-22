@@ -72,3 +72,5 @@ map_iou = 0.3
 MINOVERLAP = 0.75
 
 ATTENTION=0
+
+ANCHOR_MASK = [[6, 7, 8], [3, 4, 5], [0, 1, 2]]

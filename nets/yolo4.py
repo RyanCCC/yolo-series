@@ -14,6 +14,7 @@ from utils.utils import compose
 
 from nets.CSPdarknet53 import darknet_body
 from nets.attention import cbam_block, eca_block, se_block
+import config
 
 attention_block = [se_block, cbam_block, eca_block]
 
@@ -238,9 +239,7 @@ def yolo_boxes_and_scores(feats, anchors, num_classes, input_shape, image_shape,
     box_scores = K.reshape(box_scores, [-1, num_classes])
     return boxes, box_scores
 
-# ---------------------------------------------------#
-#   图片预测
-# ---------------------------------------------------#
+# 推理
 def yolo_eval(yolo_outputs,
               anchors,
               num_classes,
@@ -256,7 +255,7 @@ def yolo_eval(yolo_outputs,
     else:
         num_layers = len(yolo_outputs)
 
-    anchor_mask = [[6, 7, 8], [3, 4, 5], [0, 1, 2]]
+    anchor_mask = config.ANCHOR_MASK
     input_shape = K.shape(yolo_outputs[0])[1:3] * 32
     boxes = []
     box_scores = []
