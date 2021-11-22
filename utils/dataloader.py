@@ -33,6 +33,7 @@ def data_generator(annotation_lines, batch_size, input_shape, anchors, num_class
         else:
             yield [image_data, *y_true], np.zeros(batch_size)
 
+#  详解：https://blog.csdn.net/weixin_38145317/article/details/95349201
 def preprocess_true_boxes(true_boxes, input_shape, anchors, num_classes):
     assert (true_boxes[..., 4]<num_classes).all(), 'class id must be less than num_classes'
     num_layers = len(anchors)//3

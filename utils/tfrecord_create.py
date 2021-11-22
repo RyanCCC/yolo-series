@@ -99,7 +99,8 @@ def create_tfrecord(annotation, class_map, data_dir, sub_folder='JPEGImages'):
 def parse_tfrecord(tfrecord, class_table, size, max_boxes=100):
     x = tf.io.parse_single_example(tfrecord, IMAGE_FEATURE_MAP)
     x_train = tf.image.decode_jpeg(x['image/encoded'], channels=3)
-    # x_train = tf.image.resize(x_train, (size, size))
+    x_train = tf.image.resize(x_train, (size, size))
+    # x_train = tf.image.resize_with_pad(x_train, size, size, 'nearest', antialias=True)
 
     class_text = tf.sparse.to_dense(
         x['image/object/class/text'], default_value='')
@@ -110,9 +111,11 @@ def parse_tfrecord(tfrecord, class_table, size, max_boxes=100):
                         tf.sparse.to_dense(x['image/object/bbox/ymax']),
                         labels], axis=1)
     filenames = tf.stack([x['image/filename']])
+    # correct box
 
-    # paddings = [[0, max_boxes - tf.shape(y_train)[0]], [0, 0]]
-    # y_train = tf.pad(y_train, paddings)
+
+    paddings = [[0, max_boxes - tf.shape(y_train)[0]], [0, 0]]
+    y_train = tf.pad(y_train, paddings)
 
     return x_train, y_train,filenames
 
@@ -136,6 +139,9 @@ def load_tfrecord_dataset(file_pattern, class_file, size=416):
     # files = tf.data.Dataset.list_files(file_pattern)
     # dataset = files.flat_map(tf.data.TFRecordDataset)
     dataset = tf.data.TFRecordDataset(file_pattern)
+    # debug function 
+    # for ds in dataset:
+    #     parse_tfrecord(ds, class_table, size)
     return dataset.map(lambda x: parse_tfrecord(x, class_table, size))
 
 
