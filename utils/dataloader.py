@@ -36,6 +36,15 @@ def data_generator(annotation_lines, batch_size, input_shape, anchors, num_class
             yield [image_data, *y_true], np.zeros(batch_size)
 
 #  详解：https://blog.csdn.net/weixin_38145317/article/details/95349201
+# https://zhuanlan.zhihu.com/p/79425557
+'''
+preprocess_true_boxes，顾名思义对真实框进行相关预处理。
+为了更好地理解这个函数，有必要先说明bboxes和label分别表示什么，具体怎么操作
+bboxes是用来存放真实框的中心坐标以及宽高(x,y,w,h),其shape为(3,150,4)。3表示3种网格尺寸，150表示每种网格尺寸允许存放的最大真实框数量，4就是(x,y,w,h)。
+label是用来存放3种网格尺寸下每一个网格的中心坐标、宽高、置信度以及所属类别(x, y, w, h, conf, classid)，其中class_id用one-hot编码表示，并对其进行平滑处理。
+label的shape为(3,train_output_sizes,train_output_sizes,anchor_per_scale,5 + num_classes)。3表示3种网格尺寸，train_output_sizes表示每种网格尺寸的大小，anchor_per_scale表示每个网格预测多少个anchor框，5 + numclasses就不再多说了。
+label的初始化为0矩阵，即每个网格的信息(x, y, w, h, conf, classid)都设置为0。计算3个先验框和真实框的iou值，筛选iou值>0.3的先验框并标记索引， 然后将真实框的(x,y,w,h,class_id)填充到真实框所属的网格中(对应标记索引)，网格的置信度设为1。
+'''
 def preprocess_true_boxes(true_boxes, input_shape, anchors, num_classes):
     # 该函数得到detectors_mask（最佳预测的anchor boxes，每一个true boxes都对应一个anchor boxes）
     # true_boxes：实际框的位置和类别
