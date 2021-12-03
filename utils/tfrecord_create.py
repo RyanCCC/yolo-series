@@ -222,7 +222,7 @@ def main_create_tfrecord(tfrecord_save_path, dataset_root, class_path, dataset_t
         tf_example = create_tfrecord(annotation, class_map, data_dir='./villages')
         writer.write(tf_example.SerializeToString())
     writer.close()
-    # visual_dataset(tfrecord_save_path, class_path, 416, classes_name)
+    visual_dataset(tfrecord_save_path, class_path, 416, classes_name)
     print('finish')
 
 

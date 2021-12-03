@@ -43,16 +43,21 @@ def preprocess_true_boxes(true_boxes, input_shape, anchors, num_classes):
     num_layers = len(anchors)//3
     anchor_mask = config.ANCHOR_MASK
 
+    # 归一化
     true_boxes = np.array(true_boxes, dtype='float32')
     input_shape = np.array(input_shape, dtype='int32')
+    # 中心点坐标
     boxes_xy = (true_boxes[..., 0:2] + true_boxes[..., 2:4]) // 2
+    # 标注框长宽
     boxes_wh = true_boxes[..., 2:4] - true_boxes[..., 0:2]
     true_boxes[..., 0:2] = boxes_xy/input_shape[::-1]
     true_boxes[..., 2:4] = boxes_wh/input_shape[::-1]
 
     # m为图片数量，grid_shapes为网格的shape
     m = true_boxes.shape[0]
+    # {0:32  1:16  2:8}表示特征金字塔下采样的倍数，得到不同尺度下的feature map的尺寸
     grid_shapes = [input_shape//{0:32, 1:16, 2:8}[l] for l in range(num_layers)]
+    # 对不同的特征图下生成对应目标框的，如目标框有两个，对于13*13feature map，生成2*13*13*3*(5+class_num+1)
     y_true = [np.zeros((m,grid_shapes[l][0],grid_shapes[l][1],len(anchor_mask[l]),5+num_classes),
         dtype='float32') for l in range(num_layers)]
     anchors = np.expand_dims(anchors, 0)
@@ -60,8 +65,8 @@ def preprocess_true_boxes(true_boxes, input_shape, anchors, num_classes):
     anchor_mins = -anchor_maxes
     valid_mask = boxes_wh[..., 0]>0
 
+    # 对每一张图进行处理，计算每个目标与设定anchor box的最佳IOU
     for b in range(m):
-        # 对每一张图进行处理
         wh = boxes_wh[b, valid_mask[b]]
         if len(wh)==0: continue
         wh = np.expand_dims(wh, -2)
@@ -235,3 +240,19 @@ def transform_targets(y_train, anchors, anchor_masks, size):
         grid_size *= 2
 
     return tuple(y_outs)
+
+
+if __name__ == '__main__':
+    '''
+    debug preprocess_true_boxes
+    '''
+    true_boxes = [[[263, 211, 324, 339, 8], [165, 264, 253, 372, 8], [241, 194, 295, 299, 8], [150, 141, 229, 284, 14]],
+              [[69, 172, 270, 330, 12], [150, 141, 229, 284, 14], [241, 194, 295, 299, 8], [285, 201, 327, 331, 14]]]
+
+    true_boxes = np.array(true_boxes)
+    print(true_boxes.shape)
+    input_shape = (416, 416)
+    anchors = [[10, 13], [16, 30], [33, 23], [30, 61], [62, 45], [59, 119], [116, 90], [156, 198], [373, 326]]
+    num_classes = 20
+    
+    preprocess_true_boxes(true_boxes, input_shape, anchors, num_classes)
