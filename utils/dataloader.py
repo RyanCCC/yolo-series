@@ -92,16 +92,18 @@ def preprocess_true_boxes(true_boxes, input_shape, anchors, num_classes):
         iou = intersect_area / (box_area + anchor_area - intersect_area)
         best_anchor = np.argmax(iou, axis=-1)
 
-        for t, n in enumerate(best_anchor):
+        for t, best_detect in enumerate(best_anchor):
             for l in range(num_layers):
-                if n in anchor_mask[l]:
-                    i = np.floor(true_boxes[b,t,0] * grid_shapes[l][1]).astype('int32')
-                    j = np.floor(true_boxes[b,t,1] * grid_shapes[l][0]).astype('int32')
-                    k = anchor_mask[l].index(n)
+                if best_detect in anchor_mask[l]:
+                    # 根据真实框的坐标信息来计算所属网格左上角的位置. xind, yind其实就是网格的坐标
+                    xind = np.floor(true_boxes[b,t,0] * grid_shapes[l][1]).astype('int32')
+                    yind = np.floor(true_boxes[b,t,1] * grid_shapes[l][0]).astype('int32')
+                    k = anchor_mask[l].index(best_detect)
                     c = true_boxes[b, t, 4].astype('int32')
-                    y_true[l][b, j, i, k, 0:4] = true_boxes[b, t, 0:4]
-                    y_true[l][b, j, i, k, 4] = 1
-                    y_true[l][b, j, i, k, 5+c] = 1
+                    # 填充真实框的中心位置和宽高
+                    y_true[l][b, yind, xind, k, 0:4] = true_boxes[b, t, 0:4]
+                    y_true[l][b, yind, xind, k, 4] = 1
+                    y_true[l][b, yind, xind, k, 5+c] = 1
 
     return y_true
 

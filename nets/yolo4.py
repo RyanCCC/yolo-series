@@ -19,11 +19,7 @@ import config
 attention_block = [se_block, cbam_block, eca_block]
 
 
-#--------------------------------------------------#
-#   单次卷积DarknetConv2D
 #   如果步长为2则自己设定padding方式。
-#   测试中发现没有l2正则化效果更好，所以去掉了l2正则化
-#--------------------------------------------------#
 @wraps(Conv2D)
 def DarknetConv2D(*args, **kwargs):
     # darknet_conv_kwargs = {'kernel_regularizer': l2(5e-4)}
@@ -50,19 +46,12 @@ def make_five_convs(x, num_filters):
     x = DarknetConv2D_BN_Leaky(num_filters, (1, 1))(x)
     return x
 
-#---------------------------------------------------#
+
 #   Panet网络的构建，并且获得预测结果
-#---------------------------------------------------#
 def yolo_body(inputs, num_anchors, num_classes, phi=0):
     if phi >=4:
         raise AssertionError("Phi must be less than or equal to 3. ")
-    #---------------------------------------------------#   
-    #   生成CSPdarknet53的主干模型
-    #   获得三个有效特征层，他们的shape分别是：
-    #   52,52,256
-    #   26,26,512
-    #   13,13,1024
-    #---------------------------------------------------#
+    # 下采样方式为[8, 16, 32]
     feat1, feat2, feat3 = darknet_body(inputs)
     if 1<=phi and phi<=3:
         feat1 = attention_block[phi-1](feat1, name='feat1')
@@ -168,16 +157,12 @@ def yolo_head(feats, anchors, num_classes, input_shape, calc_loss=False):
     grid = K.cast(grid, K.dtype(feats))
 
     feats = K.reshape(feats, [-1, grid_shape[0], grid_shape[1], num_anchors, num_classes + 5])
-
+    # b_x = sigmoid(t_x)+C_x, b_y = sigmoid(t_y)+C_y, b_w = p_w*e^{t_x}，同理b_y
     box_xy = (K.sigmoid(feats[..., :2]) + grid) / K.cast(grid_shape[...,::-1], K.dtype(feats))
     box_wh = K.exp(feats[..., 2:4]) * anchors_tensor / K.cast(input_shape[...,::-1], K.dtype(feats))
     box_confidence = K.sigmoid(feats[..., 4:5])
     box_class_probs = K.sigmoid(feats[..., 5:])
 
-    #---------------------------------------------------------------------#
-    #   在计算loss的时候返回grid, feats, box_xy, box_wh
-    #   在预测的时候返回box_xy, box_wh, box_confidence, box_class_probs
-    #---------------------------------------------------------------------#
     if calc_loss == True:
         return grid, feats, box_xy, box_wh
     return box_xy, box_wh, box_confidence, box_class_probs
