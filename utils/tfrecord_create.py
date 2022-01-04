@@ -111,9 +111,6 @@ def parse_tfrecord(tfrecord, class_table, size, max_boxes=100):
                         tf.sparse.to_dense(x['image/object/bbox/ymax']),
                         labels], axis=1)
     filenames = tf.stack([x['image/filename']])
-    # correct box
-
-
     paddings = [[0, max_boxes - tf.shape(y_train)[0]], [0, 0]]
     y_train = tf.pad(y_train, paddings)
 
@@ -122,7 +119,7 @@ def parse_tfrecord(tfrecord, class_table, size, max_boxes=100):
 def load_tfrecord_dataset(file_pattern, class_file, size=(416, 416)):
     LINE_NUMBER = -1  # TODO: use tf.lookup.TextFileIndex.LINE_NUMBER
     '''
-    tf.lookup.StaticHashTable：建立类别与数字的关联关系
+    tf.lookup.StaticHashTable: 建立类别与数字的关联关系
     keys_tensor = tf.constant([1, 2])
     vals_tensor = tf.constant([3, 4])
     input_tensor = tf.constant([1, 5])
@@ -131,7 +128,7 @@ def load_tfrecord_dataset(file_pattern, class_file, size=(416, 416)):
     print(table.lookup(input_tensor))
     output:tf.Tensor([ 3 -1], shape=(2,), dtype=int32)
 
-    tf.lookup.TextFileInitializer：Table initializers from a text file.
+    tf.lookup.TextFileInitializer: Table initializers from a text file.
     '''
     class_table = tf.lookup.StaticHashTable(tf.lookup.TextFileInitializer(
         class_file, tf.string, 0, tf.int64, LINE_NUMBER, delimiter="\n"), -1)
