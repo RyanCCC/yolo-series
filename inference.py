@@ -167,10 +167,8 @@ def inference(model_path, image_path, letterbox_image=config.letterbox_image, sc
     scores_ = []
     classes_ = []
     for c in range(len(class_names)):
-        # 对小目标类别的阈值调低一些
         class_boxes = tf.boolean_mask(boxes, mask[:, c])
         class_box_scores = tf.boolean_mask(box_scores[:, c], mask[:, c])
-
         # tensorflow非极大值抑制：https://www.tensorflow.org/api_docs/python/tf/image/non_max_suppression
         nms_index = tf.image.non_max_suppression(
             class_boxes, class_box_scores, max_boxes_tensor, iou_threshold=0.5)
