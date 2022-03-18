@@ -240,10 +240,10 @@ def model_optimizer(model_path):
     model.save('./tmp')
 
 
-# TODO: FPS_Test
+# TODO: FPS Test
 
 
-# TODO：性能测试
+# TODO：map Test
 
 if __name__ == '__main__':
     model_path = './village_model/'
