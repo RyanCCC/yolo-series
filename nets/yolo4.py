@@ -144,10 +144,7 @@ def yolo_head(feats, anchors, num_classes, input_shape, calc_loss=False):
     feats = tf.convert_to_tensor(feats)
     anchors_tensor = K.reshape(K.constant(anchors), [1, 1, 1, num_anchors, 2])
 
-    #---------------------------------------------------#
-    #   获得x，y的网格
-    #   (13, 13, 1, 2)
-    #---------------------------------------------------#
+    
     grid_shape = K.shape(feats)[1:3]  # height, width
     grid_y = K.tile(K.reshape(K.arange(0, stop=grid_shape[0]), [-1, 1, 1, 1]),
                     [1, grid_shape[1], 1, 1])
@@ -216,9 +213,7 @@ def yolo_boxes_and_scores(feats, anchors, num_classes, input_shape, image_shape,
             box_maxes[..., 0:1] * image_shape[0],  # y_max
             box_maxes[..., 1:2] * image_shape[1]  # x_max
         ])
-    #-----------------------------------------------------------------#
-    #   获得最终得分和框的位置
-    #-----------------------------------------------------------------#
+    
     boxes = K.reshape(boxes, [-1, 4])
     box_scores = box_confidence * box_class_probs
     box_scores = K.reshape(box_scores, [-1, num_classes])
@@ -250,9 +245,6 @@ def yolo_eval(yolo_outputs,
                                                     image_shape, letterbox_image)
         boxes.append(_boxes)
         box_scores.append(_box_scores)
-    #-----------------------------------------------------------#
-    #   将每个特征层的结果进行堆叠
-    #-----------------------------------------------------------#
     boxes = K.concatenate(boxes, axis=0)
     box_scores = K.concatenate(box_scores, axis=0)
     mask = box_scores >= score_threshold

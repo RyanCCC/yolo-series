@@ -70,6 +70,8 @@ class YOLO(object):
         else:
             self.yolo_model = yolo_body(Input(shape=(None,None,3)), num_anchors//2, num_classes, phi=sys_config.ATTENTION)
         self.yolo_model.load_weights(self.model_path)
+        # self.yolo_model.save('./village_model', save_format='tf')
+        # self.yolo_model = tf.keras.models.load_model('./village_model')
 
         print('{} model, anchors, and classes loaded.'.format(model_path))
 
@@ -93,6 +95,8 @@ class YOLO(object):
             arguments={'anchors': self.anchors, 'num_classes': len(self.class_names), 'image_shape': self.model_image_size, 
             'score_threshold': self.score, 'eager': True, 'max_boxes': self.max_boxes, 'letterbox_image': self.letterbox_image})(inputs)
         self.yolo_model = Model([self.yolo_model.input, self.input_image_shape], outputs)
+        self.yolo_model.summary()
+        print('debug')
  
     @tf.function
     def get_pred(self, image_data, input_image_shape):

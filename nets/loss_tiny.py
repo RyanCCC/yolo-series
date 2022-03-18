@@ -107,9 +107,7 @@ def yolo_loss(args, anchors, num_classes, ignore_thresh=.5, label_smoothing=0.1,
         ignore_mask = K.expand_dims(ignore_mask, -1)
         box_loss_scale = 2 - y_true[l][...,2:3]*y_true[l][...,3:4]
 
-        #-----------------------------------------------------------#
-        #   计算Ciou loss
-        #-----------------------------------------------------------#
+        # ciou loss
         raw_true_box = y_true[l][...,0:4]
         ciou = box_ciou(pred_box, raw_true_box)
         ciou_loss = object_mask * box_loss_scale * (1 - ciou)
@@ -122,9 +120,6 @@ def yolo_loss(args, anchors, num_classes, ignore_thresh=.5, label_smoothing=0.1,
         location_loss = K.sum(tf.where(tf.math.is_nan(ciou_loss), tf.zeros_like(ciou_loss), ciou_loss))
         confidence_loss = K.sum(tf.where(tf.math.is_nan(confidence_loss), tf.zeros_like(confidence_loss), confidence_loss))
         class_loss = K.sum(tf.where(tf.math.is_nan(class_loss), tf.zeros_like(class_loss), class_loss))
-        #-----------------------------------------------------------#
-        #   计算正样本数量
-        #-----------------------------------------------------------#
         num_pos += tf.maximum(K.sum(K.cast(object_mask, tf.float32)), 1)
         loss += location_loss + confidence_loss + class_loss
 
