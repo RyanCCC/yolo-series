@@ -1,17 +1,9 @@
-import colorsys
 import os
 import sys
 sys.path.append(os.getcwd())
 import config as sys_config
-import numpy as np
-from keras import backend as K
-from keras.layers import Input
-from keras.models import load_model
 from PIL import Image
 from tqdm import tqdm
-
-from nets.yolo4 import yolo_body, yolo_eval
-from utils.utils import letterbox_image
 from nets.yolo import YOLO
 
 

@@ -6,14 +6,15 @@ import config as sys_config
 import numpy as np
 import tensorflow as tf
 from PIL import Image, ImageDraw, ImageFont
+from utils.utils import letterbox_image
+from tensorflow.keras import backend as K
 from tensorflow.keras.layers import Input, Lambda
 from tensorflow.keras.models import Model
 
 if not sys_config.ISTINY:
-    from nets.yolo4 import yolo_body, yolo_eval
+    from nets.yolo4 import yolo_body, yolo_eval, yolo_head,yolo_correct_boxes, yolo_boxes_and_scores
 else:
-    from nets.yolo4_tiny import yolo_body, yolo_eval
-from utils.utils import letterbox_image
+    from nets.yolo4_tiny import yolo_body, yolo_eval, yolo_head, yolo_correct_boxes, yolo_boxes_and_scores
 
 
 class YOLO(object):
@@ -71,8 +72,7 @@ class YOLO(object):
             self.yolo_model = yolo_body(Input(shape=(None,None,3)), num_anchors//2, num_classes, phi=sys_config.ATTENTION)
         self.yolo_model.load_weights(self.model_path)
         # self.yolo_model.save('./village_model', save_format='tf')
-        # self.yolo_model = tf.keras.models.load_model('./village_model')
-
+        # self.yolo_model1 = tf.keras.models.load_model('./village_model')
         print('{} model, anchors, and classes loaded.'.format(model_path))
 
         # 画框设置不同的颜色
@@ -99,13 +99,18 @@ class YOLO(object):
         print('debug')
  
     @tf.function
+    def get_pred_1(self, image_data):
+        yolo_outputs = self.yolo_model1([image_data], training=False)
+        return yolo_outputs
+    
+    @tf.function
     def get_pred(self, image_data, input_image_shape):
         out_boxes, out_scores, out_classes = self.yolo_model([image_data, input_image_shape], training=False)
         return out_boxes, out_scores, out_classes
 
 
     def detect_image(self, image):
-        
+
         image = image.convert('RGB')
         if self.letterbox_image:
             boxed_image = letterbox_image(image, (self.model_image_size[1],self.model_image_size[0]))
@@ -115,7 +120,46 @@ class YOLO(object):
         image_data /= 255.
         image_data = np.expand_dims(image_data, 0)  # Add batch dimension.
         input_image_shape = np.expand_dims(np.array([image.size[1], image.size[0]], dtype='float32'), 0)
-        out_boxes, out_scores, out_classes = self.get_pred(image_data, input_image_shape) 
+        out_boxes, out_scores, out_classes = self.get_pred(image_data, input_image_shape)
+        # yolo_outputs = self.get_pred_1(image_data)
+        # # 推理后处理
+        # image_shape1 = K.reshape(yolo_outputs[-1], [-1])
+        # num_layers = len(yolo_outputs)
+        # anchor_mask = config.ANCHOR_MASK
+        # input_shape = K.shape(yolo_outputs[0])[1:3] * 32
+        # boxes = []
+        # box_scores = []
+
+        # for l in range(num_layers):
+        #     _boxes, _box_scores = yolo_boxes_and_scores(yolo_outputs[l], self.anchors[anchor_mask[l]], len(self.class_names), input_shape,
+        #                                             image_shape, letterbox_image)
+        #     boxes.append(_boxes)
+        #     box_scores.append(_box_scores)
+        # boxes = K.concatenate(boxes, axis=0)
+        # box_scores = K.concatenate(box_scores, axis=0)
+        # mask = box_scores >= self.score
+        # max_boxes_tensor = K.constant(self.max_boxes, dtype='int32')
+        # boxes_ = []
+        # scores_ = []
+        # classes_ = []
+        # for c in range(len(self.class_names)):
+        #     # 对小目标类别的阈值调低一些
+        #     class_boxes = tf.boolean_mask(boxes, mask[:, c])
+        #     class_box_scores = tf.boolean_mask(box_scores[:, c], mask[:, c])
+
+        #     # tensorflow非极大值抑制：https://www.tensorflow.org/api_docs/python/tf/image/non_max_suppression
+        #     nms_index = tf.image.non_max_suppression(
+        #         class_boxes, class_box_scores, max_boxes_tensor, iou_threshold=0.5)
+        # # K.gather 检索张量reference中索引indices的元素
+        #     class_boxes = K.gather(class_boxes, nms_index)
+        #     class_box_scores = K.gather(class_box_scores, nms_index)
+        #     classes = K.ones_like(class_box_scores, 'int32') * c
+        #     boxes_.append(class_boxes)
+        #     scores_.append(class_box_scores)
+        #     classes_.append(classes)
+        # out_boxes = K.concatenate(boxes_, axis=0)
+        # out_scores = K.concatenate(scores_, axis=0)
+        # out_classes = K.concatenate(classes_, axis=0)
         
         print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
         font = ImageFont.truetype(font='model_data/simhei.ttf', size=np.floor(3e-2 * image.size[1] + 0.5).astype('int32'))

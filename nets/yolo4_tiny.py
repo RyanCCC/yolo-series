@@ -6,7 +6,6 @@ from tensorflow.keras.initializers import RandomNormal
 from tensorflow.keras.layers import (BatchNormalization, Concatenate, Conv2D,
                                      LeakyReLU, UpSampling2D)
 from tensorflow.keras.models import Model
-from tensorflow.keras.regularizers import l2
 from utils.utils import compose
 
 from nets.attention import cbam_block, eca_block, se_block

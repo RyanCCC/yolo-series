@@ -62,12 +62,9 @@ def box_iou(b1, b2):
     return iou
 
 
-#---------------------------------------------------#
-#   loss值计算
-#---------------------------------------------------#
+# 损失计算
 def yolo_loss(args, anchors, num_classes, ignore_thresh=.5, label_smoothing=0.1, print_loss=False, normalize=True):
 
-    # 一共有两层
     num_layers = len(anchors)//3 
 
     y_true = args[num_layers:]
@@ -75,7 +72,6 @@ def yolo_loss(args, anchors, num_classes, ignore_thresh=.5, label_smoothing=0.1,
 
     anchor_mask = [[6,7,8], [3,4,5], [0,1,2]] if num_layers==3 else [[3,4,5], [1,2,3]]
 
-    # 得到input_shpae为416,416 
     input_shape = K.cast(K.shape(yolo_outputs[0])[1:3] * 32, K.dtype(y_true[0]))
 
     loss = 0
