@@ -6,6 +6,7 @@ import config
 import numpy as np
 import os
 import colorsys
+import tensorflow_model_optimization as tfmot
 
 @tf.function
 def get_outputs(model, image_data):
@@ -142,7 +143,11 @@ def inference(model_path, image_path, letterbox_image=config.letterbox_image, sc
     image_data = np.expand_dims(image_data, 0)  # Add batch dimension.
     # input_image_shape = np.expand_dims(np.array([image.size[1], image.size[0]], dtype='float32'), 0)
     image_shape = np.array([image.size[1], image.size[0]], dtype='float32')
+    import time
+    time1 = time.time()
     yolo_outputs = get_outputs(model, image_data)
+    time2 = time.time()
+    print(time2-time1)
     num_layers = len(yolo_outputs)
     anchor_mask = config.ANCHOR_MASK
     input_shape = K.shape(yolo_outputs[0])[1:3] * 32
@@ -169,7 +174,7 @@ def inference(model_path, image_path, letterbox_image=config.letterbox_image, sc
         # tensorflow非极大值抑制：https://www.tensorflow.org/api_docs/python/tf/image/non_max_suppression
         nms_index = tf.image.non_max_suppression(
             class_boxes, class_box_scores, max_boxes_tensor, iou_threshold=0.5)
-    # K.gather 检索张量reference中索引indices的元素
+        # K.gather 检索张量reference中索引indices的元素
         class_boxes = K.gather(class_boxes, nms_index)
         class_box_scores = K.gather(class_box_scores, nms_index)
         classes = K.ones_like(class_box_scores, 'int32') * c
@@ -219,8 +224,31 @@ def inference(model_path, image_path, letterbox_image=config.letterbox_image, sc
 
 
 
+def model_optimizer(model_path):
+    # 加载模型
+    model = tf.keras.models.load_model(model_path)
+    # 对模型中的卷积层进行剪枝
+    for layer in model.layers:
+        if isinstance(layer, tf.keras.layers.Conv2D):
+            tfmot.sparsity.keras.prune_low_magnitude(layer)
+    # pruning
+    model = tfmot.sparsity.keras.strip_pruning(model)
+    # 移动端需要转化为tflite
+    # converter = tf.lite.TFLiteConverter.from_keras_model(model)
+    # converter.optimizations = [tf.lite.Optimize.DEFAULT]
+    # quantized_and_pruned_tflite_model = converter.convert()
+    model.save('./tmp')
+
+
+# TODO: FPS_Test
+
+
+# TODO：性能测试
+
 if __name__ == '__main__':
     model_path = './village_model/'
-    image_path = './result/20210817120311.jpg'
+    # model_path = './tmp/'
+    image_path = './result/20210817115925.jpg'
+    # model_optimizer(model_path)
     r_image = inference(model_path=model_path, image_path=image_path)
     r_image.show()
