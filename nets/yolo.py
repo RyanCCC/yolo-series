@@ -71,6 +71,7 @@ class YOLO(object):
         else:
             self.yolo_model = yolo_body(Input(shape=(None,None,3)), num_anchors//2, num_classes, phi=sys_config.ATTENTION)
         self.yolo_model.load_weights(self.model_path)
+        # self.yolo_model.compile()
         # self.yolo_model.save('./village_model', save_format='tf')
         # self.yolo_model1 = tf.keras.models.load_model('./village_model')
         print('{} model, anchors, and classes loaded.'.format(model_path))

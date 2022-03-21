@@ -8,6 +8,9 @@ import os
 import colorsys
 import tensorflow_model_optimization as tfmot
 
+# 加载模型
+model = tf.keras.models.load_model(model_path)
+
 @tf.function
 def get_outputs(model, image_data):
     outputs = model([image_data], training=False)
@@ -123,8 +126,6 @@ def yolo_head(feats, anchors, num_classes, input_shape, calc_loss=False):
 
 def inference(model_path, image_path, letterbox_image=config.letterbox_image, score=config.score, iou=config.iou,max_boxes=config.max_boxes,
                 class_path = config.classes_path, anchors=config.anchors_path):
-    # 加载模型
-    model = tf.keras.models.load_model(model_path)
     # 读取类别信息
     class_names = get_class(class_path)
     # 读取预设框信息
@@ -242,6 +243,9 @@ def model_optimizer(model_path):
 
 
 # TODO：map Test
+
+
+
 
 if __name__ == '__main__':
     model_path = './village_model/'
