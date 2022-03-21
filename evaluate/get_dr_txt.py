@@ -14,7 +14,6 @@ from nets.yolo import YOLO
 
 此处获得的./input/detection-results/里面的txt的框的数量会比直接predict多一些，这是因为这里的门限低，
 目的是为了计算不同门限条件下的Recall和Precision值，从而实现map的计算。
-
 这里的self.iou指的是非极大抑制所用到的iou，具体的可以了解非极大抑制的原理，
 如果低分框与高分框的iou大于这里设定的self.iou，那么该低分框将会被剔除。
 

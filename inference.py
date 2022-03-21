@@ -5,10 +5,12 @@ from utils.utils import letterbox_image
 import config
 import numpy as np
 import os
+from tqdm import tqdm
 import colorsys
 import tensorflow_model_optimization as tfmot
 
 # 加载模型
+model_path = './village_model/'
 model = tf.keras.models.load_model(model_path)
 
 @tf.function
@@ -124,8 +126,9 @@ def yolo_head(feats, anchors, num_classes, input_shape, calc_loss=False):
         return grid, feats, box_xy, box_wh
     return box_xy, box_wh, box_confidence, box_class_probs
 
-def inference(model_path, image_path, letterbox_image=config.letterbox_image, score=config.score, iou=config.iou,max_boxes=config.max_boxes,
-                class_path = config.classes_path, anchors=config.anchors_path):
+def inference(image_path, letterbox_image=config.letterbox_image, score=config.score, \
+            iou = config.iou, max_boxes=config.max_boxes, class_path = config.classes_path, \
+            anchors=config.anchors_path, show=True, get_dr = False, image_id = None):
     # 读取类别信息
     class_names = get_class(class_path)
     # 读取预设框信息
@@ -172,7 +175,7 @@ def inference(model_path, image_path, letterbox_image=config.letterbox_image, sc
         class_box_scores = tf.boolean_mask(box_scores[:, c], mask[:, c])
         # tensorflow非极大值抑制：https://www.tensorflow.org/api_docs/python/tf/image/non_max_suppression
         nms_index = tf.image.non_max_suppression(
-            class_boxes, class_box_scores, max_boxes_tensor, iou_threshold=0.5)
+            class_boxes, class_box_scores, max_boxes_tensor, iou_threshold=iou)
         # K.gather 检索张量reference中索引indices的元素
         class_boxes = K.gather(class_boxes, nms_index)
         class_box_scores = K.gather(class_box_scores, nms_index)
@@ -185,8 +188,10 @@ def inference(model_path, image_path, letterbox_image=config.letterbox_image, sc
     out_classes = K.concatenate(classes_, axis=0)
         
     print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
-    font = ImageFont.truetype(font='model_data/simhei.ttf', size=np.floor(3e-2 * image.size[1] + 0.5).astype('int32'))
-    thickness = max((image.size[0] + image.size[1]) // 300, 1)
+
+    if show:
+        font = ImageFont.truetype(font='model_data/simhei.ttf', size=np.floor(3e-2 * image.size[1] + 0.5).astype('int32'))
+        thickness = max((image.size[0] + image.size[1]) // 300, 1)
         
     for i, c in list(enumerate(out_classes)):
         predicted_class = class_names[c]
@@ -201,28 +206,37 @@ def inference(model_path, image_path, letterbox_image=config.letterbox_image, sc
         left = max(0, np.floor(left + 0.5).astype('int32'))
         bottom = min(image.size[1], np.floor(bottom + 0.5).astype('int32'))
         right = min(image.size[0], np.floor(right + 0.5).astype('int32'))
-
-        label = '{} {:.2f}'.format(predicted_class, score)
-        draw = ImageDraw.Draw(image)
-        label_size = draw.textsize(label, font)
-        label = label.encode('utf-8')
-        print(label, top, left, bottom, right)
+        if show:
+            label = '{} {:.2f}'.format(predicted_class, score)
+            draw = ImageDraw.Draw(image)
+            label_size = draw.textsize(label, font)
+            label = label.encode('utf-8')
+            print(label, top, left, bottom, right)
             
-        if top - label_size[1] >= 0:
-            text_origin = np.array([left, top - label_size[1]])
-        else:
-            text_origin = np.array([left, top + 1])
+            if top - label_size[1] >= 0:
+                text_origin = np.array([left, top - label_size[1]])
+            else:
+                text_origin = np.array([left, top + 1])
 
-        for i in range(thickness):
-            draw.rectangle([left + i, top + i, right - i, bottom - i],outline=colors[c])
-        draw.rectangle([tuple(text_origin), tuple(text_origin + label_size)],fill=colors[c])
-        draw.text(text_origin, str(label,'UTF-8'), fill=(0, 0, 0), font=font)
-        del draw
+            for i in range(thickness):
+                draw.rectangle([left + i, top + i, right - i, bottom - i],outline=colors[c])
+            draw.rectangle([tuple(text_origin), tuple(text_origin + label_size)],fill=colors[c])
+            draw.text(text_origin, str(label,'UTF-8'), fill=(0, 0, 0), font=font)
+            del draw
+        
+        if get_dr:
+            if image_id is None:
+                raise Exception("imageid should not be none!")
+            # 计算map
+            dr_txt_path = os.path.join(config.result, config.pr_folder_name, image_id+'.txt')
+            with open(dr_txt_path, 'w') as f:
+                f.write("%s %s %s %s %s %s\n" % (predicted_class, str(score.numpy()), str(int(left)), str(int(top)), str(int(right)),str(int(bottom))))
+
 
     return image
 
 
-
+# 模型优化，其中包括模型的剪枝以及量化
 def model_optimizer(model_path):
     # 加载模型
     model = tf.keras.models.load_model(model_path)
@@ -243,14 +257,33 @@ def model_optimizer(model_path):
 
 
 # TODO：map Test
+def get_dr_txt(test_set, dataset_base_path):
+    '''
+    该函数计算模型在测试集上的性能，将推理结果保存为txt文档，以此计算map。
+    计算完成后，检查groud true文件是否生成，未生成则运行./evaluate/get_gt_txt.py
+    推理的txt以及ground true的txt生成后运算get_map.py得出模型的map指标。
+    '''
+
+    image_ids = open(test_set).read().strip().split()
+
+    if not os.path.exists(os.path.join(config.result, config.pr_folder_name)):
+        os.makedirs(os.path.join(config.result, config.pr_folder_name))
+
+    for image_id in tqdm(image_ids):
+        image_path = dataset_base_path+"/JPEGImages/"+image_id+".jpg"
+        # 开启后在之后计算mAP可以可视化
+        # image.save("./input/images-optional/"+image_id+".jpg")
+        inference(image_path, show=False, get_dr=True, image_id=image_id)
 
 
 
 
 if __name__ == '__main__':
-    model_path = './village_model/'
-    # model_path = './tmp/'
+    # 记录模型的推理结果：get dr
+    test_set = os.path.join(config.test_txt, 'test.txt')
+    dataset_base_path = config.dataset_base_path
+    get_dr_txt(test_set, dataset_base_path)
     image_path = './result/20210817115925.jpg'
     # model_optimizer(model_path)
-    r_image = inference(model_path=model_path, image_path=image_path)
+    r_image = inference(image_path=image_path)
     r_image.show()

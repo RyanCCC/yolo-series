@@ -364,7 +364,9 @@ for txt_file in ground_truth_files_list:
     if not os.path.exists(temp_path):
         error_msg = "Error. File not found: {}\n".format(temp_path)
         error_msg += "(You can avoid this error message by running extra/intersect-gt-and-dr.py)"
-        error(error_msg)
+        print(error_msg)
+        # error(error_msg)
+        continue
     lines_list = file_lines_to_list(txt_file)
     # create ground-truth dictionary
     bounding_boxes = []

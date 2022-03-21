@@ -50,7 +50,7 @@ learning_rate_unfreeze  = 1e-4
 ISTINY=False
 model_path='./model/village_tf2.h5'
 score=0.3
-iou=0.3
+iou=0.5
 max_boxes=100
 letterbox_image=False
 onnx=False
@@ -68,7 +68,6 @@ gt_folder_name = 'gt'
 pr_folder_name = 'pr'
 image_optional = 'images-optional'
 map_socre = 0.1
-map_iou = 0.3
 MINOVERLAP = 0.75
 
 ATTENTION=0
