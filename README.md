@@ -142,11 +142,6 @@ Yolov4对Darknet53进行改进，借鉴CSPNet(Cross Stage Partial Networks:跨�
 
 ### 检测头训练策略
 
-<<<<<<< HEAD
-### 检测头推理策略
-
-## 目标检测评价指标
-=======
 1. CIoU-loss
    
    - 经典IoU loss:
@@ -204,7 +199,7 @@ Yolov4对Darknet53进行改进，借鉴CSPNet(Cross Stage Partial Networks:跨�
 
 4. [遗传算法优化超参](https://arxiv.org/pdf/2004.10934.pdf)
 
-#### 检测头推理策略
+### 检测头推理策略
 
 1. SAM模块
 
@@ -215,7 +210,7 @@ Yolov4对Darknet53进行改进，借鉴CSPNet(Cross Stage Partial Networks:跨�
   ![image](https://user-images.githubusercontent.com/27406337/130165726-e09bc6a1-df33-4588-8a9e-895ec51b8667.png)
 
 
-#### Yolov4实验
+### Yolov4实验
 
   ![image](https://user-images.githubusercontent.com/27406337/130165934-61594e35-7ba8-41c8-a367-e6f69d0541c3.png)
 
@@ -226,53 +221,50 @@ Yolov4对Darknet53进行改进，借鉴CSPNet(Cross Stage Partial Networks:跨�
   ![image](https://user-images.githubusercontent.com/27406337/130165986-d733ff7f-243a-40c3-806f-dbb97ac52561.png)
 
 
-### 目标检测评价指标(https://github.com/rafaelpadilla/Object-Detection-Metrics)
+## 目标检测评价指标(https://github.com/rafaelpadilla/Object-Detection-Metrics)
 
-#### 准确率（Accuracy）
+### 准确率（Accuracy）
 
   正确分类的样本数除以样本总数，即 accuracy=正确预测的正反例数
 
-#### 错误率（Error rate）
+### 错误率（Error rate）
 
   错误率与正确率相反，描述被分类器错分的比例，即：
     
   错误率 = 1-准确率
 
-#### 混淆矩阵（Confusion Matrix）
+### 混淆矩阵（Confusion Matrix）
 
   混淆矩阵又被称为错误矩阵，在每个类别下，模型预测错误的结果数量以及错误预测类别和正确预测的数量都在这一矩阵下面显示出来。
     
   ![image](https://user-images.githubusercontent.com/27406337/130168328-e89ee068-6726-4626-a952-c07b051c374a.png)
 
-#### 召回率（Recall）
+### 召回率（Recall）
     
     查全率，预测为正例的样本中正确的数量除以真正的Positive的数量，即Recall = TP/(TP+FN) = TP/P
 
-#### 精确率（Precision）
+### 精确率（Precision）
 
   查准率，被分为正例的示例中实际为正例的比例，即：Precision = TP/(TP+FP)
     
   ![image](https://user-images.githubusercontent.com/27406337/130168701-b8da8275-5046-413e-b462-1fc63310be08.png)
 
-#### PR曲线
+### PR曲线
 
   选取不同阈值时对应的精度和召回。总体趋势，精度越高，召回越低，当召回达到1时，对应概率分数最低的正样本。
     
   ![image](https://user-images.githubusercontent.com/27406337/130168796-682d5e7a-f525-4024-bdba-de80f7721f58.png)
 
-#### 平均精度（Average-Precision AP）
+### 平均精度（Average-Precision AP）
 
   P-R曲线围起来的面积
 
-#### F指标（F measure）
+### F指标（F measure）
 
   ![image](https://user-images.githubusercontent.com/27406337/130169188-bbe0aa90-d67a-4fcf-ae41-e2aa45eb7955.png)
 
-#### F指标
 
-  ![image](https://user-images.githubusercontent.com/27406337/130169234-d5ddc7a5-3b30-4baa-85b4-2d6d90f1a384.png)
-
-#### ROC曲线
+### ROC曲线
     
   True Positive Rate ( TPR ) = TP / [ TP + FN] ，TPR代表能将正例分对的概率
     
@@ -281,349 +273,10 @@ Yolov4对Darknet53进行改进，借鉴CSPNet(Cross Stage Partial Networks:跨�
   ![image](https://user-images.githubusercontent.com/27406337/130169395-b392bdb6-9b46-4409-a266-f1c6a014acca.png)
     
   AUC则是ROC曲线围住的面积。
->>>>>>> fb7412abf2db0bd6ecc618e6573f0482162bb0d2
 
 ## Yolov4 Implement by TF2
 
-<<<<<<< HEAD
-### 项目结构
-=======
-仓库主要有以下三个分支：
-
-#### Matser分支
-
-  介绍yolov4
-
-#### Keras分支
-
-  使用keras+tensorflow1.0实现yolov4算法
-  
-  conda环境：
-  
-  ```
-  name: tf2
-channels:
-  - conda-forge
-  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/pytorch
-  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main
-  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free
-  - defaults
-dependencies:
-  - backcall=0.2.0=pyh9f0ad1d_0
-  - backports=1.0=py_2
-  - backports.functools_lru_cache=1.6.4=pyhd8ed1ab_0
-  - ca-certificates=2020.12.5=h5b45459_0
-  - certifi=2020.12.5=py37h03978a9_1
-  - colorama=0.4.4=pyh9f0ad1d_0
-  - ipykernel=5.5.4=py37h7813e69_0
-  - ipython=7.23.1=py37h7813e69_0
-  - ipython_genutils=0.2.0=py_1
-  - jedi=0.18.0=py37h03978a9_2
-  - jupyter_client=6.1.12=pyhd8ed1ab_0
-  - jupyter_core=4.7.1=py37h03978a9_0
-  - libsodium=1.0.18=h8d14728_1
-  - matplotlib-inline=0.1.2=pyhd8ed1ab_2
-  - openssl=1.1.1k=h8ffe710_0
-  - parso=0.8.2=pyhd8ed1ab_0
-  - pickleshare=0.7.5=py_1003
-  - pip=21.1.1=pyhd8ed1ab_0
-  - prompt-toolkit=3.0.18=pyha770c72_0
-  - pygments=2.9.0=pyhd8ed1ab_0
-  - python=3.7.6=cpython_h60c2a47_6
-  - python-dateutil=2.8.1=py_0
-  - python_abi=3.7=1_cp37m
-  - pywin32=300=py37hcc03f2d_0
-  - pyzmq=22.0.3=py37hcce574b_1
-  - setuptools=49.6.0=py37h03978a9_3
-  - sqlite=3.35.5=h8ffe710_0
-  - tornado=6.1=py37hcc03f2d_1
-  - traitlets=5.0.5=py_0
-  - vc=14.2=hb210afc_4
-  - vs2015_runtime=14.28.29325=h5e1d092_4
-  - wcwidth=0.2.5=pyh9f0ad1d_2
-  - wheel=0.36.2=pyhd3deb0d_0
-  - wincertstore=0.2=py37h03978a9_1006
-  - zeromq=4.3.4=h0e60522_0
-  - pip:
-    - absl-py==0.12.0
-    - aniso8601==9.0.1
-    - astunparse==1.6.3
-    - attrs==20.3.0
-    - cachetools==4.2.2
-    - cffi==1.14.5
-    - chardet==4.0.0
-    - click==7.1.2
-    - cycler==0.10.0
-    - decorator==4.4.2
-    - dill==0.3.4
-    - easydict==1.9
-    - easyocr==1.4
-    - flask==1.1.2
-    - flask-docs==0.4.6
-    - flask-login==0.5.0
-    - flask-restful==0.3.9
-    - flask-restplus==0.13.0
-    - flatbuffers==1.12
-    - future==0.18.2
-    - gast==0.3.3
-    - gevent==21.1.2
-    - google-auth==1.30.0
-    - google-auth-oauthlib==0.4.4
-    - google-pasta==0.2.0
-    - googleapis-common-protos==1.53.0
-    - greenlet==1.1.0
-    - grpcio==1.32.0
-    - h5py==2.10.0
-    - idna==2.10
-    - imageio==2.9.0
-    - imgaug==0.4.0
-    - importlib-metadata==4.0.1
-    - importlib-resources==5.2.0
-    - itsdangerous==1.1.0
-    - jinja2==2.11.3
-    - joblib==1.0.1
-    - jsonschema==3.2.0
-    - keras==2.4.3
-    - keras-preprocessing==1.1.2
-    - kiwisolver==1.3.1
-    - labelme2coco==0.1.2
-    - lxml==4.6.3
-    - markdown==3.3.4
-    - markupsafe==1.1.1
-    - matplotlib==3.4.1
-    - networkx==2.5.1
-    - numpy==1.19.5
-    - oauthlib==3.1.0
-    - onnxruntime==1.8.1
-    - opencv-python==4.5.1.48
-    - opt-einsum==3.3.0
-    - pandas==1.2.4
-    - pillow==8.2.0
-    - pixellib==0.4.8
-    - promise==2.3
-    - protobuf==3.15.8
-    - psycopg2==2.8.6
-    - pyasn1==0.4.8
-    - pyasn1-modules==0.2.8
-    - pycparser==2.20
-    - pyparsing==2.4.7
-    - pyrsistent==0.17.3
-    - python-bidi==0.4.2
-    - pytz==2021.1
-    - pywavelets==1.1.1
-    - pyyaml==5.4.1
-    - requests==2.25.1
-    - requests-oauthlib==1.3.0
-    - rsa==4.7.2
-    - scikit-image==0.18.1
-    - scikit-learn==0.24.2
-    - scipy==1.6.3
-    - seaborn==0.11.1
-    - shapely==1.7.1
-    - six==1.15.0
-    - sklearn==0.0
-    - tensorboard==2.5.0
-    - tensorboard-data-server==0.6.1
-    - tensorboard-plugin-wit==1.8.0
-    - tensorflow==2.4.0
-    - tensorflow-datasets==4.3.0
-    - tensorflow-estimator==2.4.0
-    - tensorflow-metadata==1.1.0
-    - termcolor==1.1.0
-    - theano==1.0.5
-    - threadpoolctl==2.1.0
-    - tifffile==2021.4.8
-    - torch==1.9.0
-    - torchvision==0.10.0
-    - tqdm==4.61.0
-    - typing-extensions==3.7.4.3
-    - urllib3==1.25.8
-    - werkzeug==0.16.1
-    - wrapt==1.12.1
-    - zipp==3.4.1
-    - zope-event==4.5.0
-    - zope-interface==5.4.0
-prefix: D:\soft\Anaconda\envs\tf2
-
-  ```
-  
-#### tf2分支
-
-  使用tensorflow2 实现yolov4算法。tensorflow2的训练速度会快些
-  
-  Conda环境
-  
-  ```
-  name: tf1
-channels:
-  - conda-forge
-  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/pytorch
-  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main
-  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free
-  - defaults
-dependencies:
-  - backports=1.0=py_2
-  - backports.functools_lru_cache=1.6.4=pyhd8ed1ab_0
-  - certifi=2020.12.5=py36ha15d459_1
-  - colorama=0.4.4=pyh9f0ad1d_0
-  - ipykernel=5.5.4=py36hfacbf0b_0
-  - ipython=5.8.0=py36_1
-  - ipython_genutils=0.2.0=py_1
-  - jupyter_client=6.1.12=pyhd8ed1ab_0
-  - jupyter_core=4.7.1=py36ha15d459_0
-  - libsodium=1.0.18=h8d14728_1
-  - pickleshare=0.7.5=py_1003
-  - prompt_toolkit=1.0.15=py_1
-  - pygments=2.9.0=pyhd8ed1ab_0
-  - python=3.6.13=h39d44d4_0_cpython
-  - python-dateutil=2.8.1=py_0
-  - python_abi=3.6=1_cp36m
-  - pywin32=300=py36h68aa20f_0
-  - pyzmq=22.0.3=py36h1d5d788_1
-  - setuptools=49.6.0=py36ha15d459_3
-  - simplegeneric=0.8.1=py_1
-  - tornado=6.1=py36h68aa20f_1
-  - traitlets=4.3.3=py36h9f0ad1d_1
-  - vc=14.2=hb210afc_4
-  - vs2015_runtime=14.28.29325=h5e1d092_4
-  - wcwidth=0.2.5=pyh9f0ad1d_2
-  - wheel=0.36.2=pyhd3deb0d_0
-  - wincertstore=0.2=py36ha15d459_1006
-  - zeromq=4.3.4=h0e60522_0
-  - pip:
-    - absl-py==0.12.0
-    - alembic==1.5.8
-    - aniso8601==9.0.1
-    - astor==0.8.1
-    - attrs==20.3.0
-    - augmentor==0.2.8
-    - bleach==1.5.0
-    - cached-property==1.5.2
-    - cachetools==4.2.2
-    - chardet==4.0.0
-    - click==7.1.2
-    - cycler==0.10.0
-    - cython==0.29.24
-    - dataclasses==0.8
-    - decorator==4.4.2
-    - docopt==0.6.2
-    - easydict==1.9
-    - easyocr==1.4
-    - faker==8.1.0
-    - fire==0.4.0
-    - flasgger==0.9.5
-    - flask==1.1.2
-    - flask-ckeditor==0.4.4.1
-    - flask-login==0.5.0
-    - flask-migrate==2.7.0
-    - flask-moment==0.11.0
-    - flask-restplus==0.13.0
-    - flask-share==0.1.1
-    - flask-sqlalchemy==2.5.1
-    - flask-uploads==0.2.1
-    - flask-wtf==0.14.3
-    - flatbuffers==1.12
-    - future==0.18.2
-    - gast==0.4.0
-    - google-api-core==1.31.0
-    - google-api-python-client==2.14.0
-    - google-auth==1.33.1
-    - google-auth-httplib2==0.1.0
-    - google-pasta==0.2.0
-    - googleapis-common-protos==1.53.0
-    - greenlet==1.0.0
-    - grpcio==1.37.0
-    - h5py==2.10.0
-    - html5lib==0.9999999
-    - httplib2==0.19.1
-    - idna==2.10
-    - imageio==2.9.0
-    - imantics==0.1.12
-    - imgaug==0.4.0
-    - importlib-metadata==3.10.0
-    - itsdangerous==1.1.0
-    - jinja2==2.11.3
-    - joblib==1.0.1
-    - jsonschema==3.2.0
-    - keras==2.1.5
-    - keras-applications==1.0.8
-    - keras-preprocessing==1.1.2
-    - keras2onnx==1.7.0
-    - kiwisolver==1.3.1
-    - labelme2coco==0.1.2
-    - lxml==4.6.3
-    - mako==1.1.4
-    - markdown==3.3.4
-    - markupsafe==1.1.1
-    - matplotlib==3.3.4
-    - mistune==0.8.4
-    - mysqlclient==2.0.3
-    - networkx==2.5.1
-    - numpy==1.19.5
-    - oauth2client==4.1.3
-    - onnx==1.9.0
-    - onnxconverter-common==1.8.1
-    - onnxruntime==1.8.1
-    - opencv-python==4.5.1.48
-    - packaging==21.0
-    - pandas==1.1.5
-    - pillow==8.2.0
-    - pip==21.0.1
-    - pipreqs==0.4.10
-    - pixellib==0.6.1
-    - protobuf==3.15.7
-    - psycopg2==2.8.6
-    - pyasn1==0.4.8
-    - pyasn1-modules==0.2.8
-    - pycocotools==2.0.2
-    - pydrive==1.3.1
-    - pymysql==1.0.2
-    - pyparsing==2.4.7
-    - pyrsistent==0.17.3
-    - pytesseract==0.3.8
-    - python-bidi==0.4.2
-    - python-editor==1.0.4
-    - pytils==0.3
-    - pytz==2021.1
-    - pywavelets==1.1.1
-    - pyyaml==5.4.1
-    - redis==3.5.3
-    - requests==2.25.1
-    - rsa==4.7.2
-    - scikit-image==0.17.2
-    - scikit-learn==0.24.2
-    - scipy==1.5.4
-    - shapely==1.7.1
-    - six==1.15.0
-    - sklearn==0.0
-    - sqlalchemy==1.4.11
-    - tensorboard==1.14.0
-    - tensorflow==1.14.0
-    - tensorflow-estimator==1.14.0
-    - termcolor==1.1.0
-    - text-unidecode==1.3
-    - textdistance==4.2.1
-    - tf2onnx==1.9.1
-    - threadpoolctl==2.1.0
-    - tifffile==2020.9.3
-    - torch==1.9.0
-    - torchaudio==0.9.0
-    - torchsummary==1.5.1
-    - torchvision==0.10.0
-    - tqdm==4.60.0
-    - typing-extensions==3.7.4.3
-    - uritemplate==3.0.1
-    - urllib3==1.26.4
-    - werkzeug==0.16.1
-    - wrapt==1.12.1
-    - wtforms==2.3.3
-    - xmljson==0.2.1
-    - yarg==0.1.9
-    - zipp==3.4.1
-prefix: D:\soft\Anaconda\envs\tf1
-
-  ```
->>>>>>> fb7412abf2db0bd6ecc618e6573f0482162bb0d2
+文件结构：
 
 ``` python
 
