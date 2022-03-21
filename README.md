@@ -221,7 +221,9 @@ Yolov4对Darknet53进行改进，借鉴CSPNet(Cross Stage Partial Networks:跨�
   ![image](https://user-images.githubusercontent.com/27406337/130165986-d733ff7f-243a-40c3-806f-dbb97ac52561.png)
 
 
-## 目标检测评价指标(https://github.com/rafaelpadilla/Object-Detection-Metrics)
+## 目标检测评价指标
+
+可参考以下仓库：https://github.com/rafaelpadilla/Object-Detection-Metrics
 
 ### 准确率（Accuracy）
 
