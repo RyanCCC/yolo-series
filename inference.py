@@ -128,11 +128,11 @@ def yolo_head(feats, anchors, num_classes, input_shape, calc_loss=False):
 
 def inference(image_path, letterbox_image=config.letterbox_image, score=config.score, \
             iou = config.iou, max_boxes=config.max_boxes, class_path = config.classes_path, \
-            anchors=config.anchors_path, show=True, get_dr = False, image_id = None):
+            anchors_path=config.anchors_path, show=True, get_dr = False, image_id = None):
     # 读取类别信息
     class_names = get_class(class_path)
     # 读取预设框信息
-    anchors = get_anchors(anchors)
+    anchors = get_anchors(anchors_path)
     # 设置颜色
     colors = get_colors(class_names)
     # 推理之前的图像预处理
@@ -254,6 +254,31 @@ def model_optimizer(model_path):
 
 
 # TODO: FPS Test
+def FPS_Calculate(image_path, class_path = config.classes_path,anchors_path=config.anchors_path, interval = 100):
+    # 读取类别信息
+    class_names = get_class(class_path)
+    # 读取预设框信息
+    anchors = get_anchors(anchors_path)
+    # 推理之前的图像预处理
+    image = Image.open(image_path)
+    image = image.convert('RGB')
+    if letterbox_image:
+        boxed_image = letterbox_image(image, (config.imagesize,config.imagesize))
+    else:
+        boxed_image = image.resize((config.imagesize,config.imagesize), Image.BICUBIC)
+    image_data = np.array(boxed_image, dtype='float32')
+    image_data /= 255.
+    image_data = np.expand_dims(image_data, 0)  # Add batch dimension.
+    # input_image_shape = np.expand_dims(np.array([image.size[1], image.size[0]], dtype='float32'), 0)
+    image_shape = np.array([image.size[1], image.size[0]], dtype='float32')
+    import time
+    time1 = time.time()
+    for i in range(interval):
+        yolo_outputs = get_outputs(model, image_data)
+    time2 = time.time()
+    tact_time = (time2 - time1) / interval
+    print(str(tact_time) + ' seconds, ' + str(1/tact_time) + 'FPS, @batch_size 1')
+
 
 
 # TODO：map Test
@@ -279,11 +304,14 @@ def get_dr_txt(test_set, dataset_base_path):
 
 
 if __name__ == '__main__':
+    image_path = './result/20210817115925.jpg'
+    # 计算FPS
+    FPS_Calculate(image_path)
     # 记录模型的推理结果：get dr
     test_set = os.path.join(config.test_txt, 'test.txt')
     dataset_base_path = config.dataset_base_path
     get_dr_txt(test_set, dataset_base_path)
-    image_path = './result/20210817115925.jpg'
+    
     # model_optimizer(model_path)
     r_image = inference(image_path=image_path)
     r_image.show()
