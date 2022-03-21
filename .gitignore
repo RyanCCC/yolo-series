@@ -1,6 +1,8 @@
-data
 .history
-model
-nets
+*.png
+__pycache__
+villages
+logs
 result
-utils
+*.h5
+village_model

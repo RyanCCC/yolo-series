@@ -1,8 +1,7 @@
 # Yolov4
 
-### Yolov4原理以及实现
 
-#### YOLOV4介绍
+## YOLOV4介绍
 
 Yolov4论文的abstract可以看出Yolov4结合了前人的好处，用了大量技巧提高目标检测的效率。其中包括：加权残差链接（WRC），跨阶段部分链接（CSP），跨小批量标准化（CmBN），自对抗训练（SAT），Mish激活，马赛克数据增强，DropBlock正则化，CIoU Loss等等。可以看成一篇目标检测的综述，里面用到的Tricks需要查阅相关的论文才知道。技巧类的论文可以查看：[Bag of Freebies for Training Object Detection Neural Networks](https://arxiv.org/abs/1902.04103)和[Bag of Tricks for Image Classification with Convolutional Neural Networks](https://arxiv.org/abs/1812.01187)。
 
@@ -25,11 +24,11 @@ Yolov4的贡献如下：
 - YOLOv3-head，因为是anchor-base方法，因此分类、回归分支没有改变。
 
 
-#### Yolov4框架原理
+## Yolov4框架原理
 
 Yolov4框架主要从以下几个方面展开：目标检测`通用检测框架`，`CSPDarknet53`，`SPP结构`，`PAN结构`和`Yolov3`。
 
-###### 目标检测通用框架
+### 目标检测通用框架
 
 ![image](https://user-images.githubusercontent.com/27406337/130031449-47c1282d-ace8-4971-93d0-7d60004dbb12.png)
 
@@ -62,7 +61,7 @@ Yolov4介绍两种训练推理的套路：
 
 ![image](https://user-images.githubusercontent.com/27406337/130035306-d5a3ffc1-b080-4de3-bfbc-589804f0a613.png)
 
-###### CSPDarknet53
+### CSPDarknet53
 
 Yolov4对Darknet53进行改进，借鉴CSPNet(Cross Stage Partial Networks:跨阶段局部网络)。其解决了其他大型卷积神经网络框架Backbone中网络优化的梯度信息重复问题，将梯度的变化从头到尾地集成到特征图中，因此减少了模型的参数量和FLOPS(floating point operations per second)数值，既保证了推理速度和准确率，又减少了模型尺寸。
 
@@ -86,16 +85,16 @@ Yolov4对Darknet53进行改进，借鉴CSPNet(Cross Stage Partial Networks:跨�
 
 ![image](https://user-images.githubusercontent.com/27406337/130041283-7a895d72-6d76-4d43-8244-89aaff4c577f.png)
 
-###### SPP结构
+### SPP结构
 
 ![image](https://user-images.githubusercontent.com/27406337/130041428-1ecf089e-be02-494e-9963-57ed00a8ecc9.png)
 
-###### PAN结构
+### PAN结构
 
 ![image](https://user-images.githubusercontent.com/27406337/130041568-f2167a7e-cc0f-4c93-8f38-8365ec490c69.png)
 
 
-#### Backbone训练策略
+### Backbone训练策略
 
 1. 数据增强
 
@@ -118,25 +117,104 @@ Yolov4对Darknet53进行改进，借鉴CSPNet(Cross Stage Partial Networks:跨�
 
    对预测有100%的信心可能表明模型是在记忆数据，而不是在学习。标签平滑调整预测的目标上限为一个较低的值，比如0.9。它将使用这个值而不是1.0来计算损失。这个概念缓解了过度拟合。说白了，这个平滑就是一定程度缩小label中min和max的差距，label平滑可以减小过拟合。所以，适当调整label，让两端的极值往中间凑凑，可以增加泛化性能。
 
-#### Backbone推理策略
+### Backbone推理策略
 
 1. [Mish激活函数](https://arxiv.org/pdf/1908.08681.pdf)
 2. MiWRC策略
 
-#### 检测头训练策略
+### 检测头训练策略
 
-#### 检测头推理策略
+### 检测头推理策略
 
-### 目标检测评价指标
+## 目标检测评价指标
 
-### 仓库说明
+## Yolov4 Implement by TF2
 
-仓库主要有以下三个分支：
-1. Matser分支：介绍yolov4
-3. Keras分支：使用keras+tensorflow1.0实现yolov4算法
-4. tf2分支：使用tensorflow2 实现yolov4算法。tensorflow2的训练速度会快些
+### 项目结构
 
-### 参考
+``` python
+
++---logs：存放训练日志的文档
+|---method：一些基础方法，如划分数据集训练集，生成训练集文档等
+|---data：基础配置
+|   +---simhei.ttf：字体
+|   +---yolo_anchors.txt：预设置的anchorbox
+|   \---voc.names：存放类别名称，同理可换成customer类别名称
+|---model：存放模型和权重
+|   +---yolo4_voc_weights.h5：VOC预训练权重
+|   \---yolo4_weight.h5：COCO预训练权重
+|---nets：Yolov4网络代码
+|---result：推理结果保存的文件夹
+|---utils：基础模块
+\---datasets：数据集，以VOC数据集格式
+    +---Annotations：数据集标注
+    +---ImageSets
+    |   \---Main：划分训练集、测试集、验证集的txt文档
+    \---JPEGImages：图像
+```
+
+### 执行步骤：
+
+1. 生成训练集、测试集以及验证集：运行voc_annotation.py，注意路径设置
+
+```python
+base_path = './villages'
+class_file = './villages/village.names'
+
+数据集的文件结构：
+
+|---train_datasets
+    +---Annotations
+    +---ImageSets
+        |---Main
+           |---test.txt
+           |---train.txt
+           |---trainval.txt
+           |---val.txt
+    \---JPEGImages
+
+```
+
+2. 运行train.py文件，要注意一些路径的设置
+
+```python
+annotation_path = './train_datasets/train.txt'
+log_dir = 'logs/'
+classes_path = 'train_datasets/village.names'    
+anchors_path = './data/yolo_anchors.txt'
+weights_path = './data/yolo4_weight.h5'
+save_model_name = 'village.h5'
+input_shape = (416,416)
+```
+
+### MAP计算步骤
+
+1. 统计测试集的groundtrue
+
+```python
+
+python get_gt_txt.py
+
+```
+
+2. 计算模型推理测试集的结果
+
+```python
+
+python get_dr_txt.py
+
+```
+
+3. 计算map的性能指标
+
+```python
+
+python get_map.py
+
+```
+
+
+## 参考
 
 [yolov4代码实现](https://github.com/AlexeyAB/darknet)
 
