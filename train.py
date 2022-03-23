@@ -17,10 +17,6 @@ import config as sys_config
 from utils.dataloader import data_generator, get_classes, get_anchors, preprocess_true_boxes_tf, transform_targets
 from utils.tfrecord_create import load_tfrecord_dataset, transform_dataset
 from tqdm import tqdm
-import tensorflow_model_optimization as tfmot
-
-Pruning = True
-prune_low_magnitude = tfmot.sparsity.keras.prune_low_magnitude
 
 # 防止bug
 def get_train_step_fn():

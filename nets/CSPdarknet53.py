@@ -7,9 +7,9 @@ from tensorflow.keras.layers import (Add, BatchNormalization, Concatenate,
                                      UpSampling2D, ZeroPadding2D)
 from tensorflow.keras.regularizers import l2
 from utils.utils import compose
+import tensorflow_model_optimization as tfmot
 
-
-class Mish(Layer):
+class Mish(Layer, tfmot.sparsity.keras.PrunableLayer):  
     def __init__(self, **kwargs):
         super(Mish, self).__init__(**kwargs)
         self.supports_masking = True
@@ -22,8 +22,10 @@ class Mish(Layer):
         return config
 
     def compute_output_shape(self, input_shape):
-        return input_shape
-
+        return input_shape  
+    
+    def get_prunable_weights(self):
+        return self.weights
 #--------------------------------------------------#
 #   单次卷积DarknetConv2D
 #   如果步长为2则自己设定padding方式。
