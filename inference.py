@@ -8,6 +8,13 @@ import os
 from tqdm import tqdm
 import colorsys
 import tensorflow_model_optimization as tfmot
+import cv2
+import time
+
+# 检查是否有GPU
+gpus = tf.config.experimental.list_physical_devices('GPU')
+for gpu in gpus:
+    tf.config.experimental.set_memory_growth(gpu, True)
 
 # 加载模型
 model_path = './village_model/'
@@ -126,7 +133,7 @@ def yolo_head(feats, anchors, num_classes, input_shape, calc_loss=False):
         return grid, feats, box_xy, box_wh
     return box_xy, box_wh, box_confidence, box_class_probs
 
-def inference(image_path, letterbox_image=config.letterbox_image, score=config.score, \
+def inference(image, letterbox_image=config.letterbox_image, score=config.score, \
             iou = config.iou, max_boxes=config.max_boxes, class_path = config.classes_path, \
             anchors_path=config.anchors_path, show=True, get_dr = False, image_id = None):
     # 读取类别信息
@@ -136,7 +143,6 @@ def inference(image_path, letterbox_image=config.letterbox_image, score=config.s
     # 设置颜色
     colors = get_colors(class_names)
     # 推理之前的图像预处理
-    image = Image.open(image_path)
     image = image.convert('RGB')
     if letterbox_image:
         boxed_image = letterbox_image(image, (config.imagesize,config.imagesize))
@@ -255,10 +261,29 @@ def model_optimizer(model_path):
 
 # TODO: FPS Test
 def FPS_Calculate(image_path, class_path = config.classes_path,anchors_path=config.anchors_path, interval = 100):
-    # 读取类别信息
-    class_names = get_class(class_path)
-    # 读取预设框信息
-    anchors = get_anchors(anchors_path)
+    video_path = './result/test2.MOV'
+    capture=cv2.VideoCapture(video_path)
+    fps = 0.0
+    while(True):
+        t1 = time.time()
+        ref,frame=capture.read()
+        frame = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
+        frame = Image.fromarray(np.uint8(frame))
+        frame = np.array(inference(frame))
+        frame = cv2.cvtColor(frame,cv2.COLOR_RGB2BGR)
+            
+        fps  = ( fps + (1./(time.time()-t1)) ) / 2
+        print("fps= %.2f"%(fps))
+        frame = cv2.putText(frame, "fps= %.2f"%(fps), (0, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+            
+        cv2.imshow("video",frame)
+        c= cv2.waitKey(1) & 0xff 
+
+        if c==27:
+            capture.release()
+            break
+    capture.release()
+    cv2.destroyAllWindows()
     # 推理之前的图像预处理
     image = Image.open(image_path)
     image = image.convert('RGB')
@@ -271,7 +296,7 @@ def FPS_Calculate(image_path, class_path = config.classes_path,anchors_path=conf
     image_data = np.expand_dims(image_data, 0)  # Add batch dimension.
     # input_image_shape = np.expand_dims(np.array([image.size[1], image.size[0]], dtype='float32'), 0)
     image_shape = np.array([image.size[1], image.size[0]], dtype='float32')
-    import time
+    
     time1 = time.time()
     for i in range(interval):
         yolo_outputs = get_outputs(model, image_data)
@@ -313,5 +338,6 @@ if __name__ == '__main__':
     get_dr_txt(test_set, dataset_base_path)
     
     # model_optimizer(model_path)
-    r_image = inference(image_path=image_path)
+    image = Image.open(image_path)
+    r_image = inference(image)
     r_image.show()
