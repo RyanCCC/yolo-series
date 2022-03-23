@@ -1,5 +1,3 @@
-from functools import partial
-
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.callbacks import (EarlyStopping, ReduceLROnPlateau,
@@ -17,8 +15,10 @@ import config as sys_config
 from utils.dataloader import data_generator, get_classes, get_anchors, preprocess_true_boxes_tf, transform_targets
 from utils.tfrecord_create import load_tfrecord_dataset, transform_dataset
 from tqdm import tqdm
+import os
 import tensorflow_model_optimization as tfmot
 
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 prune_low_magnitude = tfmot.sparsity.keras.prune_low_magnitude
 
 Epoch = sys_config.epoch
@@ -96,13 +96,13 @@ pruning_params = {
 model_for_pruning = prune_low_magnitude(model, **pruning_params)
 
 model_for_pruning.summary()
-model_for_pruning.compile(optimizer=Adam(learning_rate_freeze), loss={'yolo_loss': lambda y_true, y_pred: y_pred})
+model_for_pruning.compile(optimizer=Adam(learning_rate_freeze), loss={'prune_low_magnitude_yolo_loss': lambda y_true, y_pred: y_pred})
 model_for_pruning.fit(data_generator(lines[:num_train], batch_size, input_shape, anchors, num_classes, mosaic=mosaic, random=True, eager=False),
                     steps_per_epoch=epoch_size,
                     validation_data=data_generator(lines[num_train:], batch_size, input_shape, anchors, num_classes, mosaic=False, random=False, eager=False),
                     validation_steps=epoch_size_val,
                     epochs=Epoch,
                     initial_epoch=0,
-                    callbacks=[logging, checkpoint, reduce_lr, early_stopping])
+                    callbacks=[logging, checkpoint, reduce_lr, early_stopping, tfmot.sparsity.keras.UpdatePruningStep()])
 # 以h5格式保存模型
 tf.keras.models.save_model(model_for_pruning, './model/village_model_pruning.h5', include_optimizer=False)
