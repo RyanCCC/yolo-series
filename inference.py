@@ -133,7 +133,7 @@ def yolo_head(feats, anchors, num_classes, input_shape, calc_loss=False):
         return grid, feats, box_xy, box_wh
     return box_xy, box_wh, box_confidence, box_class_probs
 
-def inference(image, letterbox_image=config.letterbox_image, score=config.score, \
+def inference(image,model = model, letterbox_image=config.letterbox_image, score=config.score, \
             iou = config.iou, max_boxes=config.max_boxes, class_path = config.classes_path, \
             anchors_path=config.anchors_path, show=True, get_dr = False, image_id = None):
     # 读取类别信息
@@ -256,34 +256,34 @@ def model_optimizer(model_path):
     # converter = tf.lite.TFLiteConverter.from_keras_model(model)
     # converter.optimizations = [tf.lite.Optimize.DEFAULT]
     # quantized_and_pruned_tflite_model = converter.convert()
-    model.save('./tmp')
+    model.save('./village_model_pruning')
 
 
 # TODO: FPS Test
-def FPS_Calculate(image_path, class_path = config.classes_path,anchors_path=config.anchors_path, interval = 100):
-    video_path = './result/test2.MOV'
-    capture=cv2.VideoCapture(video_path)
-    fps = 0.0
-    while(True):
-        t1 = time.time()
-        ref,frame=capture.read()
-        frame = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
-        frame = Image.fromarray(np.uint8(frame))
-        frame = np.array(inference(frame))
-        frame = cv2.cvtColor(frame,cv2.COLOR_RGB2BGR)
+def FPS_Calculate(image_path, model = model, class_path = config.classes_path,anchors_path=config.anchors_path, interval = 100):
+    # video_path = './result/test2.MOV'
+    # capture=cv2.VideoCapture(video_path)
+    # fps = 0.0
+    # while(True):
+    #     t1 = time.time()
+    #     ref,frame=capture.read()
+    #     frame = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
+    #     frame = Image.fromarray(np.uint8(frame))
+    #     frame = np.array(inference(frame))
+    #     frame = cv2.cvtColor(frame,cv2.COLOR_RGB2BGR)
             
-        fps  = ( fps + (1./(time.time()-t1)) ) / 2
-        print("fps= %.2f"%(fps))
-        frame = cv2.putText(frame, "fps= %.2f"%(fps), (0, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+    #     fps  = ( fps + (1./(time.time()-t1)) ) / 2
+    #     print("fps= %.2f"%(fps))
+    #     frame = cv2.putText(frame, "fps= %.2f"%(fps), (0, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
             
-        cv2.imshow("video",frame)
-        c= cv2.waitKey(1) & 0xff 
+    #     cv2.imshow("video",frame)
+    #     c= cv2.waitKey(1) & 0xff 
 
-        if c==27:
-            capture.release()
-            break
-    capture.release()
-    cv2.destroyAllWindows()
+    #     if c==27:
+    #         capture.release()
+    #         break
+    # capture.release()
+    # cv2.destroyAllWindows()
     # 推理之前的图像预处理
     image = Image.open(image_path)
     image = image.convert('RGB')
@@ -307,7 +307,7 @@ def FPS_Calculate(image_path, class_path = config.classes_path,anchors_path=conf
 
 
 # TODO：map Test
-def get_dr_txt(test_set, dataset_base_path):
+def get_dr_txt(test_set, dataset_base_path, model=model):
     '''
     该函数计算模型在测试集上的性能，将推理结果保存为txt文档，以此计算map。
     计算完成后，检查groud true文件是否生成，未生成则运行./evaluate/get_gt_txt.py
@@ -321,14 +321,16 @@ def get_dr_txt(test_set, dataset_base_path):
 
     for image_id in tqdm(image_ids):
         image_path = dataset_base_path+"/JPEGImages/"+image_id+".jpg"
-        # 开启后在之后计算mAP可以可视化
-        # image.save("./input/images-optional/"+image_id+".jpg")
-        inference(image_path, show=False, get_dr=True, image_id=image_id)
+        image = Image.open(image_path)
+        inference(image, model=model, show=False, get_dr=True, image_id=image_id)
 
 
 
 
 if __name__ == '__main__':
+    # 模型优化
+    model_optimizer(model_path)
+    model_optimizer(model_path)
     image_path = './result/20210817115925.jpg'
     # 计算FPS
     FPS_Calculate(image_path)
@@ -336,8 +338,7 @@ if __name__ == '__main__':
     test_set = os.path.join(config.test_txt, 'test.txt')
     dataset_base_path = config.dataset_base_path
     get_dr_txt(test_set, dataset_base_path)
-    
-    # model_optimizer(model_path)
+    model_optimizer(model_path)
     image = Image.open(image_path)
     r_image = inference(image)
     r_image.show()
