@@ -225,15 +225,13 @@ if __name__ == "__main__":
                 fit_one_epoch(model_body, yolo_loss, optimizer, epoch, epoch_size, epoch_size_val,gen, gen_val, 
                             Freeze_epoch, anchors, num_classes, label_smoothing, regularization, get_train_step_fn())
         else:
-            pass
-            # lines表示训练txt中的数据
-            # model.fit(data_generator(lines[:num_train], batch_size, input_shape, anchors, num_classes, mosaic=mosaic, random=True, eager=False),
-            #         steps_per_epoch=epoch_size,
-            #         validation_data=data_generator(lines[num_train:], batch_size, input_shape, anchors, num_classes, mosaic=False, random=False, eager=False),
-            #         validation_steps=epoch_size_val,
-            #         epochs=Freeze_epoch,
-            #         initial_epoch=Init_epoch,
-            #         callbacks=[logging, checkpoint, reduce_lr, early_stopping])
+            model.fit(data_generator(lines[:num_train], batch_size, input_shape, anchors, num_classes, mosaic=mosaic, random=True, eager=False),
+                    steps_per_epoch=epoch_size,
+                    validation_data=data_generator(lines[num_train:], batch_size, input_shape, anchors, num_classes, mosaic=False, random=False, eager=False),
+                    validation_steps=epoch_size_val,
+                    epochs=Freeze_epoch,
+                    initial_epoch=Init_epoch,
+                    callbacks=[logging, checkpoint, reduce_lr, early_stopping])
 
     for i in range(freeze_layers): model_body.layers[i].trainable = True
 
@@ -286,49 +284,15 @@ if __name__ == "__main__":
                 fit_one_epoch(model_body, yolo_loss, optimizer, epoch, epoch_size, epoch_size_val,gen, gen_val, 
                             Epoch, anchors, num_classes, label_smoothing, regularization, get_train_step_fn())
         else:
-            pass
-            # model.fit(data_generator(lines[:num_train], batch_size, input_shape, anchors, num_classes, mosaic=mosaic, random=True, eager=False),
-            #         steps_per_epoch=epoch_size,
-            #         validation_data=data_generator(lines[num_train:], batch_size, input_shape, anchors, num_classes, mosaic=False, random=False, eager=False),
-            #         validation_steps=epoch_size_val,
-            #         epochs=Epoch,
-            #         initial_epoch=Freeze_epoch,
-            #         callbacks=[logging, checkpoint, reduce_lr, early_stopping])
-    
-        # 查看baseline model的结果
-        # _, baseline_model_accuracy = model.evaluate(data_generator(lines[1:2], batch_size, input_shape, anchors, num_classes, mosaic=False, random=False, eager=False))
-        # print('Baseline test accuracy:', baseline_model_accuracy)
-        # 以h5格式保存模型
-        tf.keras.models.save_model(model, './model/village_model.h5', include_optimizer=False)
-
-        if Pruning:
-            # Compute end step to finish pruning after 2 epochs.
-            batch_size = 128
-            epochs = 2
-            validation_split = 0.1 # 10% of training set will be used for validation set. 
-            end_step = np.ceil(num_train/batch_size).astype(np.int32) * epochs
-            # Define model for pruning.
-            pruning_params = {
-                    'pruning_schedule': tfmot.sparsity.keras.PolynomialDecay(initial_sparsity=0.50,
-                                                        final_sparsity=0.80,
-                                                        begin_step=0,
-                                                        end_step=end_step)}
-            model_for_pruning = prune_low_magnitude(model, **pruning_params)
-            model.compile(optimizer=Adam(), loss={'yolo_loss': lambda y_true, y_pred: y_pred})
-            model_for_pruning.summary()
-            model_for_pruning.fit(data_generator(lines[:num_train], batch_size, input_shape, anchors, num_classes, mosaic=mosaic, random=True, eager=False),
+            model.fit(data_generator(lines[:num_train], batch_size, input_shape, anchors, num_classes, mosaic=mosaic, random=True, eager=False),
                     steps_per_epoch=epoch_size,
                     validation_data=data_generator(lines[num_train:], batch_size, input_shape, anchors, num_classes, mosaic=False, random=False, eager=False),
                     validation_steps=epoch_size_val,
                     epochs=Epoch,
                     initial_epoch=Freeze_epoch,
                     callbacks=[logging, checkpoint, reduce_lr, early_stopping])
-            _, model_for_pruning_accuracy = model_for_pruning.evaluate(data_generator(lines[num_train:], batch_size, input_shape, anchors, num_classes, mosaic=False, random=False, eager=False), verbose=0)
-            print('Baseline test accuracy:', baseline_model_accuracy) 
-            print('Pruned test accuracy:', model_for_pruning_accuracy)
-             # 以h5格式保存模型
-            tf.keras.models.save_model(model_for_pruning_accuracy, './model/village_model_pruning.h5', include_optimizer=False)
-
+    
+    
 
         
 
