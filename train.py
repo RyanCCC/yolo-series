@@ -19,7 +19,7 @@ from utils.tfrecord_create import load_tfrecord_dataset, transform_dataset
 from tqdm import tqdm
 import tensorflow_model_optimization as tfmot
 
-Pruning = False
+Pruning = True
 prune_low_magnitude = tfmot.sparsity.keras.prune_low_magnitude
 
 # 防止bug
@@ -225,14 +225,15 @@ if __name__ == "__main__":
                 fit_one_epoch(model_body, yolo_loss, optimizer, epoch, epoch_size, epoch_size_val,gen, gen_val, 
                             Freeze_epoch, anchors, num_classes, label_smoothing, regularization, get_train_step_fn())
         else:
+            pass
             # lines表示训练txt中的数据
-            model.fit(data_generator(lines[:num_train], batch_size, input_shape, anchors, num_classes, mosaic=mosaic, random=True, eager=False),
-                    steps_per_epoch=epoch_size,
-                    validation_data=data_generator(lines[num_train:], batch_size, input_shape, anchors, num_classes, mosaic=False, random=False, eager=False),
-                    validation_steps=epoch_size_val,
-                    epochs=Freeze_epoch,
-                    initial_epoch=Init_epoch,
-                    callbacks=[logging, checkpoint, reduce_lr, early_stopping])
+            # model.fit(data_generator(lines[:num_train], batch_size, input_shape, anchors, num_classes, mosaic=mosaic, random=True, eager=False),
+            #         steps_per_epoch=epoch_size,
+            #         validation_data=data_generator(lines[num_train:], batch_size, input_shape, anchors, num_classes, mosaic=False, random=False, eager=False),
+            #         validation_steps=epoch_size_val,
+            #         epochs=Freeze_epoch,
+            #         initial_epoch=Init_epoch,
+            #         callbacks=[logging, checkpoint, reduce_lr, early_stopping])
 
     for i in range(freeze_layers): model_body.layers[i].trainable = True
 
@@ -285,17 +286,18 @@ if __name__ == "__main__":
                 fit_one_epoch(model_body, yolo_loss, optimizer, epoch, epoch_size, epoch_size_val,gen, gen_val, 
                             Epoch, anchors, num_classes, label_smoothing, regularization, get_train_step_fn())
         else:
-            model.fit(data_generator(lines[:num_train], batch_size, input_shape, anchors, num_classes, mosaic=mosaic, random=True, eager=False),
-                    steps_per_epoch=epoch_size,
-                    validation_data=data_generator(lines[num_train:], batch_size, input_shape, anchors, num_classes, mosaic=False, random=False, eager=False),
-                    validation_steps=epoch_size_val,
-                    epochs=Epoch,
-                    initial_epoch=Freeze_epoch,
-                    callbacks=[logging, checkpoint, reduce_lr, early_stopping])
+            pass
+            # model.fit(data_generator(lines[:num_train], batch_size, input_shape, anchors, num_classes, mosaic=mosaic, random=True, eager=False),
+            #         steps_per_epoch=epoch_size,
+            #         validation_data=data_generator(lines[num_train:], batch_size, input_shape, anchors, num_classes, mosaic=False, random=False, eager=False),
+            #         validation_steps=epoch_size_val,
+            #         epochs=Epoch,
+            #         initial_epoch=Freeze_epoch,
+            #         callbacks=[logging, checkpoint, reduce_lr, early_stopping])
     
         # 查看baseline model的结果
-        _, baseline_model_accuracy = model.evaluate(data_generator(lines[num_train:], batch_size, input_shape, anchors, num_classes, mosaic=False, random=False, eager=False))
-        print('Baseline test accuracy:', baseline_model_accuracy)
+        # _, baseline_model_accuracy = model.evaluate(data_generator(lines[1:2], batch_size, input_shape, anchors, num_classes, mosaic=False, random=False, eager=False))
+        # print('Baseline test accuracy:', baseline_model_accuracy)
         # 以h5格式保存模型
         tf.keras.models.save_model(model, './model/village_model.h5', include_optimizer=False)
 

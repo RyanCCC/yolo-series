@@ -330,7 +330,6 @@ def get_dr_txt(test_set, dataset_base_path, model=model):
 if __name__ == '__main__':
     # 模型优化
     model_optimizer(model_path)
-    model_optimizer(model_path)
     image_path = './result/20210817115925.jpg'
     # 计算FPS
     FPS_Calculate(image_path)
@@ -338,7 +337,6 @@ if __name__ == '__main__':
     test_set = os.path.join(config.test_txt, 'test.txt')
     dataset_base_path = config.dataset_base_path
     get_dr_txt(test_set, dataset_base_path)
-    model_optimizer(model_path)
     image = Image.open(image_path)
     r_image = inference(image)
     r_image.show()
