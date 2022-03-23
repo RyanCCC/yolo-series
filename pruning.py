@@ -86,10 +86,7 @@ reduce_lr       = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=3, 
 if epoch_size == 0 or epoch_size_val == 0:
     raise ValueError("数据集过小，无法进行训练，请扩充数据集。")
 # Compute end step to finish pruning after 2 epochs.
-batch_size = 128
-epochs = 2
-validation_split = 0.1 # 10% of training set will be used for validation set. 
-end_step = np.ceil(num_train/batch_size).astype(np.int32) * epochs
+end_step = np.ceil(num_train/batch_size).astype(np.int32) * Epoch
 # Define model for pruning.
 pruning_params = {
     'pruning_schedule': tfmot.sparsity.keras.PolynomialDecay(initial_sparsity=0.50,final_sparsity=0.80,begin_step=0,end_step=end_step)}
