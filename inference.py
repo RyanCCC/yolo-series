@@ -242,21 +242,6 @@ def inference(image,model = model, letterbox_image=config.letterbox_image, score
     return image
 
 
-# 模型优化，其中包括模型的剪枝以及量化
-def model_optimizer(model_path):
-    # 加载模型
-    model = tf.keras.models.load_model(model_path)
-    # 对模型中的卷积层进行剪枝
-    for layer in model.layers:
-        if isinstance(layer, tf.keras.layers.Conv2D):
-            tfmot.sparsity.keras.prune_low_magnitude(layer)
-    # pruning
-    model = tfmot.sparsity.keras.strip_pruning(model)
-    # 移动端需要转化为tflite
-    # converter = tf.lite.TFLiteConverter.from_keras_model(model)
-    # converter.optimizations = [tf.lite.Optimize.DEFAULT]
-    # quantized_and_pruned_tflite_model = converter.convert()
-    model.save('./village_model_pruning')
 
 
 # TODO: FPS Test
@@ -328,8 +313,6 @@ def get_dr_txt(test_set, dataset_base_path, model=model):
 
 
 if __name__ == '__main__':
-    # 模型优化
-    model_optimizer(model_path)
     image_path = './result/20210817115925.jpg'
     # 计算FPS
     FPS_Calculate(image_path)

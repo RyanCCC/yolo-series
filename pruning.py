@@ -5,16 +5,11 @@ from tensorflow.keras.callbacks import (EarlyStopping, ReduceLROnPlateau,
 from tensorflow.keras.layers import Input, Lambda
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
-from tqdm import tqdm
-
 from nets.loss import yolo_loss
 from nets.yolo4 import yolo_body
-from utils.utils import (ModelCheckpoint,
-                         WarmUpCosineDecayScheduler)
+from utils.utils import ModelCheckpoint
 import config as sys_config
-from utils.dataloader import data_generator, get_classes, get_anchors, preprocess_true_boxes_tf, transform_targets
-from utils.tfrecord_create import load_tfrecord_dataset, transform_dataset
-from tqdm import tqdm
+from utils.dataloader import data_generator, get_classes, get_anchors
 import os
 import tensorflow_model_optimization as tfmot
 
