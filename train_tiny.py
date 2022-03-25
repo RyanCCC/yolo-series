@@ -216,10 +216,6 @@ if __name__ == "__main__":
     print('Load weights {}.'.format(weights_path))
     model_body.load_weights(weights_path, by_name=True, skip_mismatch=True)
     
-    #------------------------------------------------------#
-    #   在这个地方设置损失，将网络的输出结果传入loss函数
-    #   把整个模型的输出作为loss
-    #------------------------------------------------------#
     y_true = [Input(shape=(h//{0:32, 1:16}[l], w//{0:32, 1:16}[l], num_anchors//2, num_classes+5)) for l in range(2)]
     loss_input = [*model_body.output, *y_true]
     model_loss = Lambda(yolo_loss, output_shape=(1,), name='yolo_loss',
