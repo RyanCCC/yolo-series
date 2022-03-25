@@ -10,15 +10,17 @@ import colorsys
 import tensorflow_model_optimization as tfmot
 import cv2
 import time
+from nets.loss import _smooth_labels
 
 # 检查是否有GPU
 gpus = tf.config.experimental.list_physical_devices('GPU')
 for gpu in gpus:
     tf.config.experimental.set_memory_growth(gpu, True)
 
+
 # 加载模型
-model_path = './village_model/'
-model = tf.keras.models.load_model(model_path)
+model_path = './model/village_model_pruning'
+model = tf.keras.models.load_model(model_path, custom_objects={'_smooth_labels':_smooth_labels, 'yolo_head':yolo_head})
 
 @tf.function
 def get_outputs(model, image_data):
@@ -101,7 +103,7 @@ def yolo_correct_boxes(box_xy, box_wh, input_shape, image_shape):
         box_maxes[..., 1:2]  # x_max
     ])
 
-    boxes *= K.concatenate([image_shape, image_shape])
+    boxes *= K.concatenate([image_pythoshape, image_shape])
     return boxes
 
 
@@ -132,6 +134,8 @@ def yolo_head(feats, anchors, num_classes, input_shape, calc_loss=False):
     if calc_loss == True:
         return grid, feats, box_xy, box_wh
     return box_xy, box_wh, box_confidence, box_class_probs
+
+
 
 def inference(image,model = model, letterbox_image=config.letterbox_image, score=config.score, \
             iou = config.iou, max_boxes=config.max_boxes, class_path = config.classes_path, \

@@ -98,4 +98,4 @@ model_for_pruning.fit(data_generator(lines[:num_train], batch_size, input_shape,
                     callbacks=[logging, checkpoint, reduce_lr, early_stopping, tfmot.sparsity.keras.UpdatePruningStep()])
 exported_model = tfmot.sparsity.keras.strip_pruning(model_for_pruning)
 # 以h5格式保存模型
-tf.keras.models.save_model(exported_model, './model/village_model_pruning', include_optimizer=False, save_format='tf')
+exported_model.save('./model/village_model_pruning', include_optimizer=False, save_format='tf')
