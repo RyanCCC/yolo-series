@@ -9,9 +9,7 @@ def _smooth_labels(y_true, label_smoothing):
     label_smoothing = K.constant(label_smoothing, dtype=K.floatx())
     return y_true * (1.0 - label_smoothing) + label_smoothing / num_classes
 
-#---------------------------------------------------#
-#   将预测值的每个特征层调成真实值
-#---------------------------------------------------#
+
 def yolo_head(feats, anchors, num_classes, input_shape, calc_loss=False):
     num_anchors = len(anchors)
     #---------------------------------------------------#
@@ -35,20 +33,11 @@ def yolo_head(feats, anchors, num_classes, input_shape, calc_loss=False):
     #   85可拆分成4 + 1 + 80
     feats = K.reshape(feats, [-1, grid_shape[0], grid_shape[1], num_anchors, num_classes + 5])
 
-    #---------------------------------------------------#
-    #   将预测值调成真实值
-    #   box_xy对应框的中心点
-    #   box_wh对应框的宽和高
-    #---------------------------------------------------#
     box_xy = (K.sigmoid(feats[..., :2]) + grid) / K.cast(grid_shape[...,::-1], K.dtype(feats))
     box_wh = K.exp(feats[..., 2:4]) * anchors_tensor / K.cast(input_shape[...,::-1], K.dtype(feats))
     box_confidence = K.sigmoid(feats[..., 4:5])
     box_class_probs = K.sigmoid(feats[..., 5:])
 
-    #---------------------------------------------------------------------#
-    #   在计算loss的时候返回grid, feats, box_xy, box_wh
-    #   在预测的时候返回box_xy, box_wh, box_confidence, box_class_probs
-    #---------------------------------------------------------------------#
     if calc_loss == True:
         return grid, feats, box_xy, box_wh
     return box_xy, box_wh, box_confidence, box_class_probs
