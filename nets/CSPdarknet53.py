@@ -93,7 +93,7 @@ def DarknetConv2D_BN_SiLU(*args, **kwargs):
     if "name" in kwargs.keys():
         no_bias_kwargs['name'] = kwargs['name'] + '.conv'
     return compose(
-        DarknetConv2D(*args, **no_bias_kwargs),
+        DarknetConv2D_withL2(*args, **no_bias_kwargs),
         BatchNormalization(momentum = 0.97, epsilon = 0.001, name = kwargs['name'] + '.bn'),
         SiLU())
 
@@ -139,15 +139,15 @@ def darknet_body_yolox(x, dep_mul, wid_mul, weight_decay=5e-4):
     # 320, 320, 12 => 320, 320, 64
     x = DarknetConv2D_BN_SiLU(base_channels, (3, 3), weight_decay=weight_decay, name = 'backbone.backbone.stem.conv')(x)
     # 320, 320, 64 => 160, 160, 128
-    x = resblock_body(x, base_channels * 2, base_depth, weight_decay=weight_decay, name = 'backbone.backbone.dark2')
+    x = resblock_body_yolox(x, base_channels * 2, base_depth, weight_decay=weight_decay, name = 'backbone.backbone.dark2')
     # 160, 160, 128 => 80, 80, 256
-    x = resblock_body(x, base_channels * 4, base_depth * 3, weight_decay=weight_decay, name = 'backbone.backbone.dark3')
+    x = resblock_body_yolox(x, base_channels * 4, base_depth * 3, weight_decay=weight_decay, name = 'backbone.backbone.dark3')
     feat1 = x
     # 80, 80, 256 => 40, 40, 512
-    x = resblock_body(x, base_channels * 8, base_depth * 3, weight_decay=weight_decay, name = 'backbone.backbone.dark4')
+    x = resblock_body_yolox(x, base_channels * 8, base_depth * 3, weight_decay=weight_decay, name = 'backbone.backbone.dark4')
     feat2 = x
     # 40, 40, 512 => 20, 20, 1024
-    x = resblock_body(x, base_channels * 16, base_depth, shortcut=False, last=True, weight_decay=weight_decay, name = 'backbone.backbone.dark5')
+    x = resblock_body_yolox(x, base_channels * 16, base_depth, shortcut=False, last=True, weight_decay=weight_decay, name = 'backbone.backbone.dark5')
     feat3 = x
     return feat1,feat2,feat3
 

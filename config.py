@@ -6,6 +6,7 @@ dataset_base_path = r'.\villages'
 
 classes_path = os.path.join(dataset_base_path, 'village.names') 
 train_txt= os.path.join(dataset_base_path, 'train.txt')
+val_txt= os.path.join(dataset_base_path, 'val.txt')
 test_txt = os.path.join(dataset_base_path, 'ImageSets/Main')
 anchors_path = './data/yolo_anchors.txt'
 anchors_tiny_path = './data/yolo_anchors_tiny.txt'
