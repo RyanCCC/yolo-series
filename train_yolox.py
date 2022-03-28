@@ -171,7 +171,7 @@ if __name__=='__main__':
         early_stopping  = EarlyStopping(monitor='val_loss', min_delta = 0, patience = 10, verbose = 1)
         checkpoint = ModelCheckpoint(weight_name, monitor = 'val_loss', save_weights_only = True, save_best_only = False)
         lr_schedule = LearningRateScheduler(lr_scheduler_func, verbose = 1)
-        callbacks = [logging, checkpoint, early_stopping]
+        callbacks = [logging, lr_schedule, checkpoint, early_stopping]
 
         # 训练模型
         print('Train on {} samples, val on {} samples, with batch size {}.'.format(num_train, num_val, batch_size))

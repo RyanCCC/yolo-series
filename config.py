@@ -32,9 +32,6 @@ label_smoothing = 0
 
 regularization = True
 '''
-Init_epoch：初始训练世代
-Freeze_epoch：冻结训练世代
-epoch：最终训练世代
 冻结训练：Init_epoch~Freeze_epoch
 解冻训练：Freeze_epoch~epoch
 '''
@@ -43,7 +40,7 @@ Freeze_epoch        = 50
 epoch = 100
 freeze_layers = 249
 freeze_layers_tiny = 60
-batch_size          = 2
+batch_size          = 16
 learning_rate_freeze  = 1e-3
 learning_rate_unfreeze  = 1e-4
 
