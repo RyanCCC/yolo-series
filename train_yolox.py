@@ -9,7 +9,7 @@ from tensorflow.keras.optimizers import SGD, Adam
 from nets.yolox import yolo_body, get_yolox_model
 from nets.loss_yolox import get_lr_scheduler, get_yolo_loss
 from utils.callbacks import ModelCheckpoint
-from utils.dataloader import YoloDatasets, get_classes
+from utils.dataloader_yolox import YoloDatasets, get_classes
 from tqdm import tqdm
 import config
 
@@ -17,9 +17,6 @@ def get_train_step_fn():
     @tf.function
     def train_step(imgs, targets, net, yolo_loss, optimizer):
         with tf.GradientTape() as tape:
-            #------------------------------#
-            #   计算loss
-            #------------------------------#
             P5_output, P4_output, P3_output = net(imgs, training=True)
             args        = [P5_output, P4_output, P3_output] + [targets]
             
@@ -94,21 +91,21 @@ for gpu in gpus:
 if __name__=='__main__':
     classes_path = config.classes_path
     pretrain_model_path = config.pretrain_weight
-    input_shape = (config.imagesize,config.imagesize)
+    input_shape = [640,640]
     # yolox的版本：tiny、s、m、l、x
     phi = 's'
-    mosaic = config.mosaic
+    mosaic = True
 
     Init_Epoch = config.Init_epoch
     Freeze_Epoch = config.Freeze_epoch
     Freeze_batch_size = config.batch_size
 
-    UnFreeze_Epoch = 200
+    UnFreeze_Epoch = config.epoch
     UnFreeze_batch_size = 16
 
     Freeze_train = True
 
-    learning_rate = config.learning_rate_freeze
+    learning_rate = 1e-2
     min_learning_rate = learning_rate*0.01
 
     optimizerType = 'sgd'
@@ -140,7 +137,7 @@ if __name__=='__main__':
         freeze_layers = {'tiny': 125, 's': 125, 'm': 179, 'l': 234, 'x': 290}[phi]
         for i in range(freeze_layers):
             model.layers[i].trainable = False
-            print('Freeze the first {} layers of total {} layers.'.format(freeze_layers, len(model.layers)))
+        print('Freeze the first {} layers of total {} layers.'.format(freeze_layers, len(model.layers)))
         batch_size = Freeze_batch_size if Freeze_train else UnFreeze_batch_size
         # 设置学习率的参数
         nbs     = 64
@@ -150,9 +147,9 @@ if __name__=='__main__':
 
         # 加载数据
         with open(train_txt, encoding='utf-8') as f:
-            train_line = f.readline()
+            train_line = f.readlines()
         with open(val_txt, encoding='utf-8') as f:
-            val_line = f.readline()
+            val_line = f.readlines()
         num_train = len(train_line)
         num_val = len(val_line)
         epoch_step      = num_train // batch_size
@@ -174,7 +171,7 @@ if __name__=='__main__':
         early_stopping  = EarlyStopping(monitor='val_loss', min_delta = 0, patience = 10, verbose = 1)
         checkpoint = ModelCheckpoint(weight_name, monitor = 'val_loss', save_weights_only = True, save_best_only = False)
         lr_schedule = LearningRateScheduler(lr_scheduler_func, verbose = 1)
-        callbacks = [logging, checkpoint, lr_schedule, early_stopping]
+        callbacks = [logging, checkpoint, early_stopping]
 
         # 训练模型
         print('Train on {} samples, val on {} samples, with batch size {}.'.format(num_train, num_val, batch_size))
