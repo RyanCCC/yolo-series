@@ -3,7 +3,7 @@
 基于Tensorflow2实现YOLO系列的算法，当前实现了两个算法，一个是YOLOV4，另一个是YOLOX。后续将追踪关于YOLO的一些成果，并及时复现当中的算法。具体可以参考本人的博客：[目标检测2022最新进展](https://blog.csdn.net/u012655441/article/details/123552537)。
 
 
-## YOLOV4介绍
+## YOLOV4
 
 Yolov4论文的abstract可以看出Yolov4结合了前人的好处，用了大量技巧提高目标检测的效率。其中包括：加权残差链接（WRC），跨阶段部分链接（CSP），跨小批量标准化（CmBN），自对抗训练（SAT），Mish激活，马赛克数据增强，DropBlock正则化，CIoU Loss等等。可以看成一篇目标检测的综述，里面用到的Tricks需要查阅相关的论文才知道。技巧类的论文可以查看：[Bag of Freebies for Training Object Detection Neural Networks](https://arxiv.org/abs/1902.04103)和[Bag of Tricks for Image Classification with Convolutional Neural Networks](https://arxiv.org/abs/1812.01187)。
 
@@ -309,7 +309,8 @@ python get_map.py
 
 ## YOLOX
 
-TODO
+YOLOX的代码可以直接运行```train_yolox.py```即可。
+
 
 ## 目标检测评价指标
 
