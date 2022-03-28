@@ -350,3 +350,5 @@ if __name__ == "__main__":
                     epochs=Epoch,
                     initial_epoch=Freeze_epoch,
                     callbacks=[logging, checkpoint, reduce_lr, early_stopping])
+    
+    model.save('./model/village_tiny', save_format='tf')

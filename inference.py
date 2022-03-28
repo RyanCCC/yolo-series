@@ -19,7 +19,7 @@ for gpu in gpus:
 
 # 加载模型
 model_path = './village_model'
-model = tf.keras.models.load_model(model_path, custom_objects={'_smooth_labels':_smooth_labels})
+model = tf.keras.models.load_model(model_path)
 
 @tf.function
 def get_outputs(model, image_data):
