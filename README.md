@@ -1,4 +1,4 @@
-# Yolov4
+# YoloSeries
 
 
 ## YOLOV4介绍
@@ -7,11 +7,11 @@ Yolov4论文的abstract可以看出Yolov4结合了前人的好处，用了大量
 
 ![image](https://user-images.githubusercontent.com/27406337/130028721-43e82cf5-fff6-4830-b33a-33536d80afb6.png)
 
-Yolov4达到的效果：
+YOLOV4达到的效果：
 
 ![image](https://user-images.githubusercontent.com/27406337/130029170-67be34d5-b9a9-4aac-ad21-0c988d60023f.png)
 
-Yolov4的贡献如下：
+YOLOV4的贡献如下：
 
 1. Develope an efficient and powerful object detection model.
 2. Verify the influence of state-of-the-art Bag-of-Freebies and Bag-of-Specials methods of object detection during the detector training
@@ -24,7 +24,7 @@ Yolov4的贡献如下：
 - YOLOv3-head，因为是anchor-base方法，因此分类、回归分支没有改变。
 
 
-## Yolov4框架原理
+## YOLOV4框架原理
 
 Yolov4框架主要从以下几个方面展开：目标检测`通用检测框架`，`CSPDarknet53`，`SPP结构`，`PAN结构`和`Yolov3`。
 
@@ -54,7 +54,7 @@ Yolov4的网络结构图（来源：https://cloud.tencent.com/developer/article/
 
 ![image](https://user-images.githubusercontent.com/27406337/130032435-26ae1571-dc14-4aac-9c04-6e366a4129bf.png)
 
-Yolov4介绍两种训练推理的套路：
+YOLOV4介绍两种训练推理的套路：
 
 1. **Bag of freebies**：在训练上增加一些策略，达到更高的精度并且在测试的时候不会增加额外的时间策略，如图像增强，网络正则化，类别不平衡的处理方法。我的理解是提高检测速度。
 
@@ -210,7 +210,7 @@ Yolov4对Darknet53进行改进，借鉴CSPNet(Cross Stage Partial Networks:跨�
   ![image](https://user-images.githubusercontent.com/27406337/130165726-e09bc6a1-df33-4588-8a9e-895ec51b8667.png)
 
 
-### Yolov4实验
+### YOLOv4实验
 
   ![image](https://user-images.githubusercontent.com/27406337/130165934-61594e35-7ba8-41c8-a367-e6f69d0541c3.png)
 
@@ -220,63 +220,7 @@ Yolov4对Darknet53进行改进，借鉴CSPNet(Cross Stage Partial Networks:跨�
   
   ![image](https://user-images.githubusercontent.com/27406337/130165986-d733ff7f-243a-40c3-806f-dbb97ac52561.png)
 
-
-## 目标检测评价指标
-
-可参考以下仓库：https://github.com/rafaelpadilla/Object-Detection-Metrics
-
-### 准确率（Accuracy）
-
-  正确分类的样本数除以样本总数，即 accuracy=正确预测的正反例数
-
-### 错误率（Error rate）
-
-  错误率与正确率相反，描述被分类器错分的比例，即：
-    
-  错误率 = 1-准确率
-
-### 混淆矩阵（Confusion Matrix）
-
-  混淆矩阵又被称为错误矩阵，在每个类别下，模型预测错误的结果数量以及错误预测类别和正确预测的数量都在这一矩阵下面显示出来。
-    
-  ![image](https://user-images.githubusercontent.com/27406337/130168328-e89ee068-6726-4626-a952-c07b051c374a.png)
-
-### 召回率（Recall）
-    
-    查全率，预测为正例的样本中正确的数量除以真正的Positive的数量，即Recall = TP/(TP+FN) = TP/P
-
-### 精确率（Precision）
-
-  查准率，被分为正例的示例中实际为正例的比例，即：Precision = TP/(TP+FP)
-    
-  ![image](https://user-images.githubusercontent.com/27406337/130168701-b8da8275-5046-413e-b462-1fc63310be08.png)
-
-### PR曲线
-
-  选取不同阈值时对应的精度和召回。总体趋势，精度越高，召回越低，当召回达到1时，对应概率分数最低的正样本。
-    
-  ![image](https://user-images.githubusercontent.com/27406337/130168796-682d5e7a-f525-4024-bdba-de80f7721f58.png)
-
-### 平均精度（Average-Precision AP）
-
-  P-R曲线围起来的面积
-
-### F指标（F measure）
-
-  ![image](https://user-images.githubusercontent.com/27406337/130169188-bbe0aa90-d67a-4fcf-ae41-e2aa45eb7955.png)
-
-
-### ROC曲线
-    
-  True Positive Rate ( TPR ) = TP / [ TP + FN] ，TPR代表能将正例分对的概率
-    
-  False Positive Rate( FPR ) = FP / [ FP + TN] ，FPR代表将负例错分为正例的概率
-   
-  ![image](https://user-images.githubusercontent.com/27406337/130169395-b392bdb6-9b46-4409-a266-f1c6a014acca.png)
-    
-  AUC则是ROC曲线围住的面积。
-
-## Yolov4 Implement by TF2
+## YOLOV4 Implement by TF2
 
 文件结构：
 
@@ -361,12 +305,71 @@ python get_map.py
 
 ```
 
+## YOLOX
+
+TODO
+
+## 目标检测评价指标
+
+可参考以下仓库：https://github.com/rafaelpadilla/Object-Detection-Metrics
+
+### 准确率（Accuracy）
+
+  正确分类的样本数除以样本总数，即 accuracy=正确预测的正反例数
+
+### 错误率（Error rate）
+
+  错误率与正确率相反，描述被分类器错分的比例，即：
+    
+  错误率 = 1-准确率
+
+### 混淆矩阵（Confusion Matrix）
+
+  混淆矩阵又被称为错误矩阵，在每个类别下，模型预测错误的结果数量以及错误预测类别和正确预测的数量都在这一矩阵下面显示出来。
+    
+  ![image](https://user-images.githubusercontent.com/27406337/130168328-e89ee068-6726-4626-a952-c07b051c374a.png)
+
+### 召回率（Recall）
+    
+    查全率，预测为正例的样本中正确的数量除以真正的Positive的数量，即Recall = TP/(TP+FN) = TP/P
+
+### 精确率（Precision）
+
+  查准率，被分为正例的示例中实际为正例的比例，即：Precision = TP/(TP+FP)
+    
+  ![image](https://user-images.githubusercontent.com/27406337/130168701-b8da8275-5046-413e-b462-1fc63310be08.png)
+
+### PR曲线
+
+  选取不同阈值时对应的精度和召回。总体趋势，精度越高，召回越低，当召回达到1时，对应概率分数最低的正样本。
+    
+  ![image](https://user-images.githubusercontent.com/27406337/130168796-682d5e7a-f525-4024-bdba-de80f7721f58.png)
+
+### 平均精度（Average-Precision AP）
+
+  P-R曲线围起来的面积
+
+### F指标（F measure）
+
+  ![image](https://user-images.githubusercontent.com/27406337/130169188-bbe0aa90-d67a-4fcf-ae41-e2aa45eb7955.png)
+
+
+### ROC曲线
+    
+  True Positive Rate ( TPR ) = TP / [ TP + FN] ，TPR代表能将正例分对的概率
+    
+  False Positive Rate( FPR ) = FP / [ FP + TN] ，FPR代表将负例错分为正例的概率
+   
+  ![image](https://user-images.githubusercontent.com/27406337/130169395-b392bdb6-9b46-4409-a266-f1c6a014acca.png)
+    
+  AUC则是ROC曲线围住的面积。
+
 
 ## 参考
 
-[yolov4代码实现](https://github.com/AlexeyAB/darknet)
+[YOLOV4代码实现](https://github.com/AlexeyAB/darknet)
 
-[yolov4论文](https://arxiv.org/pdf/2004.10934.pdf)
+[YOLOV4论文](https://arxiv.org/pdf/2004.10934.pdf)
 
 [Object-Detection-Metrics](https://github.com/rafaelpadilla/Object-Detection-Metrics)
 
@@ -374,7 +377,11 @@ python get_map.py
 
 [mAP计算代码](https://github.com/Cartucho/mAP)
 
-[Yolov3-tf2](https://github.com/zzh8829/yolov3-tf2)
+[YOLOV3-tf2](https://github.com/zzh8829/yolov3-tf2)
+
+[YOLOX Code](https://github.com/Megvii-BaseDetection/YOLOX)
+
+[YOLOX Paper](https://arxiv.org/abs/2107.08430)
 
 
 
