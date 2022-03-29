@@ -210,6 +210,9 @@ if __name__=='__main__':
                     epochs              = Freeze_Epoch,
                     initial_epoch       = UnFreeze_Epoch,
                     callbacks           = callbacks)
+        
+        # 以Tensorflow格式保存模型
+        model.save('./model/village_yolox', save_format='tf2')
 
 
 
