@@ -25,18 +25,18 @@ def get_yolo_loss(input_shape, num_layers, num_classes):
         #            [batch_size, 6400, num_classes + 5]]
         #-----------------------------------------------#
         for i in range(num_layers):
-            output          = y_pred[i]
+            output = y_pred[i]
             #-----------------------------------------------#
             #   stride 一个特征点对应原始像素点的数量
             #-----------------------------------------------#
-            grid_shape      = tf.shape(output)[1:3]
-            stride          = input_shape[0] / tf.cast(grid_shape[0], K.dtype(output))
+            grid_shape = tf.shape(output)[1:3]
+            stride  = input_shape[0] / tf.cast(grid_shape[0], K.dtype(output))
 
             #-----------------------------------------------#
             #   根据特征层的高和宽，获得网格点坐标
             #-----------------------------------------------#
             grid_x, grid_y  = tf.meshgrid(tf.range(grid_shape[1]), tf.range(grid_shape[0]))
-            grid            = tf.cast(tf.reshape(tf.stack((grid_x, grid_y), 2), (1, -1, 2)), K.dtype(output))
+            grid = tf.cast(tf.reshape(tf.stack((grid_x, grid_y), 2), (1, -1, 2)), K.dtype(output))
             
             #-----------------------------------------------#
             #   进行解码
@@ -134,16 +134,10 @@ def get_assignments(gt_bboxes_per_image, gt_classes, bboxes_preds_per_image, obj
     pair_wise_ious      = bboxes_iou(gt_bboxes_per_image, bboxes_preds_per_image)
     pair_wise_ious_loss = -tf.math.log(pair_wise_ious + 1e-8)
     gt_cls_per_image    = tf.tile(tf.expand_dims(tf.one_hot(tf.cast(gt_classes, tf.int32), num_classes), 1), (1, num_in_boxes_anchor, 1))
-    cls_preds_          = K.sigmoid(tf.tile(tf.expand_dims(cls_preds_, 0), (num_gt, 1, 1))) *\
+    cls_preds_   = K.sigmoid(tf.tile(tf.expand_dims(cls_preds_, 0), (num_gt, 1, 1))) *\
                           K.sigmoid(tf.tile(tf.expand_dims(obj_preds_, 0), (num_gt, 1, 1)))
 
     pair_wise_cls_loss  = tf.reduce_sum(K.binary_crossentropy(gt_cls_per_image, tf.sqrt(cls_preds_)), -1)
-
-    #-------------------------------------------------------#
-    #   种类比较接近的情况瞎，交叉熵较低
-    #   真实框和预测框重合度较高的时候，cost较低
-    #   这个特征点是要有对应的真实框的，cost才会低
-    #-------------------------------------------------------#
     cost = pair_wise_cls_loss + 3.0 * pair_wise_ious_loss + 100000.0 * tf.cast((~is_in_boxes_and_center), K.dtype(bboxes_preds_per_image))
 
     gt_matched_classes, fg_mask, pred_ious_this_matching, matched_gt_inds, num_fg = dynamic_k_matching(cost, pair_wise_ious, fg_mask, gt_classes, num_gt)
@@ -151,8 +145,8 @@ def get_assignments(gt_bboxes_per_image, gt_classes, bboxes_preds_per_image, obj
 
 def get_in_boxes_info(gt_bboxes_per_image, x_shifts, y_shifts, expanded_strides, num_gt, total_num_anchors, center_radius = 2.5):
     expanded_strides_per_image  = expanded_strides[0]
-    x_centers_per_image         = tf.tile(tf.expand_dims(((x_shifts[0] + 0.5) * expanded_strides_per_image), 0), [num_gt, 1])
-    y_centers_per_image         = tf.tile(tf.expand_dims(((y_shifts[0] + 0.5) * expanded_strides_per_image), 0), [num_gt, 1])
+    x_centers_per_image = tf.tile(tf.expand_dims(((x_shifts[0] + 0.5) * expanded_strides_per_image), 0), [num_gt, 1])
+    y_centers_per_image = tf.tile(tf.expand_dims(((y_shifts[0] + 0.5) * expanded_strides_per_image), 0), [num_gt, 1])
 
     gt_bboxes_per_image_l = tf.tile(tf.expand_dims((gt_bboxes_per_image[:, 0] - 0.5 * gt_bboxes_per_image[:, 2]), 1), [1, total_num_anchors])
     gt_bboxes_per_image_r = tf.tile(tf.expand_dims((gt_bboxes_per_image[:, 0] + 0.5 * gt_bboxes_per_image[:, 2]), 1), [1, total_num_anchors])
@@ -166,7 +160,7 @@ def get_in_boxes_info(gt_bboxes_per_image, x_shifts, y_shifts, expanded_strides,
     b_b = gt_bboxes_per_image_b - y_centers_per_image
     bbox_deltas = tf.stack([b_l, b_t, b_r, b_b], 2)
 
-    is_in_boxes     = tf.reduce_min(bbox_deltas, axis = -1) > 0.0
+    is_in_boxes = tf.reduce_min(bbox_deltas, axis = -1) > 0.0
     is_in_boxes_all = tf.reduce_sum(tf.cast(is_in_boxes, K.dtype(gt_bboxes_per_image)), axis = 0) > 0.0
 
     gt_bboxes_per_image_l = tf.tile(tf.expand_dims(gt_bboxes_per_image[:, 0], 1), [1, total_num_anchors]) - center_radius * tf.expand_dims(expanded_strides_per_image, 0)
@@ -178,9 +172,9 @@ def get_in_boxes_info(gt_bboxes_per_image, x_shifts, y_shifts, expanded_strides,
     c_r = gt_bboxes_per_image_r - x_centers_per_image
     c_t = y_centers_per_image - gt_bboxes_per_image_t
     c_b = gt_bboxes_per_image_b - y_centers_per_image
-    center_deltas       = tf.stack([c_l, c_t, c_r, c_b], 2)
-    is_in_centers       = tf.reduce_min(center_deltas, axis = -1) > 0.0
-    is_in_centers_all   = tf.reduce_sum(tf.cast(is_in_centers, K.dtype(gt_bboxes_per_image)), axis = 0) > 0.0
+    center_deltas = tf.stack([c_l, c_t, c_r, c_b], 2)
+    is_in_centers = tf.reduce_min(center_deltas, axis = -1) > 0.0
+    is_in_centers_all = tf.reduce_sum(tf.cast(is_in_centers, K.dtype(gt_bboxes_per_image)), axis = 0) > 0.0
     fg_mask = tf.cast(is_in_boxes_all | is_in_centers_all, tf.bool)
     
     is_in_boxes_and_center  = tf.boolean_mask(is_in_boxes, fg_mask, axis = 1) & tf.boolean_mask(is_in_centers, fg_mask, axis = 1)
@@ -188,26 +182,26 @@ def get_in_boxes_info(gt_bboxes_per_image, x_shifts, y_shifts, expanded_strides,
     return fg_mask, is_in_boxes_and_center
 
 def bboxes_iou(b1, b2):
-    b1              = K.expand_dims(b1, -2)
-    b1_xy           = b1[..., :2]
-    b1_wh           = b1[..., 2:4]
-    b1_wh_half      = b1_wh/2.
-    b1_mins         = b1_xy - b1_wh_half
-    b1_maxes        = b1_xy + b1_wh_half
+    b1 = K.expand_dims(b1, -2)
+    b1_xy = b1[..., :2]
+    b1_wh = b1[..., 2:4]
+    b1_wh_half = b1_wh/2.
+    b1_mins = b1_xy - b1_wh_half
+    b1_maxes = b1_xy + b1_wh_half
 
-    b2              = K.expand_dims(b2, 0)
-    b2_xy           = b2[..., :2]
-    b2_wh           = b2[..., 2:4]
-    b2_wh_half      = b2_wh/2.
-    b2_mins         = b2_xy - b2_wh_half
-    b2_maxes        = b2_xy + b2_wh_half
+    b2 = K.expand_dims(b2, 0)
+    b2_xy = b2[..., :2]
+    b2_wh = b2[..., 2:4]
+    b2_wh_half = b2_wh/2.
+    b2_mins = b2_xy - b2_wh_half
+    b2_maxes = b2_xy + b2_wh_half
     intersect_mins  = K.maximum(b1_mins, b2_mins)
     intersect_maxes = K.minimum(b1_maxes, b2_maxes)
     intersect_wh    = K.maximum(intersect_maxes - intersect_mins, 0.)
     intersect_area  = intersect_wh[..., 0] * intersect_wh[..., 1]
-    b1_area         = b1_wh[..., 0] * b1_wh[..., 1]
-    b2_area         = b2_wh[..., 0] * b2_wh[..., 1]
-    iou             = intersect_area / (b1_area + b2_area - intersect_area)
+    b1_area = b1_wh[..., 0] * b1_wh[..., 1]
+    b2_area = b2_wh[..., 0] * b2_wh[..., 1]
+    iou = intersect_area / (b1_area + b2_area - intersect_area)
     return iou
 
 def dynamic_k_matching(cost, pair_wise_ious, fg_mask, gt_classes, num_gt):
