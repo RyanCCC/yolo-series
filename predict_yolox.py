@@ -127,7 +127,7 @@ def prediction(model, image_data, input_image_shape):
     out_boxes, out_scores, out_classes = model([image_data, input_image_shape], training=False)
     return out_boxes, out_scores, out_classes
 
-def detect(image,input_shape,model_path, class_path, confidence=0.01, nms_iou=0.001,max_boxes=100, letterbox_image = True,  crop=False):
+def detect(image,input_shape,model_path, class_path, confidence=0.5, nms_iou=0.001,max_boxes=100, letterbox_image = True,  crop=False):
     class_names = get_classes(class_path)
     num_classes = len(class_names)
     # 设置颜色
