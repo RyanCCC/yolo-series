@@ -24,7 +24,7 @@ if __name__ == "__main__":
     video_fps       = sys_config.video_fps
 
     if mode == "predict":
-        img = sys_config.image
+        img =  './result/20210817120311.jpg'
         image = Image.open(img)
         r_image = yolo.detect_image(image)
         r_image.show()

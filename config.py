@@ -53,7 +53,6 @@ max_boxes=100
 letterbox_image=False
 onnx=False
 mode = "predict"
-image = './result/20210817120311.jpg'
 test_txt_file = './villages/test.txt'
 
 video_path      = 0

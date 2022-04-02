@@ -11,8 +11,6 @@ from utils.dataloader_yolox import cvtColor, get_classes, preprocess_input
 import tensorflow.keras.backend as K
 import gc
 
-from utils.utils import letterbox_image
-
 def resize_image(image, size, letterbox_image):
     iw, ih  = image.size
     w, h    = size
@@ -190,11 +188,13 @@ def detect(image,input_shape,model_path, class_path, confidence=0.5, nms_iou=0.0
 
 if __name__=='__main__':
     classes_path = config.classes_path
+    image = './result/20210803173137.jpg'
     input_shape = [640,640]
     phi = 's'
     letterbox_image = True
     model_path = './model/village_yolox.h5'
-    image = Image.open(config.image)
+    image = Image.open(image)
+    image.show()
     img = detect(image, input_shape, model_path, classes_path)
     img.show()
 

@@ -9,10 +9,10 @@ import tensorflow.keras.backend as K
 def get_yolo_loss(input_shape, num_layers, num_classes):
     def yolo_loss(args):
         #-----------------------------------------------#
-        #   labels 标签结果[batch_size, num_gt, 4 + 1]
-        #   y_pred 预测结果[[batch_size, 20, 20, num_classes + 5]
-        #                   [batch_size, 40, 40, num_classes + 5]
-        #                   [batch_size, 80, 80, num_classes + 5]]
+        #   ground true:[batch_size, num_gt, 4 + 1]
+        #   y_pred :[[batch_size, 20, 20, num_classes + 5]
+        #            [batch_size, 40, 40, num_classes + 5]
+        #            [batch_size, 80, 80, num_classes + 5]]
         #-----------------------------------------------#
         labels, y_pred = args[-1], args[:-1]
         x_shifts            = []
@@ -59,11 +59,6 @@ def get_yolo_loss(input_shape, num_layers, num_classes):
 
 
 def get_losses(x_shifts, y_shifts, expanded_strides, outputs, labels, num_classes):
-    #-----------------------------------------------#
-    #   [batch, n_anchors_all, 4] 预测框的坐标
-    #   [batch, n_anchors_all, 1] 特征点是否有对应的物体
-    #   [batch, n_anchors_all, n_cls] 特征点对应物体的种类
-    #-----------------------------------------------#
     bbox_preds  = outputs[:, :, :4]  
     obj_preds   = outputs[:, :, 4:5]
     cls_preds   = outputs[:, :, 5:]  
