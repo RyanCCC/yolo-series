@@ -19,28 +19,18 @@ def get_yolo_loss(input_shape, num_layers, num_classes):
         y_shifts            = []
         expanded_strides    = []
         outputs             = []
-        #-----------------------------------------------#
-        # outputs   [[batch_size, 400, num_classes + 5]
-        #            [batch_size, 1600, num_classes + 5]
-        #            [batch_size, 6400, num_classes + 5]]
-        #-----------------------------------------------#
+        '''
+        outputs   [[batch_size, 400, num_classes + 5]
+            [batch_size, 1600, num_classes + 5]
+            [batch_size, 6400, num_classes + 5]]
+        '''
         for i in range(num_layers):
             output = y_pred[i]
-            #-----------------------------------------------#
-            #   stride 一个特征点对应原始像素点的数量
-            #-----------------------------------------------#
             grid_shape = tf.shape(output)[1:3]
             stride  = input_shape[0] / tf.cast(grid_shape[0], K.dtype(output))
-
-            #-----------------------------------------------#
-            #   根据特征层的高和宽，获得网格点坐标
-            #-----------------------------------------------#
             grid_x, grid_y  = tf.meshgrid(tf.range(grid_shape[1]), tf.range(grid_shape[0]))
             grid = tf.cast(tf.reshape(tf.stack((grid_x, grid_y), 2), (1, -1, 2)), K.dtype(output))
             
-            #-----------------------------------------------#
-            #   进行解码
-            #-----------------------------------------------#
             output          = tf.reshape(output, [tf.shape(y_pred[i])[0], grid_shape[0] * grid_shape[1], -1])
             output_xy       = (output[..., :2] + grid) * stride
             output_wh       = tf.exp(output[..., 2:4]) * stride
@@ -72,13 +62,13 @@ def get_losses(x_shifts, y_shifts, expanded_strides, outputs, labels, num_classe
     def loop_body(b, num_fg, loss_iou, loss_obj, loss_cls):
         # num_gt 单张图片的真实框的数量
         num_gt  = tf.cast(nlabel[b], tf.int32)
-        #-----------------------------------------------#
-        #   gt_bboxes_per_image     [num_gt, 4]
-        #   gt_classes              [num_gt]
-        #   bboxes_preds_per_image  [n_anchors_all, 4]
-        #   obj_preds_per_image     [n_anchors_all, 1]
-        #   cls_preds_per_image     [n_anchors_all, num_classes]
-        #-----------------------------------------------#
+        '''
+        gt_bboxes_per_image     [num_gt, 4]
+        gt_classes              [num_gt]
+        bboxes_preds_per_image  [n_anchors_all, 4]
+        obj_preds_per_image     [n_anchors_all, 1]
+        cls_preds_per_image     [n_anchors_all, num_classes]
+        '''
         gt_bboxes_per_image     = labels[b][:num_gt, :4]
         gt_classes              = labels[b][:num_gt,  4]
         bboxes_preds_per_image  = bbox_preds[b]
@@ -122,10 +112,7 @@ def get_assignments(gt_bboxes_per_image, gt_classes, bboxes_preds_per_image, obj
     cls_preds_              = tf.boolean_mask(cls_preds_per_image, fg_mask, axis = 0)
     num_in_boxes_anchor     = tf.shape(bboxes_preds_per_image)[0]
 
-    #-------------------------------------------------------#
-    #   计算真实框和预测框的重合程度
-    #   pair_wise_ious      [num_gt, fg_mask]
-    #-------------------------------------------------------#
+    # 计算IoU
     pair_wise_ious      = bboxes_iou(gt_bboxes_per_image, bboxes_preds_per_image)
     pair_wise_ious_loss = -tf.math.log(pair_wise_ious + 1e-8)
     gt_cls_per_image    = tf.tile(tf.expand_dims(tf.one_hot(tf.cast(gt_classes, tf.int32), num_classes), 1), (1, num_in_boxes_anchor, 1))
