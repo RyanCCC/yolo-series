@@ -8,7 +8,7 @@ from tensorflow.keras.layers import (BatchNormalization, Concatenate, Conv2D,
 from tensorflow.keras.models import Model
 from utils.utils import compose
 
-from nets.attention import cbam_block, eca_block, se_block
+from Attention.attention import cbam_block, eca_block, se_block
 from nets.CSPdarknet53_tiny import darknet_body
 
 attention_block = [se_block, cbam_block, eca_block]

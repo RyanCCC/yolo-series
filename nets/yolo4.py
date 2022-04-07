@@ -13,7 +13,7 @@ from tensorflow.keras.regularizers import l2
 from utils.utils import compose
 
 from nets.CSPdarknet53 import darknet_body
-from nets.attention import cbam_block, eca_block, se_block
+from Attention.attention import cbam_block, eca_block, se_block
 import config
 
 attention_block = [se_block, cbam_block, eca_block]
