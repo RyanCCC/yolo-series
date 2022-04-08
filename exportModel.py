@@ -3,6 +3,7 @@
 '''
 import numpy as np
 import tensorflow as tf
+from tensorflow.keras.layers import Input
 import os
 import config as sys_config
 if not sys_config.ISTINY:
