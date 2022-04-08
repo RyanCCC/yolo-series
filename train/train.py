@@ -9,117 +9,14 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
 from tqdm import tqdm
 
-from nets.loss_tiny import yolo_loss
-from nets.yolo4_tiny import yolo_body
+from nets.loss import yolo_loss
+from nets.yolo4 import yolo_body
 from utils.utils import (ModelCheckpoint,
-                         WarmUpCosineDecayScheduler, get_random_data,
-                         get_random_data_with_Mosaic)
+                         WarmUpCosineDecayScheduler)
 import config as sys_config
-
-
-# 设置GPU自增长
-gpus = tf.config.experimental.list_physical_devices('GPU')
-for gpu in gpus:
-    tf.config.experimental.set_memory_growth(gpu, True)
-
-
-def get_classes(classes_path):
-    '''loads the classes'''
-    with open(classes_path) as f:
-        class_names = f.readlines()
-    class_names = [c.strip() for c in class_names]
-    return class_names
-
-def get_anchors(anchors_path):
-    '''loads the anchors from a file'''
-    with open(anchors_path) as f:
-        anchors = f.readline()
-    anchors = [float(x) for x in anchors.split(',')]
-    return np.array(anchors).reshape(-1, 2)
-
-def data_generator(annotation_lines, batch_size, input_shape, anchors, num_classes, mosaic=False, random=True, eager=True):
-    n = len(annotation_lines)
-    i = 0
-    flag = True
-    while True:
-        image_data = []
-        box_data = []
-        for b in range(batch_size):
-            if i==0:
-                np.random.shuffle(annotation_lines)
-            if mosaic:
-                if flag and (i+4) < n:
-                    image, box = get_random_data_with_Mosaic(annotation_lines[i:i+4], input_shape)
-                    i = (i+4) % n
-                else:
-                    image, box = get_random_data(annotation_lines[i], input_shape, random=random)
-                    i = (i+1) % n
-                flag = bool(1-flag)
-            else:
-                image, box = get_random_data(annotation_lines[i], input_shape, random=random)
-                i = (i+1) % n
-            image_data.append(image)
-            box_data.append(box)
-        image_data = np.array(image_data)
-        box_data = np.array(box_data)
-        y_true = preprocess_true_boxes(box_data, input_shape, anchors, num_classes)
-        if eager:
-            yield image_data, y_true[0], y_true[1]
-        else:
-            yield [image_data, *y_true], np.zeros(batch_size)
-
-def preprocess_true_boxes(true_boxes, input_shape, anchors, num_classes):
-    assert (true_boxes[..., 4]<num_classes).all(), 'class id must be less than num_classes'
-    num_layers = len(anchors)//3
-    anchor_mask = [[6,7,8], [3,4,5], [0,1,2]] if num_layers==3 else [[3,4,5], [1,2,3]]
-
-    true_boxes = np.array(true_boxes, dtype='float32')
-    input_shape = np.array(input_shape, dtype='int32')
-    boxes_xy = (true_boxes[..., 0:2] + true_boxes[..., 2:4]) // 2
-    boxes_wh = true_boxes[..., 2:4] - true_boxes[..., 0:2]
-    true_boxes[..., 0:2] = boxes_xy/input_shape[::-1]
-    true_boxes[..., 2:4] = boxes_wh/input_shape[::-1]
-
-    # m为图片数量，grid_shapes为网格的shape
-    m = true_boxes.shape[0]
-    grid_shapes = [input_shape//{0:32, 1:16, 2:8}[l] for l in range(num_layers)]
-    y_true = [np.zeros((m,grid_shapes[l][0],grid_shapes[l][1],len(anchor_mask[l]),5+num_classes),
-        dtype='float32') for l in range(num_layers)]
-    anchors = np.expand_dims(anchors, 0)
-    anchor_maxes = anchors / 2.
-    anchor_mins = -anchor_maxes
-    valid_mask = boxes_wh[..., 0]>0
-
-    for b in range(m):
-        # 对每一张图进行处理
-        wh = boxes_wh[b, valid_mask[b]]
-        if len(wh)==0: continue
-        wh = np.expand_dims(wh, -2)
-        box_maxes = wh / 2.
-        box_mins = -box_maxes
-        intersect_mins = np.maximum(box_mins, anchor_mins)
-        intersect_maxes = np.minimum(box_maxes, anchor_maxes)
-        intersect_wh = np.maximum(intersect_maxes - intersect_mins, 0.)
-        intersect_area = intersect_wh[..., 0] * intersect_wh[..., 1]
-
-        box_area = wh[..., 0] * wh[..., 1]
-        anchor_area = anchors[..., 0] * anchors[..., 1]
-
-        iou = intersect_area / (box_area + anchor_area - intersect_area)
-        best_anchor = np.argmax(iou, axis=-1)
-
-        for t, n in enumerate(best_anchor):
-            for l in range(num_layers):
-                if n in anchor_mask[l]:
-                    i = np.floor(true_boxes[b,t,0] * grid_shapes[l][1]).astype('int32')
-                    j = np.floor(true_boxes[b,t,1] * grid_shapes[l][0]).astype('int32')
-                    k = anchor_mask[l].index(n)
-                    c = true_boxes[b, t, 4].astype('int32')
-                    y_true[l][b, j, i, k, 0:4] = true_boxes[b, t, 0:4]
-                    y_true[l][b, j, i, k, 4] = 1
-                    y_true[l][b, j, i, k, 5+c] = 1
-
-    return y_true
+from utils.dataloader import data_generator, get_classes, get_anchors, preprocess_true_boxes_tf, transform_targets
+from utils.tfrecord_create import load_tfrecord_dataset, transform_dataset
+from tqdm import tqdm
 
 # 防止bug
 def get_train_step_fn():
@@ -127,8 +24,8 @@ def get_train_step_fn():
     def train_step(imgs, yolo_loss, targets, net, optimizer, regularization, normalize):
         with tf.GradientTape() as tape:
             # 计算loss
-            P5_output, P4_output = net(imgs, training=True)
-            args = [P5_output, P4_output] + targets
+            P5_output, P4_output, P3_output = net(imgs, training=True)
+            args = [P5_output, P4_output, P3_output] + targets
             loss_value = yolo_loss(args,anchors,num_classes,label_smoothing=label_smoothing,normalize=normalize)
             if regularization:
                 # 加入正则化损失
@@ -147,8 +44,8 @@ def fit_one_epoch(net, yolo_loss, optimizer, epoch, epoch_size, epoch_size_val, 
         for iteration, batch in enumerate(gen):
             if iteration>=epoch_size:
                 break
-            images, target0, target1 = batch[0], batch[1], batch[2], batch[3]
-            targets = [target0, target1]
+            images, target0, target1, target2 = batch[0], batch[1], batch[2], batch[3]
+            targets = [target0, target1, target2]
             targets = [tf.convert_to_tensor(target) for target in targets]
             loss_value = train_step(images, yolo_loss, targets, net, optimizer, regularization, normalize)
             loss = loss + loss_value
@@ -163,12 +60,12 @@ def fit_one_epoch(net, yolo_loss, optimizer, epoch, epoch_size, epoch_size_val, 
             if iteration>=epoch_size_val:
                 break
             # 计算验证集loss
-            images, target0, target1 = batch[0], batch[1], batch[2]
-            targets = [target0, target1]
+            images, target0, target1, target2 = batch[0], batch[1], batch[2], batch[3]
+            targets = [target0, target1, target2]
             targets = [tf.convert_to_tensor(target) for target in targets]
 
-            P5_output, P4_output = net(images)
-            args = [P5_output, P4_output] + targets
+            P5_output, P4_output, P3_output = net(images)
+            args = [P5_output, P4_output, P3_output] + targets
             loss_value = yolo_loss(args,anchors,num_classes,label_smoothing=label_smoothing, normalize=normalize)
             if regularization:
                 # 加入正则化损失
@@ -178,6 +75,8 @@ def fit_one_epoch(net, yolo_loss, optimizer, epoch, epoch_size, epoch_size_val, 
 
             pbar.set_postfix(**{'total_loss': float(val_loss)/ (iteration + 1)})
             pbar.update(1)
+
+    logs = {'loss': loss.numpy()/(epoch_size+1), 'val_loss': val_loss.numpy()/(epoch_size_val+1)}
     print('Finish Validation')
     print('Epoch:'+ str(epoch+1) + '/' + str(Epoch))
     print('Total Loss: %.4f || Val Loss: %.4f ' % (loss/(epoch_size+1),val_loss/(epoch_size_val+1)))
@@ -186,14 +85,17 @@ def fit_one_epoch(net, yolo_loss, optimizer, epoch, epoch_size, epoch_size_val, 
 gpus = tf.config.experimental.list_physical_devices(device_type='GPU')
 for gpu in gpus:
     tf.config.experimental.set_memory_growth(gpu, True)
-if __name__ == "__main__":
+
+
+def main():
     train_txt = sys_config.train_txt
     log_dir = sys_config.logdir
     classes_path = sys_config.classes_path
-    anchors_path = sys_config.anchors_tiny_path
-    weights_path = sys_config.pretrain_weight_tiny
+    anchors_path = sys_config.anchors_path
+    weights_path = sys_config.pretrain_weight
     save_model_name = sys_config.save_model_name
     input_shape = (sys_config.imagesize,sys_config.imagesize)
+    anchor_mask = sys_config.ANCHOR_MASK
     eager = sys_config.eager
     normalize = sys_config.normalize
 
@@ -210,20 +112,25 @@ if __name__ == "__main__":
 
     image_input = Input(shape=(None, None, 3))
     h, w = input_shape
-    print('Create YOLOv4-Tiny model with {} anchors and {} classes.'.format(num_anchors, num_classes))
-    model_body = yolo_body(image_input, num_anchors//2, num_classes, sys_config.ATTENTION)
-    
-    print('Load weights {}.'.format(weights_path))
+    model_body = yolo_body(image_input, num_anchors//3, num_classes, sys_config.ATTENTION)
+    print('加载权重')
     model_body.load_weights(weights_path, by_name=True, skip_mismatch=True)
     
-    y_true = [Input(shape=(h//{0:32, 1:16}[l], w//{0:32, 1:16}[l], num_anchors//2, num_classes+5)) for l in range(2)]
+
+    # 将模型的输出作为loss
+    y_true = [Input(shape=(h//{0:32, 1:16, 2:8}[l], w//{0:32, 1:16, 2:8}[l], \
+        num_anchors//3, num_classes+5)) for l in range(3)]
     loss_input = [*model_body.output, *y_true]
     model_loss = Lambda(yolo_loss, output_shape=(1,), name='yolo_loss',
-        arguments={'anchors': anchors, 'num_classes': num_classes, 'ignore_thresh': 0.5, 'label_smoothing': label_smoothing, 'normalize':normalize})(loss_input)
+        arguments={'anchors': anchors, 'num_classes': num_classes, 'ignore_thresh': 0.5, 'label_smoothing': label_smoothing})(loss_input)
+
     model = Model([model_body.input, *y_true], model_loss)
+
+
     logging = TensorBoard(log_dir=log_dir)
     checkpoint = ModelCheckpoint(log_dir+save_model_name, save_weights_only=True, save_best_only=True, period=1)
     early_stopping = EarlyStopping(min_delta=0, patience=10, verbose=1)
+
     val_split = 0.1
     with open(train_txt) as f:
         lines = f.readlines()
@@ -233,7 +140,7 @@ if __name__ == "__main__":
     num_val = int(len(lines)*val_split)
     num_train = len(lines) - num_val
     
-    freeze_layers = sys_config.freeze_layers_tiny
+    freeze_layers = sys_config.freeze_layers
     for i in range(freeze_layers): model_body.layers[i].trainable = False
     print('Freeze the first {} layers of total {} layers.'.format(freeze_layers, len(model_body.layers)))
 
@@ -249,11 +156,42 @@ if __name__ == "__main__":
         if epoch_size == 0 or epoch_size_val == 0:
             raise ValueError("数据集过小，无法进行训练，请扩充数据集。")
 
+
+        # # 加载训练集、验证集
+        # train_dataset = load_tfrecord_dataset('./train.tfrecord', classes_path, input_shape)
+        # # 对数据集进行打乱
+        # train_dataset = train_dataset.shuffle(buffer_size=512)
+        # # 设置batch size
+        # train_dataset = train_dataset.batch(batch_size)
+        # # 数据预处理
+        # # for x, y in tqdm(train_dataset):
+        # #     transform_dataset(x, input_shape),
+        # #     preprocess_true_boxes(y, input_shape, anchors, num_classes)
+        # train_dataset = train_dataset.map(lambda x, y:(
+        #     transform_dataset(x, input_shape),
+        #     preprocess_true_boxes_tf(y, input_shape, anchors, num_classes)
+        # ))
+        # # 管道
+        # train_dataset = train_dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+
+        # # 加载训练集、验证集
+        # val_dataset = load_tfrecord_dataset('./validate.tfrecord', classes_path, input_shape)
+        # # 对数据集进行打乱
+        # val_dataset = val_dataset.shuffle(buffer_size=512)
+        # # 设置batch size
+        # val_dataset = val_dataset.batch(batch_size)
+        # # 数据预处理
+        # val_dataset = val_dataset.map(lambda x, y:(
+        #     transform_dataset(x, input_shape),
+        #     preprocess_true_boxes_tf(y, input_shape, anchors, num_classes)
+        # ))
+        
+
         if eager:
             gen     = tf.data.Dataset.from_generator(partial(data_generator, annotation_lines = lines[:num_train], batch_size = batch_size,
-                input_shape = input_shape, anchors = anchors, num_classes = num_classes, mosaic=mosaic, random=True), (tf.float32, tf.float32, tf.float32))
+                input_shape = input_shape, anchors = anchors, num_classes = num_classes, mosaic=mosaic, random=True), (tf.float32, tf.float32, tf.float32, tf.float32))
             gen_val = tf.data.Dataset.from_generator(partial(data_generator, annotation_lines = lines[num_train:], batch_size = batch_size, 
-                input_shape = input_shape, anchors = anchors, num_classes = num_classes, mosaic=False, random=False), (tf.float32, tf.float32, tf.float32))
+                input_shape = input_shape, anchors = anchors, num_classes = num_classes, mosaic=False, random=False), (tf.float32, tf.float32, tf.float32, tf.float32))
 
             gen     = gen.shuffle(buffer_size=batch_size).prefetch(buffer_size=batch_size)
             gen_val = gen_val.shuffle(buffer_size=batch_size).prefetch(buffer_size=batch_size)
@@ -295,6 +233,7 @@ if __name__ == "__main__":
 
     for i in range(freeze_layers): model_body.layers[i].trainable = True
 
+    # Transfer Learning
     if True:
         Freeze_epoch        = sys_config.Freeze_epoch
         Epoch               = sys_config.epoch
@@ -309,9 +248,9 @@ if __name__ == "__main__":
 
         if eager:
             gen     = tf.data.Dataset.from_generator(partial(data_generator, annotation_lines = lines[:num_train], batch_size = batch_size,
-                input_shape = input_shape, anchors = anchors, num_classes = num_classes, mosaic=mosaic, random=True), (tf.float32, tf.float32, tf.float32))
+                input_shape = input_shape, anchors = anchors, num_classes = num_classes, mosaic=mosaic, random=True), (tf.float32, tf.float32, tf.float32, tf.float32))
             gen_val = tf.data.Dataset.from_generator(partial(data_generator, annotation_lines = lines[num_train:], batch_size = batch_size, 
-                input_shape = input_shape, anchors = anchors, num_classes = num_classes, mosaic=False, random=False), (tf.float32, tf.float32, tf.float32))
+                input_shape = input_shape, anchors = anchors, num_classes = num_classes, mosaic=False, random=False), (tf.float32, tf.float32, tf.float32, tf.float32))
 
             gen     = gen.shuffle(buffer_size=batch_size).prefetch(buffer_size=batch_size)
             gen_val = gen_val.shuffle(buffer_size=batch_size).prefetch(buffer_size=batch_size)
@@ -351,4 +290,9 @@ if __name__ == "__main__":
                     initial_epoch=Freeze_epoch,
                     callbacks=[logging, checkpoint, reduce_lr, early_stopping])
     
-    model.save('./model/village_tiny', save_format='tf')
+    
+
+        
+
+
+

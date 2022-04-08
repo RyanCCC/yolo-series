@@ -88,7 +88,7 @@ gpus = tf.config.experimental.list_physical_devices(device_type='GPU')
 for gpu in gpus:
     tf.config.experimental.set_memory_growth(gpu, True)
 
-if __name__=='__main__':
+def main():
     classes_path = config.classes_path
     pretrain_model_path = config.pretrain_weight
     input_shape = [640,640]
