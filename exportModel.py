@@ -3,15 +3,12 @@
 '''
 import numpy as np
 import tensorflow as tf
-from PIL import Image
-from nets.yolo import YOLO
-from tensorflow.keras.layers import Input, Lambda
 import os
 import config as sys_config
 if not sys_config.ISTINY:
-    from nets.yolo4 import yolo_body, yolo_eval, yolo_head,yolo_correct_boxes, yolo_boxes_and_scores
+    from nets.yolo4 import yolo_body
 else:
-    from nets.yolo4_tiny import yolo_body, yolo_eval, yolo_head, yolo_correct_boxes, yolo_boxes_and_scores
+    from nets.yolo4_tiny import yolo_body
 
 
 def get_class(classes_path):
