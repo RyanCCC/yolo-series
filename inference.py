@@ -241,7 +241,7 @@ def inference(image,model = model, letterbox_image=config.letterbox_image, score
 
 
 
-def FPS_Calculate(image_path, model = model, class_path = config.classes_path,anchors_path=config.anchors_path, interval = 100):
+def FPSTest(image_path, model = model, class_path = config.classes_path,anchors_path=config.anchors_path, interval = 100):
     # video_path = './result/test2.MOV'
     # capture=cv2.VideoCapture(video_path)
     # fps = 0.0
