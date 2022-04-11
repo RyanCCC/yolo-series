@@ -108,9 +108,6 @@ def yolo_correct_boxes(box_xy, box_wh, input_shape, image_shape):
 
 def yolo_head(feats, anchors, num_classes, input_shape, calc_loss=False):
     num_anchors = len(anchors)
-    #---------------------------------------------------#
-    #   [1, 1, 1, num_anchors, 2]
-    #---------------------------------------------------#
     feats = tf.convert_to_tensor(feats)
     anchors_tensor = K.reshape(K.constant(anchors), [1, 1, 1, num_anchors, 2])
 
@@ -240,14 +237,10 @@ def inference(image,model = model, letterbox_image=config.letterbox_image, score
             dr_txt_path = os.path.join(config.result, config.pr_folder_name, image_id+'.txt')
             with open(dr_txt_path, 'w') as f:
                 f.write("%s %s %s %s %s %s\n" % (predicted_class, str(score.numpy()), str(int(left)), str(int(top)), str(int(right)),str(int(bottom))))
-
-
     return image
 
 
 
-
-# TODO: FPS Test
 def FPS_Calculate(image_path, model = model, class_path = config.classes_path,anchors_path=config.anchors_path, interval = 100):
     # video_path = './result/test2.MOV'
     # capture=cv2.VideoCapture(video_path)
