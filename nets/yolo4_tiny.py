@@ -13,11 +13,6 @@ from nets.CSPdarknet53_tiny import darknet_body
 
 attention_block = [se_block, cbam_block, eca_block]
 
-#--------------------------------------------------#
-#   单次卷积DarknetConv2D
-#   如果步长为2则自己设定padding方式。
-#   测试中发现没有l2正则化效果更好，所以去掉了l2正则化
-#--------------------------------------------------#
 @wraps(Conv2D)
 def DarknetConv2D(*args, **kwargs):
     # darknet_conv_kwargs = {'kernel_regularizer': l2(5e-4)}
@@ -27,10 +22,7 @@ def DarknetConv2D(*args, **kwargs):
     return Conv2D(*args, **darknet_conv_kwargs)
 
 
-#---------------------------------------------------#
-#   卷积块
-#   DarknetConv2D + BatchNormalization + LeakyReLU
-#---------------------------------------------------#
+
 def DarknetConv2D_BN_Leaky(*args, **kwargs):
     no_bias_kwargs = {'use_bias': False}
     no_bias_kwargs.update(kwargs)
@@ -39,17 +31,10 @@ def DarknetConv2D_BN_Leaky(*args, **kwargs):
         BatchNormalization(),
         LeakyReLU(alpha=0.1))
 
-#---------------------------------------------------#
-#   特征层->最后的输出
-#---------------------------------------------------#
+
 def yolo_body(inputs, num_anchors, num_classes, phi=0):
     if phi >= 4:
         raise AssertionError("Phi must be less than or equal to 3 (0, 1, 2, 3).")
-    #---------------------------------------------------#
-    #   生成CSPdarknet53_tiny的主干模型
-    #   feat1的shape为26,26,256
-    #   feat2的shape为13,13,512
-    #---------------------------------------------------#
     feat1, feat2 = darknet_body(inputs)
     if 1 <= phi and phi <= 3:
         feat1 = attention_block[phi-1](feat1, name="feat1")
@@ -75,21 +60,11 @@ def yolo_body(inputs, num_anchors, num_classes, phi=0):
     
     return Model(inputs, [P5_output, P4_output])
     
-#---------------------------------------------------#
-#   将预测值的每个特征层调成真实值
-#---------------------------------------------------#
 def yolo_head(feats, anchors, num_classes, input_shape, calc_loss=False):
     num_anchors = len(anchors)
-    #---------------------------------------------------#
-    #   [1, 1, 1, num_anchors, 2]
-    #---------------------------------------------------#
     feats = tf.convert_to_tensor(feats)
     anchors_tensor = K.reshape(K.constant(anchors), [1, 1, 1, num_anchors, 2])
 
-    #---------------------------------------------------#
-    #   获得x，y的网格
-    #   (13, 13, 1, 2)
-    #---------------------------------------------------#
     grid_shape = K.shape(feats)[1:3]  # height, width
     grid_y = K.tile(K.reshape(K.arange(0, stop=grid_shape[0]), [-1, 1, 1, 1]),
                     [1, grid_shape[1], 1, 1])
@@ -98,41 +73,19 @@ def yolo_head(feats, anchors, num_classes, input_shape, calc_loss=False):
     grid = K.concatenate([grid_x, grid_y])
     grid = K.cast(grid, K.dtype(feats))
 
-    #---------------------------------------------------#
-    #   将预测结果调整成(batch_size,13,13,3,85)
-    #   85可拆分成4 + 1 + 80
-    #   4代表的是中心宽高的调整参数
-    #   1代表的是框的置信度
-    #   80代表的是种类的置信度
-    #---------------------------------------------------#
     feats = K.reshape(feats, [-1, grid_shape[0], grid_shape[1], num_anchors, num_classes + 5])
-
-    #---------------------------------------------------#
-    #   将预测值调成真实值
-    #   box_xy对应框的中心点
-    #   box_wh对应框的宽和高
-    #---------------------------------------------------#
     box_xy = (K.sigmoid(feats[..., :2]) + grid) / K.cast(grid_shape[...,::-1], K.dtype(feats))
     box_wh = K.exp(feats[..., 2:4]) * anchors_tensor / K.cast(input_shape[...,::-1], K.dtype(feats))
     box_confidence = K.sigmoid(feats[..., 4:5])
     box_class_probs = K.sigmoid(feats[..., 5:])
 
-    #---------------------------------------------------------------------#
-    #   在计算loss的时候返回grid, feats, box_xy, box_wh
-    #   在预测的时候返回box_xy, box_wh, box_confidence, box_class_probs
-    #---------------------------------------------------------------------#
     if calc_loss == True:
         return grid, feats, box_xy, box_wh
     return box_xy, box_wh, box_confidence, box_class_probs
 
 
-#---------------------------------------------------#
-#   对box进行调整，使其符合真实图片的样子
-#---------------------------------------------------#
+# 调整box
 def yolo_correct_boxes(box_xy, box_wh, input_shape, image_shape):
-    #-----------------------------------------------------------------#
-    #   把y轴放前面是因为方便预测框和图像的宽高进行相乘
-    #-----------------------------------------------------------------#
     box_yx = box_xy[..., ::-1]
     box_hw = box_wh[..., ::-1]
     
@@ -140,10 +93,6 @@ def yolo_correct_boxes(box_xy, box_wh, input_shape, image_shape):
     image_shape = K.cast(image_shape, K.dtype(box_yx))
 
     new_shape = K.round(image_shape * K.min(input_shape/image_shape))
-    #-----------------------------------------------------------------#
-    #   这里求出来的offset是图像有效区域相对于图像左上角的偏移情况
-    #   new_shape指的是宽高缩放情况
-    #-----------------------------------------------------------------#
     offset = (input_shape - new_shape) / 2. / input_shape
     scale = input_shape / new_shape
 
