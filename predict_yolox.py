@@ -96,7 +96,7 @@ def DecodeBox(outputs, num_classes, input_shape, max_boxes = 100, confidence=0.5
 
 
 
-def build_model(model_path,input_shape, class_names, confidence, nms_iou,max_boxes, letterbox_image, phi='s'):
+def build_model(model_path,input_shape, class_names, confidence=0.7, nms_iou=0.001,max_boxes=100, letterbox_image = True,  phi='s'):
     num_classes = len(class_names)
     yolo_model = yolo_body([None, None, 3], num_classes=num_classes, phi=phi)
     yolo_model.load_weights(model_path)
@@ -125,8 +125,8 @@ def prediction(model, image_data, input_image_shape):
     out_boxes, out_scores, out_classes = model([image_data, input_image_shape], training=False)
     return out_boxes, out_scores, out_classes
 
-def detect(image,input_shape,model_path, class_path, confidence=0.5, nms_iou=0.001,max_boxes=100, letterbox_image = True,  crop=False):
-    class_names = get_classes(class_path)
+def detect(image,input_shape,model,classes_path, crop=False, letterbox_image=True):
+    class_names = get_classes(classes_path)
     num_classes = len(class_names)
     # 设置颜色
     hsv_tuples = [(x / num_classes, 1., 1.) for x in range(num_classes)]
@@ -134,7 +134,7 @@ def detect(image,input_shape,model_path, class_path, confidence=0.5, nms_iou=0.0
     colors = list(map(lambda x: (int(x[0] * 255), int(x[1] * 255), int(x[2] * 255)), colors))
 
     # 构建模型
-    model = build_model(model_path,input_shape, class_names, confidence, nms_iou,max_boxes, letterbox_image)
+    
     image = cvtColor(image)
     image_data  = resize_image(image, (input_shape[1], input_shape[0]), letterbox_image)
     image_data  = np.expand_dims(preprocess_input(np.array(image_data, dtype='float32')), 0)
@@ -195,6 +195,9 @@ if __name__=='__main__':
     model_path = './model/village_yolox.h5'
     image = Image.open(image)
     image.show()
-    img = detect(image, input_shape, model_path, classes_path)
+    class_names = get_classes(classes_path)
+    num_classes = len(class_names)
+    model = build_model(model_path,input_shape, class_names, letterbox_image=letterbox_image)
+    img = detect(image, input_shape, model, classes_path)
     img.show()
 

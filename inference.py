@@ -310,8 +310,6 @@ def get_dr_txt(test_set, dataset_base_path, model=model):
 
 if __name__ == '__main__':
     image_path = './result/20210817115925.jpg'
-    # 计算FPS
-    FPS_Calculate(image_path)
     # 记录模型的推理结果：get dr
     test_set = os.path.join(config.test_txt, 'test.txt')
     dataset_base_path = config.dataset_base_path

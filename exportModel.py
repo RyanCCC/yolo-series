@@ -13,11 +13,11 @@ else:
 
 
 def get_class(classes_path):
-        classes_path = os.path.expanduser(classes_path)
-        with open(classes_path) as f:
-            class_names = f.readlines()
-        class_names = [c.strip() for c in class_names]
-        return class_names
+    classes_path = os.path.expanduser(classes_path)
+    with open(classes_path) as f:
+        class_names = f.readlines()
+    class_names = [c.strip() for c in class_names]
+    return class_names
 
 def get_anchors(anchors_path):
         anchors_path = os.path.expanduser(anchors_path)
@@ -50,3 +50,4 @@ if __name__ == '__main__':
     ExportYOLOModel(type='yolov4', export_name=export_name, anchors_path=sys_config.anchors_path,
         classes_path=sys_config.classes_path,istiny=sys_config.ISTINY,model_path=sys_config.model_path)
     model = tf.keras.models.load_model(export_name)
+    print('finish export model.')
