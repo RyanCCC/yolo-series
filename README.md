@@ -2,10 +2,6 @@
 
 基于Tensorflow2实现YOLO系列的算法，当前实现了两个算法，一个是YOLOV4，另一个是YOLOX。后续将追踪关于YOLO的一些成果，并及时复现当中的算法。具体可以参考本人的博客：[目标检测2022最新进展](https://blog.csdn.net/u012655441/article/details/123552537)。
 
-
-## [YOLOV4](./doc/yolov4.md)
-
-
 ## YOLOV4 Implement by TF2
 
 文件结构：
@@ -96,26 +92,28 @@ python get_map.py
 YOLOX的代码可以直接运行```train_yolox.py```即可。
 
 
-## [目标检测评价指标](./doc/Object-Detection-Metrics.md)
-
 
 ## 参考
 
-[YOLOV4代码实现](https://github.com/AlexeyAB/darknet)
+1. [YOLOV4代码实现](https://github.com/AlexeyAB/darknet)
 
-[YOLOV4论文](https://arxiv.org/pdf/2004.10934.pdf)
+2. [YOLOV4](./doc/yolov4.md)
 
-[Object-Detection-Metrics](https://github.com/rafaelpadilla/Object-Detection-Metrics)
+3. [YOLOV4论文](https://arxiv.org/pdf/2004.10934.pdf)
 
-[目标检测算法Yolov4详解](https://cloud.tencent.com/developer/article/1748630)
+4. [Object-Detection-Metrics](./doc/Object-Detection-Metrics.md)
 
-[mAP计算代码](https://github.com/Cartucho/mAP)
+5. [目标检测算法Yolov4详解](https://cloud.tencent.com/developer/article/1748630)
 
-[YOLOV3-tf2](https://github.com/zzh8829/yolov3-tf2)
+6. [mAP计算代码](https://github.com/Cartucho/mAP)
 
-[YOLOX Code](https://github.com/Megvii-BaseDetection/YOLOX)
+7. [YOLOV3-tf2](https://github.com/zzh8829/yolov3-tf2)
 
-[YOLOX Paper](https://arxiv.org/abs/2107.08430)
+8. [YOLOX Code](https://github.com/Megvii-BaseDetection/YOLOX)
+
+9. [YOLOX Paper](https://arxiv.org/abs/2107.08430)
+
+
 
 
 ## TODO
