@@ -1,8 +1,8 @@
 import colorsys
 import cv2
 import numpy as np
-from PIL import Image, ImageDraw, ImageFont
-from nets.yolo import YOLO
+from PIL import Image
+from nets.yolo4 import YOLO
 import os
 import config as sys_config
 # deep sort imports
@@ -10,6 +10,7 @@ from deep_sort import preprocessing, nn_matching
 from deep_sort.detection import Detection
 from deep_sort.tracker import Tracker
 from utils import generate_detections as gdet
+import config as sys_config
 
 class Colors:
     # Ultralytics color palette https://ultralytics.com/
