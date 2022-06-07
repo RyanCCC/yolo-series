@@ -112,14 +112,3 @@ YOLOX的代码可以直接运行```train_yolox.py```即可。
 8. [YOLOX Code](https://github.com/Megvii-BaseDetection/YOLOX)
 
 9. [YOLOX Paper](https://arxiv.org/abs/2107.08430)
-
-
-
-
-## TODO
-
-- [ ] 理解Tensorflow Eager 模式
-- [ ] feature map 可视化
-
-
-
