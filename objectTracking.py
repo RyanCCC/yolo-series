@@ -2,7 +2,7 @@ import colorsys
 import cv2
 import numpy as np
 from PIL import Image
-from nets.yolo4 import YOLO
+from predict_yolov4_weight import YOLOV4 as  YOLO
 import os
 import config as sys_config
 # deep sort imports
@@ -11,6 +11,19 @@ from deep_sort.detection import Detection
 from deep_sort.tracker import Tracker
 from utils import generate_detections as gdet
 import config as sys_config
+
+
+# 加载yolo模型
+yolo = YOLO(
+    model_path=sys_config.model_path,
+    anchors_path=sys_config.anchors_path,
+    classes_path=sys_config.classes_path,
+    score=sys_config.score,
+    iou=sys_config.iou,
+    max_boxes=sys_config.max_boxes,
+    model_image_size=(sys_config.imagesize, sys_config.imagesize),
+    letterbox_image=sys_config.letterbox_image
+)
 
 class Colors:
     # Ultralytics color palette https://ultralytics.com/
@@ -42,25 +55,13 @@ def get_class(classes_path):
 
 if __name__ == '__main__':
     video_path = sys_config.video_path
-    
-    # 加载yolo模型
-    yolo = YOLO(
-        model_path=sys_config.model_path,
-        anchors_path=sys_config.anchors_path,
-        classes_path=sys_config.classes_path,
-        score=sys_config.score,
-        iou=sys_config.iou,
-        max_boxes=sys_config.max_boxes,
-        model_image_size=(sys_config.imagesize, sys_config.imagesize),
-        letterbox_image=sys_config.letterbox_image
-    )
     # Definition of the parameters
     max_cosine_distance = 0.4
     nn_budget = None
     nms_max_overlap = 1.0
     
     # init deep sort
-    model_filename = './model_data/mars-small128.pb'
+    model_filename = './model/mars-small128.pb'
     encoder = gdet.create_box_encoder(model_filename, batch_size=1)
     # calculate cosine distance metric
     metric = nn_matching.NearestNeighborDistanceMetric("cosine", max_cosine_distance, nn_budget)
@@ -86,17 +87,14 @@ if __name__ == '__main__':
         if frame is None:
             break
         image = Image.fromarray(frame ) 
-        bboxes, scores, classes = yolo.deep_sort_track(image)
+        bboxes, scores, classes = yolo.inference(image, istrack=True)
         # store all predictions in one parameter for simplicity when calling functions
         pred_bbox = [bboxes, scores, classes, len(bboxes)]
 
         # read in all classes in .names file
-        class_names = get_class(sys_config.classes_path)
         names = []
         for i, c in list(enumerate(classes)):
-            names.append(class_names[c])
-
-        # 转换bbox的格式，从
+            names.append(class_name[c])
 
         # encode yolo detections and feed to tracker
         features = encoder(frame, bboxes)

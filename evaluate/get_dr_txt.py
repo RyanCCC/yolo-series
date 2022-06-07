@@ -1,10 +1,12 @@
 import os
 import sys
+
+from torch import true_divide
 sys.path.append(os.getcwd())
 import config as sys_config
 from PIL import Image
 from tqdm import tqdm
-from nets.yolo import YOLO
+from predict_yolov4_weight import YOLOV4 as YOLO
 
 
 '''
@@ -17,7 +19,7 @@ from nets.yolo import YOLO
 这里的self.iou指的是非极大抑制所用到的iou，具体的可以了解非极大抑制的原理，
 如果低分框与高分框的iou大于这里设定的self.iou，那么该低分框将会被剔除。
 
-如果想要设定mAP0.x，比如设定mAP0.75，可以去get_map.py设定MINOVERLAP。
+如果想要设定mAP0.x，比如设定mAP0.75，可以去config.py设定MINOVERLAP。
 '''
 
 yolo = YOLO(    
@@ -25,7 +27,7 @@ yolo = YOLO(
     anchors_path=sys_config.anchors_path,
     classes_path=sys_config.classes_path,
     score=sys_config.map_socre,
-    iou=sys_config.map_iou,
+    iou=sys_config.MINOVERLAP,
     max_boxes=sys_config.max_boxes,
     model_image_size=(sys_config.imagesize, sys_config.imagesize),
     letterbox_image=sys_config.letterbox_image
@@ -41,6 +43,6 @@ for image_id in tqdm(image_ids):
     image = Image.open(image_path)
     # 开启后在之后计算mAP可以可视化
     # image.save("./input/images-optional/"+image_id+".jpg")
-    yolo.get_dr_txt(image_id,image)
+    yolo.inference(image, isdrtxt=True, image_id=image_id)
     
 print("Conversion completed!")
