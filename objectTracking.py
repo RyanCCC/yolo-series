@@ -45,13 +45,6 @@ class Colors:
 
 colors = Colors()  # create instance for 'from utils.plots import colors'
 
-def get_class(classes_path):
-    classes_path = os.path.expanduser(classes_path)
-    with open(classes_path,encoding='utf-8') as f:
-        class_names = f.readlines()
-    class_names = [c.strip() for c in class_names]
-    return class_names
-
 
 if __name__ == '__main__':
     video_path = sys_config.video_path
@@ -71,7 +64,7 @@ if __name__ == '__main__':
 
     cap = cv2.VideoCapture(video_path)
     n = 0
-    classname = get_class(sys_config.classes_path)
+    classname = yolo.get_classes()
     
     
     hsv_tuples = [(x / len(classname), 1., 1.)
@@ -94,7 +87,7 @@ if __name__ == '__main__':
         # read in all classes in .names file
         names = []
         for i, c in list(enumerate(classes)):
-            names.append(class_name[c])
+            names.append(classname[c])
 
         # encode yolo detections and feed to tracker
         features = encoder(frame, bboxes)

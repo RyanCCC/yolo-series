@@ -55,7 +55,7 @@ onnx=False
 mode = "predict"
 test_txt_file = './villages/test.txt'
 
-video_path      = 0
+video_path      = './video/1.MP4'
 video_save_path = ""
 video_fps       = 25.0
 
@@ -70,5 +70,3 @@ MINOVERLAP = 0.75
 ATTENTION=0
 
 ANCHOR_MASK = [[6, 7, 8], [3, 4, 5], [0, 1, 2]]
-
-# YOLOX的配置

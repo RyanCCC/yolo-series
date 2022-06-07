@@ -119,6 +119,13 @@ class YOLOV4(object):
                 left = max(0, np.floor(left + 0.5).astype('int32'))
                 bottom = min(image.size[1], np.floor(bottom + 0.5).astype('int32'))
                 right = min(image.size[0], np.floor(right + 0.5).astype('int32'))
+                # change left top right bottom to center_x, center_y, width, height
+                width = right-left
+                height = bottom-top
+                box_tmp.append(left)
+                box_tmp.append(top)
+                box_tmp.append(width)
+                box_tmp.append(height)
                 boxes.append(box_tmp)
             return boxes, out_scores, out_classes
         elif isdrtxt:

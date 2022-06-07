@@ -6,3 +6,4 @@ logs
 result
 *.h5
 village_model
+video/*
