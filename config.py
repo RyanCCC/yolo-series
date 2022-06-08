@@ -32,17 +32,17 @@ label_smoothing = 0
 
 regularization = True
 '''
-冻结训练：Init_epoch~Freeze_epoch
-解冻训练：Freeze_epoch~epoch
+冻结训练：Init_epoch -- Freeze_epoch
+解冻训练：Freeze_epoch -- epoch
 '''
-Init_epoch          = 0
-Freeze_epoch        = 50
+Init_epoch = 0
+Freeze_epoch = 50
 epoch = 100
 freeze_layers = 249
 freeze_layers_tiny = 60
-batch_size          = 16
-learning_rate_freeze  = 1e-3
-learning_rate_unfreeze  = 1e-4
+batch_size = 16
+learning_rate_freeze = 1e-3
+learning_rate_unfreeze = 1e-4
 
 # predict
 ISTINY=False
@@ -55,9 +55,9 @@ onnx=False
 mode = "predict"
 test_txt_file = './villages/test.txt'
 
-video_path      = './video/1.MP4'
+video_path = './video/1.MP4'
 video_save_path = ""
-video_fps       = 25.0
+video_fps = 25.0
 
 # calculate map
 result = os.path.join(os.getcwd(), 'result', 'map')

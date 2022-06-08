@@ -3,19 +3,12 @@ import cv2
 import os
 from PIL import Image
 import numpy as np
-from predict_yolox import detect, build_model,get_classes
-import config
+from predict_yolox import yolox
 
-url = 'rtsp://admin:augur123456@172.18.27.40:554/Streaming/Channels/101'
+url = './video/1.MP4'
 
 capture = cv2.VideoCapture(url)
 fps = 0.0
-input_shape = [640,640]
-model_path = './model/village_yolox_0510.h5'
-classes_path = config.classes_path
-class_names = get_classes(classes_path)
-num_classes = len(class_names)
-model = build_model(model_path,input_shape, class_names, letterbox_image=True)
 # 定义编解码器并创建VideoWriter对象
 fourcc = cv2.VideoWriter_fourcc(*'XVID')
 size = (int(capture.get(cv2.CAP_PROP_FRAME_WIDTH)), int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT)))
@@ -31,7 +24,7 @@ while True:
             if frame is not None and ref:
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 frame = Image.fromarray(np.uint8(frame))
-                frame = np.array(detect(frame, input_shape, model, classes_path))
+                frame = np.array(yolox.detect(frame))
                 frame = cv2.cvtColor(frame,cv2.COLOR_RGB2BGR)
             
                 fps  = ( fps + (1./(time.time()-t1)) ) / 2

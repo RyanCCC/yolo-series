@@ -190,29 +190,26 @@ class YOLOX(object):
             del draw
         return image
 
+# 创建yolox
+model_path = './model/village_yolox.h5'
+input_shape = [640,640]
+yolox = YOLOX(
+    class_path = config.classes_path,
+    input_shape = input_shape,
+    confidence = 0.5,
+    nms_iou = 0.3,
+    max_boxes=100,
+    letterbox_image = True,
+    model_path = model_path
+)
+
 if __name__=='__main__':
     # num_classes, input_shape, max_boxes = 100, confidence=0.5, nms_iou=0.3, letterbox_image=True
     classes_path = config.classes_path
     image = './result/20210803173137.jpg'
-    input_shape = [640,640]
+    
     phi = 's'
     letterbox_image = True
-    model_path = './model/village_yolox.h5'
-    
-    # 创建yolox
-    yolox = YOLOX(
-        class_path = classes_path,
-        input_shape = input_shape,
-        confidence = 0.5,
-        nms_iou = 0.3,
-        max_boxes=100,
-        letterbox_image = True,
-        model_path = model_path
-    )
-
-
-
-      
     image = Image.open(image)
     image.show()
     img = yolox.detect(image)
