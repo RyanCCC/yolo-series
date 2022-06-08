@@ -1,4 +1,3 @@
-from logging import exception
 import time
 import cv2
 import os
