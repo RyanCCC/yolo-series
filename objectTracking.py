@@ -11,6 +11,7 @@ from deep_sort.detection import Detection
 from deep_sort.tracker import Tracker
 from utils import generate_detections as gdet
 import config as sys_config
+from predict_yolox import yolox
 
 
 # 加载yolo模型
@@ -80,7 +81,9 @@ if __name__ == '__main__':
         if frame is None:
             break
         image = Image.fromarray(frame ) 
-        bboxes, scores, classes = yolo.inference(image, istrack=True)
+        # bboxes, scores, classes = yolo.inference(image, istrack=True)
+        bboxes, scores, classes = yolox.detect(image, istrack=True)
+        
         # store all predictions in one parameter for simplicity when calling functions
         pred_bbox = [bboxes, scores, classes, len(bboxes)]
 
