@@ -5,6 +5,10 @@ from PIL import Image
 import numpy as np
 from predict_yolox import yolox
 
+'''
+视频推理
+'''
+
 url = './video/1.MP4'
 
 capture = cv2.VideoCapture(url)

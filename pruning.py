@@ -13,6 +13,10 @@ from utils.dataloader import data_generator, get_classes, get_anchors
 import os
 import tensorflow_model_optimization as tfmot
 
+'''
+模型量化
+'''
+
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 prune_low_magnitude = tfmot.sparsity.keras.prune_low_magnitude
 

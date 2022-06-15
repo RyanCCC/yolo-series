@@ -8,18 +8,27 @@
 
 ``` python
 
-+---logs：存放训练日志的文档
-|---method：一些基础方法，如划分数据集训练集，生成训练集文档等
++---Attention： 实现注意力机制
 |---data：基础配置
 |   +---simhei.ttf：字体
 |   +---yolo_anchors.txt：预设置的anchorbox
 |   \---voc.names：存放类别名称，同理可换成customer类别名称
+|---deep_sort：目标跟踪Deepsort算法
+|---doc：存放YOLO资料文档
+|---evaluate：存放模型评估方法
+|---logs：存放训练日志的文档
+|---method：一些基础方法，如划分数据集训练集，生成训练集文档等
 |---model：存放模型和权重
 |   +---yolo4_voc_weights.h5：VOC预训练权重
 |   \---yolo4_weight.h5：COCO预训练权重
-|---nets：Yolov4网络代码
+|---nets：Yolo实现代码，包括YOLOV4和YOLOX
 |---result：推理结果保存的文件夹
+|---train：训练文档，
+|   +---train_tiny.py：YOLOV4 TINY训练
+|   +---train_yolox.py：YOLOX训练
+|   \---train.py：YOLOV4训练
 |---utils：基础模块
+|---video：视频存放
 \---datasets：数据集，以VOC数据集格式
     +---Annotations：数据集标注
     +---ImageSets
@@ -49,7 +58,7 @@ class_file = './villages/village.names'
 
 ```
 
-2. 运行train.py文件，要注意一些路径的设置
+2. 运行`train.py`文件，要注意一些路径的设置，另外`train.py`里有个开关，选择`YOLOX`还是`YOLOV4`的算法，当然你也改造成在命令行中用`argument`做选择。下面YOLOX同理。
 
 ```python
 annotation_path = './train_datasets/train.txt'
@@ -90,6 +99,8 @@ python get_map.py
 ## YOLOX
 
 YOLOX的代码可以直接运行```train_yolox.py```即可。
+
+## 模型转换
 
 
 

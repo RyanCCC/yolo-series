@@ -1,5 +1,5 @@
 '''
-从权重中导出模型
+从权重中导出YOLOV4模型
 '''
 import numpy as np
 import tensorflow as tf
