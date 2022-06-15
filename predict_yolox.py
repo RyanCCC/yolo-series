@@ -113,7 +113,7 @@ class YOLOX(object):
 
         return boxes_out, scores_out, classes_out
 
-    def build_model(self,  phi='s'):
+    def build_model(self,  phi='s', export_model = False):
         num_classes = len(self.class_names)
         yolo_model = yolo_body([None, None, 3], num_classes=num_classes, phi=phi)
         yolo_model.load_weights(self.model_path)
@@ -125,6 +125,9 @@ class YOLOX(object):
             output_shape = (1, ), 
             name = 'yolo_eval')(inputs)
         model = Model([yolo_model.input, input_image_shape], outputs)
+        if export_model:
+            yolo_model.save('./model/yolox_tmp', save_format='tf2')
+            yolo_model = tf.keras.models.load_model('./model/yolox_tmp', custom_objects={'yolo_eval':self.DecodeBox})
         gc.collect()
         return model
 

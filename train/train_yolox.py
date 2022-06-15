@@ -21,9 +21,6 @@ def get_train_step_fn():
             args        = [P5_output, P4_output, P3_output] + [targets]
             
             loss_value  = yolo_loss(args)
-            #------------------------------#
-            #   添加上l2正则化参数
-            #------------------------------#
             loss_value  = tf.reduce_sum(net.losses) + loss_value
         grads = tape.gradient(loss_value, net.trainable_variables)
         optimizer.apply_gradients(zip(grads, net.trainable_variables))
@@ -31,15 +28,9 @@ def get_train_step_fn():
     return train_step
 
 def val_step(imgs, targets, net, yolo_loss, optimizer):
-    #------------------------------#
-    #   计算loss
-    #------------------------------#
     P5_output, P4_output, P3_output = net(imgs, training=False)
     args        = [P5_output, P4_output, P3_output] + [targets]
     loss_value  = yolo_loss(args)
-    #------------------------------#
-    #   添加上l2正则化参数
-    #------------------------------#
     loss_value  = tf.reduce_sum(net.losses) + loss_value
     return loss_value
 
