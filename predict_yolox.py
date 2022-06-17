@@ -126,8 +126,8 @@ class YOLOX(object):
             name = 'yolo_eval')(inputs)
         model = Model([yolo_model.input, input_image_shape], outputs)
         if export_model:
-            yolo_model.save('./model/yolox_tmp', save_format='tf2')
-            yolo_model = tf.keras.models.load_model('./model/yolox_tmp', custom_objects={'yolo_eval':self.DecodeBox})
+            yolo_model.save('./model/yolox_model', save_format='tf2')
+            yolo_model = tf.keras.models.load_model('./model/yolox_model', custom_objects={'yolo_eval':self.DecodeBox})
         gc.collect()
         return model
 
