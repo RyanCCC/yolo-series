@@ -118,6 +118,10 @@ class YOLOX(object):
         yolo_model = yolo_body([None, None, 3], num_classes=num_classes, phi=phi)
         yolo_model.load_weights(self.model_path)
         print('model weight success load.')
+        if export_model:
+            yolo_model.save('./model/yolox_model', save_format='tf2')
+            yolo_model = tf.keras.models.load_model('./model/yolox_model')
+            print('model export success.')
         input_image_shape = Input([2, ], batch_size=1)
         inputs = [*yolo_model.output, input_image_shape]
         outputs = Lambda(
@@ -125,9 +129,9 @@ class YOLOX(object):
             output_shape = (1, ), 
             name = 'yolo_eval')(inputs)
         model = Model([yolo_model.input, input_image_shape], outputs)
-        if export_model:
-            yolo_model.save('./model/yolox_model', save_format='tf2')
-            yolo_model = tf.keras.models.load_model('./model/yolox_model', custom_objects={'yolo_eval':self.DecodeBox})
+        # if export_model:
+        #     yolo_model.save('./model/yolox_model', save_format='tf2')
+        #     yolo_model = tf.keras.models.load_model('./model/yolox_model', custom_objects={'yolo_eval':self.DecodeBox})
         gc.collect()
         return model
 
