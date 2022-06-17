@@ -200,7 +200,7 @@ class YOLOX(object):
                     f.write("%s %s %s %s %s %s\n" % (predicted_class, str(score.numpy()), str(int(left)), str(int(top)), str(int(right)),str(int(bottom))))
 
         else:
-            font = ImageFont.truetype(font='model_data/simhei.ttf', size=np.floor(3e-2 * image.size[1] + 0.5).astype('int32'))
+            font = ImageFont.truetype(font='data/simhei.ttf', size=np.floor(3e-2 * image.size[1] + 0.5).astype('int32'))
             thickness = int(max((image.size[0] + image.size[1]) // np.mean(input_shape), 1))
             if crop:
                 for i, c in list(enumerate(out_boxes)):
