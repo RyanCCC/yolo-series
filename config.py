@@ -55,8 +55,8 @@ onnx=False
 mode = "predict"
 test_txt_file = './villages/test.txt'
 
-video_path = './video/1.MP4'
-video_save_path = ""
+video_path = './video/test1.MOV'
+video_save_path = './video/result1.mp4'
 video_fps = 25.0
 
 # calculate map
