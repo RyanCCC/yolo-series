@@ -127,3 +127,5 @@ YOLOX的代码可以直接运行```train_yolox.py```即可。
 8. [YOLOX Code](https://github.com/Megvii-BaseDetection/YOLOX)
 
 9. [YOLOX Paper](https://arxiv.org/abs/2107.08430)
+
+10. [YOLOV5 Code](https://github.com/ultralytics/yolov5)
