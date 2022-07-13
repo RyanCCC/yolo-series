@@ -1,6 +1,13 @@
 # YoloSeries
 
-基于Tensorflow2实现YOLO系列的算法，当前实现了两个算法，一个是YOLOV4，另一个是YOLOX。后续将追踪关于YOLO的一些成果，并及时复现当中的算法。具体可以参考本人的博客：[目标检测2022最新进展](https://blog.csdn.net/u012655441/article/details/123552537)。关于YOLO的部署可以参考我的仓库：[Deployment](https://github.com/RyanCCC/Deployment)。
+基于Tensorflow2实现YOLO系列的算法，当前实现的算法有：
+
+- [x] YOLOV4
+- [x] YOLOX
+- [ ] YOLOV5
+- [ ] YOLOV7
+
+后续将追踪关于YOLO的一些成果，并及时复现当中的算法。具体可以参考本人的博客：[目标检测2022最新进展](https://blog.csdn.net/u012655441/article/details/123552537)。关于YOLO的部署可以参考我的仓库：[Deployment](https://github.com/RyanCCC/Deployment)。
 
 ## 仓库说明
 
@@ -101,9 +108,14 @@ python get_map.py
 
 ## YOLOV4
 
+![image](https://user-images.githubusercontent.com/27406337/178643886-4602cfc9-ccc3-4a87-8b59-76e80e18cc65.png)
+
+
 更多的YOLOV4资料可以参考：[yolov4](./doc/yolov4.md)
 
 ## YOLOX
+
+![image](https://user-images.githubusercontent.com/27406337/178643992-8d3149e3-b54b-4949-81db-e7baf94cbf27.png)
 
 YOLOX的代码可以直接运行```train_yolox.py```即可。
 
