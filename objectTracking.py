@@ -64,6 +64,9 @@ if __name__ == '__main__':
    
 
     cap = cv2.VideoCapture(video_path)
+    ret, frame = cap.read()
+    image = Image.fromarray(frame ) 
+    image.show()
     n = 0
     classname = yolo.get_classes()
     
@@ -80,7 +83,7 @@ if __name__ == '__main__':
         ret, frame = cap.read()
         if frame is None:
             break
-        image = Image.fromarray(frame ) 
+        image = Image.fromarray(frame) 
         # bboxes, scores, classes = yolo.inference(image, istrack=True)
         bboxes, scores, classes = yolox.detect(image, istrack=True)
         

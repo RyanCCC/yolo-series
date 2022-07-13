@@ -1,8 +1,8 @@
 # YoloSeries
 
-基于Tensorflow2实现YOLO系列的算法，当前实现了两个算法，一个是YOLOV4，另一个是YOLOX。后续将追踪关于YOLO的一些成果，并及时复现当中的算法。具体可以参考本人的博客：[目标检测2022最新进展](https://blog.csdn.net/u012655441/article/details/123552537)。关于YOLO的部署可以参考我的仓库：[Deployment](https://github.com/RyanCCC/Deployment)
+基于Tensorflow2实现YOLO系列的算法，当前实现了两个算法，一个是YOLOV4，另一个是YOLOX。后续将追踪关于YOLO的一些成果，并及时复现当中的算法。具体可以参考本人的博客：[目标检测2022最新进展](https://blog.csdn.net/u012655441/article/details/123552537)。关于YOLO的部署可以参考我的仓库：[Deployment](https://github.com/RyanCCC/Deployment)。
 
-## YOLOV4 Implement by TF2
+## 仓库说明
 
 文件结构：
 
@@ -36,7 +36,7 @@
     \---JPEGImages：图像
 ```
 
-### 执行步骤：
+## 执行步骤：
 
 1. 生成训练集、测试集以及验证集：运行voc_annotation.py，注意路径设置
 
@@ -70,7 +70,7 @@ save_model_name = 'village.h5'
 input_shape = (416,416)
 ```
 
-### MAP计算步骤
+## MAP计算步骤
 
 1. 统计测试集的groundtrue
 
@@ -96,9 +96,20 @@ python get_map.py
 
 ```
 
+想要查看更多资料，可参考[Object-Detection-Metrics](./doc/Object-Detection-Metrics.md)
+
+
+## YOLOV4
+
+更多的YOLOV4资料可以参考：[yolov4](./doc/yolov4.md)
+
 ## YOLOX
 
 YOLOX的代码可以直接运行```train_yolox.py```即可。
+
+
+## YOLOV7
+
 
 ## 模型转换
 

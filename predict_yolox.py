@@ -11,6 +11,7 @@ from nets.yolox import yolo_body
 from utils.dataloader_yolox import cvtColor, get_classes, preprocess_input
 import tensorflow.keras.backend as K
 import gc
+from glob import glob
 
 
 
@@ -248,7 +249,7 @@ class YOLOX(object):
             return image
 
 # 创建yolox
-model_path = './model/village_yolox.h5'
+model_path = './model/village_202207.h5'
 input_shape = [640,640]
 yolox = YOLOX(
     class_path = config.classes_path,
@@ -263,12 +264,13 @@ yolox = YOLOX(
 if __name__=='__main__':
     # num_classes, input_shape, max_boxes = 100, confidence=0.5, nms_iou=0.3, letterbox_image=True
     classes_path = config.classes_path
-    image = './result/20210803173137.jpg'
+    path_pattern = './samples/*'
     
     phi = 's'
     letterbox_image = True
-    image = Image.open(image)
-    image.show()
-    img = yolox.detect(image)
-    img.show()
+    for path in glob(path_pattern):
+        image = Image.open(path)
+        img = yolox.detect(image)
+        img.show()
+    print('finish')
 
