@@ -45,10 +45,10 @@ def DecodeBox(outputs,
             anchors,
             num_classes,
             input_shape,
-            anchor_mask     = [[6, 7, 8], [3, 4, 5], [0, 1, 2]],
-            max_boxes       = 100,
-            confidence      = 0.5,
-            nms_iou         = 0.3,
+            anchor_mask = [[6, 7, 8], [3, 4, 5], [0, 1, 2]],
+            max_boxes = 100,
+            confidence = 0.5,
+            nms_iou = 0.3,
             letterbox_image = True):
     
     image_shape = K.reshape(outputs[-1],[-1])
@@ -90,8 +90,8 @@ def DecodeBox(outputs,
         boxes_out.append(class_boxes)
         scores_out.append(class_box_scores)
         classes_out.append(classes)
-    boxes_out      = K.concatenate(boxes_out, axis=0)
-    scores_out     = K.concatenate(scores_out, axis=0)
-    classes_out    = K.concatenate(classes_out, axis=0)
+    boxes_out = K.concatenate(boxes_out, axis=0)
+    scores_out = K.concatenate(scores_out, axis=0)
+    classes_out = K.concatenate(classes_out, axis=0)
 
-    return boxes_out, scores_out, 
+    return boxes_out, scores_out, classes_out

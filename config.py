@@ -46,7 +46,8 @@ learning_rate_unfreeze = 1e-4
 
 # predict
 ISTINY=False
-model_path='./model/village_tf2.h5'
+# model_path='./model/village_tf2.h5'
+model_path = './model/yolov5_s_v6.1.h5'
 score=0.3
 iou=0.5
 max_boxes=100

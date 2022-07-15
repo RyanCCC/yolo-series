@@ -1,7 +1,7 @@
 from tensorflow.keras.layers import Concatenate, Input, Lambda, UpSampling2D, ZeroPadding2D
 from tensorflow.keras.models import Model
 from nets.CSPdarknet_yolov5 import C3, darknet_body
-from nets.CSPdarknet53 import DarknetConv2D_BN_SiLU, DarknetConv2D
+from nets.CSPdarknet53 import DarknetConv2D_BN_SiLU, DarknetConv2D_withL2
 from .loss import yolo_loss
 
 # 构建网络
@@ -36,11 +36,11 @@ def yolo_body(input_shape, anchors_mask, num_classes, phi, weight_decay=5e-4):
     P4_downsample   = Concatenate(axis = -1)([P4_downsample, P5])
     P5_out          = C3(P4_downsample, int(base_channels * 16), base_depth, shortcut = False, weight_decay=weight_decay, name = 'conv3_for_downsample2')
 
-    out2 = DarknetConv2D(len(anchors_mask[2]) * (5 + num_classes), (1, 1), strides = (1, 1), weight_decay=weight_decay, name = 'yolo_head_P3')(P3_out)
-    out1 = DarknetConv2D(len(anchors_mask[1]) * (5 + num_classes), (1, 1), strides = (1, 1), weight_decay=weight_decay, name = 'yolo_head_P4')(P4_out)
-    out0 = DarknetConv2D(len(anchors_mask[0]) * (5 + num_classes), (1, 1), strides = (1, 1), weight_decay=weight_decay, name = 'yolo_head_P5')(P5_out)
+    out2 = DarknetConv2D_withL2(len(anchors_mask[2]) * (5 + num_classes), (1, 1), strides = (1, 1), weight_decay=weight_decay, name = 'yolo_head_P3')(P3_out)
+    out1 = DarknetConv2D_withL2(len(anchors_mask[1]) * (5 + num_classes), (1, 1), strides = (1, 1), weight_decay=weight_decay, name = 'yolo_head_P4')(P4_out)
+    out0 = DarknetConv2D_withL2(len(anchors_mask[0]) * (5 + num_classes), (1, 1), strides = (1, 1), weight_decay=weight_decay, name = 'yolo_head_P5')(P5_out)
     return Model(inputs, [out0, out1, out2])
-    
+
 def get_train_model(model_body, input_shape, num_classes, anchors, anchors_mask, label_smoothing, focal_loss, alpha, gamma, iou_type):
     y_true = [Input(shape = (input_shape[0] // {0:32, 1:16, 2:8}[l], input_shape[1] // {0:32, 1:16, 2:8}[l], \
                                 len(anchors_mask[l]), num_classes + 5)) for l in range(len(anchors_mask))]
@@ -65,5 +65,5 @@ def get_train_model(model_body, input_shape, num_classes, anchors, anchors_mask,
             'iou_type'          : iou_type,
         }
     )([*model_body.output, *y_true])
-    model       = Model([model_body.input, *y_true], model_loss)
+    model = Model([model_body.input, *y_true], model_loss)
     return model
