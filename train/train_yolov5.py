@@ -16,7 +16,7 @@ import config
 os.environ['CUDA_VISIABLE_DEVICES'] = '0'
 
 
-if __name__ == '__main__':
+def train():
     classes_path = config.classes_path
     # yolov5_anchors.txt
     anchor_path = config.anchors_path
