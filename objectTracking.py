@@ -2,7 +2,7 @@ import colorsys
 import cv2
 import numpy as np
 from PIL import Image
-from predict_yolov4_weight import YOLOV4 as  YOLO
+# from predict_yolov4_weight import YOLOV4 as  YOLO
 import os
 import config as sys_config
 # deep sort imports
@@ -11,20 +11,20 @@ from deep_sort.detection import Detection
 from deep_sort.tracker import Tracker
 from utils import generate_detections as gdet
 import config as sys_config
-from predict_yolox import yolox
+from predict_yolox import yolox, get_classes
 
 
-# 加载yolo模型
-yolo = YOLO(
-    model_path=sys_config.model_path,
-    anchors_path=sys_config.anchors_path,
-    classes_path=sys_config.classes_path,
-    score=sys_config.score,
-    iou=sys_config.iou,
-    max_boxes=sys_config.max_boxes,
-    model_image_size=(sys_config.imagesize, sys_config.imagesize),
-    letterbox_image=sys_config.letterbox_image
-)
+# 加载yolo4模型
+# yolo = YOLO(
+#     model_path=sys_config.model_path,
+#     anchors_path=sys_config.anchors_path,
+#     classes_path=sys_config.classes_path,
+#     score=sys_config.score,
+#     iou=sys_config.iou,
+#     max_boxes=sys_config.max_boxes,
+#     model_image_size=(sys_config.imagesize, sys_config.imagesize),
+#     letterbox_image=sys_config.letterbox_image
+# )
 
 class Colors:
     # Ultralytics color palette https://ultralytics.com/
@@ -68,7 +68,7 @@ if __name__ == '__main__':
     image = Image.fromarray(frame ) 
     image.show()
     n = 0
-    classname = yolo.get_classes()
+    classname = get_classes(sys_config.classes_path)
     
     
     hsv_tuples = [(x / len(classname), 1., 1.)
