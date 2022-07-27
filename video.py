@@ -9,7 +9,7 @@ from predict_yolox import yolox
 视频推理
 '''
 
-url = './video/1.MP4'
+url = './video/Test3.mp4'
 
 capture = cv2.VideoCapture(url)
 fps = 0.0
@@ -34,18 +34,15 @@ while True:
                 fps  = ( fps + (1./(time.time()-t1)) ) / 2
                 print("fps= %.2f"%(fps))
                 frame = cv2.putText(frame, "fps= %.2f"%(fps), (0, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-                # out.write(frame)
-
+                out.write(frame)
                 cv2.imshow("video",frame)
                 if cv2.waitKey(1) == ord('q'):
                     break
-            else:
-                capture.release()
-                capture = cv2.VideoCapture(url)
-                continue
+        else:
+            break
     except Exception as e:
         break
-out.release()
+
 capture.release()
 out.release()
 cv2.destroyAllWindows()

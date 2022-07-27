@@ -56,7 +56,7 @@ onnx=False
 mode = "predict"
 test_txt_file = './villages/test.txt'
 
-video_path = './video/test.MOV'
+video_path = './video/test3.mp4'
 video_save_path = './video/result1.mp4'
 video_fps = 25.0
 
