@@ -65,7 +65,7 @@ if __name__ == '__main__':
 
     cap = cv2.VideoCapture(video_path)
     ret, frame = cap.read()
-    image = Image.fromarray(frame ) 
+    image = Image.fromarray(frame) 
     image.show()
     n = 0
     classname = get_classes(sys_config.classes_path)
