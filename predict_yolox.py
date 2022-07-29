@@ -25,6 +25,7 @@ class YOLOX(object):
             'max_boxes':kwargs['max_boxes'], 
             'letterbox_image':kwargs['letterbox_image'],
             'model_path':kwargs['model_path'],
+            'phi':kwargs['phi']
         }
         self.__dict__.update(self._arguments)
         self.class_names = get_classes(self.class_path)
@@ -114,9 +115,9 @@ class YOLOX(object):
 
         return boxes_out, scores_out, classes_out
 
-    def build_model(self,  phi='s', export_model = False):
+    def build_model(self, export_model = False):
         num_classes = len(self.class_names)
-        yolo_model = yolo_body([None, None, 3], num_classes=num_classes, phi=phi)
+        yolo_model = yolo_body([None, None, 3], num_classes=num_classes, phi=self.phi)
         yolo_model.load_weights(self.model_path)
         print('model weight success load.')
         if export_model:
@@ -249,7 +250,7 @@ class YOLOX(object):
             return image
 
 # 创建yolox
-model_path = './model/village_202207.h5'
+model_path = './model/village_yolox_l_20220728.h5'
 input_shape = [640,640]
 yolox = YOLOX(
     class_path = config.classes_path,
@@ -258,7 +259,8 @@ yolox = YOLOX(
     nms_iou = 0.4,
     max_boxes=100,
     letterbox_image = True,
-    model_path = model_path
+    model_path = model_path,
+    phi='l'
 )
 
 if __name__=='__main__':
@@ -266,7 +268,6 @@ if __name__=='__main__':
     classes_path = config.classes_path
     path_pattern = './samples/*'
     
-    phi = 's'
     letterbox_image = True
     for path in glob(path_pattern):
         image = Image.open(path)
