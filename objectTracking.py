@@ -115,6 +115,7 @@ if __name__ == '__main__':
             if not track.is_confirmed() or track.time_since_update > 1:
                 continue 
             bbox = track.to_tlbr()
+            bbox[bbox<0] = 0
             class_name = track.get_class()
             
         # draw bbox on screen
