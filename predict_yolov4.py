@@ -2,7 +2,7 @@ import tensorflow as tf
 from tensorflow.keras import backend as K
 from PIL import Image,ImageDraw, ImageFont
 from utils.utils import letterbox_image
-import config
+from config import YOLOV4Config
 import numpy as np
 import os
 from tqdm import tqdm
@@ -133,9 +133,9 @@ def yolo_head(feats, anchors, num_classes, input_shape, calc_loss=False):
 
 
 
-def inference(image,model = model, letterbox_image=config.letterbox_image, score=config.score, \
-            iou = config.iou, max_boxes=config.max_boxes, class_path = config.classes_path, \
-            anchors_path=config.anchors_path, show=True, get_dr = False, image_id = None):
+def inference(image,model = model, letterbox_image=YOLOV4Config.letterbox_image, score=YOLOV4Config.score, \
+            iou = YOLOV4Config.iou, max_boxes=YOLOV4Config.max_boxes, class_path = YOLOV4Config.classes_path, \
+            anchors_path=YOLOV4Config.anchors_path, show=True, get_dr = False, image_id = None):
     # 读取类别信息
     class_names = get_class(class_path)
     # 读取预设框信息
@@ -145,9 +145,9 @@ def inference(image,model = model, letterbox_image=config.letterbox_image, score
     # 推理之前的图像预处理
     image = image.convert('RGB')
     if letterbox_image:
-        boxed_image = letterbox_image(image, (config.imagesize,config.imagesize))
+        boxed_image = letterbox_image(image, (YOLOV4Config.imagesize,YOLOV4Config.imagesize))
     else:
-        boxed_image = image.resize((config.imagesize,config.imagesize), Image.BICUBIC)
+        boxed_image = image.resize((YOLOV4Config.imagesize,YOLOV4Config.imagesize), Image.BICUBIC)
     image_data = np.array(boxed_image, dtype='float32')
     image_data /= 255.
     image_data = np.expand_dims(image_data, 0)  # Add batch dimension.
@@ -159,7 +159,7 @@ def inference(image,model = model, letterbox_image=config.letterbox_image, score
     time2 = time.time()
     print(time2-time1)
     num_layers = len(yolo_outputs)
-    anchor_mask = config.ANCHOR_MASK
+    anchor_mask = YOLOV4Config.ANCHOR_MASK
     input_shape = K.shape(yolo_outputs[0])[1:3] * 32
     boxes = []
     box_scores = []
@@ -234,14 +234,14 @@ def inference(image,model = model, letterbox_image=config.letterbox_image, score
             if image_id is None:
                 raise Exception("imageid should not be none!")
             # 计算map
-            dr_txt_path = os.path.join(config.result, config.pr_folder_name, image_id+'.txt')
+            dr_txt_path = os.path.join(YOLOV4Config.result, YOLOV4Config.pr_folder_name, image_id+'.txt')
             with open(dr_txt_path, 'w') as f:
                 f.write("%s %s %s %s %s %s\n" % (predicted_class, str(score.numpy()), str(int(left)), str(int(top)), str(int(right)),str(int(bottom))))
     return image
 
 
 
-def FPSTest(image_path, model = model, class_path = config.classes_path,anchors_path=config.anchors_path, interval = 100):
+def FPSTest(image_path, model = model, class_path = YOLOV4Config.classes_path,anchors_path=YOLOV4Config.anchors_path, interval = 100):
     # video_path = './result/test2.MOV'
     # capture=cv2.VideoCapture(video_path)
     # fps = 0.0
@@ -269,9 +269,9 @@ def FPSTest(image_path, model = model, class_path = config.classes_path,anchors_
     image = Image.open(image_path)
     image = image.convert('RGB')
     if letterbox_image:
-        boxed_image = letterbox_image(image, (config.imagesize,config.imagesize))
+        boxed_image = letterbox_image(image, (YOLOV4Config.imagesize,YOLOV4Config.imagesize))
     else:
-        boxed_image = image.resize((config.imagesize,config.imagesize), Image.BICUBIC)
+        boxed_image = image.resize((YOLOV4Config.imagesize,YOLOV4Config.imagesize), Image.BICUBIC)
     image_data = np.array(boxed_image, dtype='float32')
     image_data /= 255.
     image_data = np.expand_dims(image_data, 0)  # Add batch dimension.
@@ -297,8 +297,8 @@ def get_dr_txt(test_set, dataset_base_path, model=model):
 
     image_ids = open(test_set).read().strip().split()
 
-    if not os.path.exists(os.path.join(config.result, config.pr_folder_name)):
-        os.makedirs(os.path.join(config.result, config.pr_folder_name))
+    if not os.path.exists(os.path.join(YOLOV4Config.result, YOLOV4Config.pr_folder_name)):
+        os.makedirs(os.path.join(YOLOV4Config.result, YOLOV4Config.pr_folder_name))
 
     for image_id in tqdm(image_ids):
         image_path = dataset_base_path+"/JPEGImages/"+image_id+".jpg"
@@ -311,9 +311,9 @@ def get_dr_txt(test_set, dataset_base_path, model=model):
 if __name__ == '__main__':
     image_path = './result/20210817115925.jpg'
     # 记录模型的推理结果：get dr
-    test_set = os.path.join(config.test_txt, 'test.txt')
-    dataset_base_path = config.dataset_base_path
-    get_dr_txt(test_set, dataset_base_path)
+    test_set = os.path.join(YOLOV4Config.test_txt, 'test.txt')
+    dataset_base_path = YOLOV4Config.dataset_base_path
+    # get_dr_txt(test_set, dataset_base_path)
     image = Image.open(image_path)
     r_image = inference(image)
     r_image.show()

@@ -24,8 +24,8 @@ class YOLO(object):
         "phi" : 's',
         "confidence" : 0.7,
         "nms_iou" : 0.5,
-        "max_boxes"         : 100,
-        "letterbox_image"   : True,
+        "max_boxes": 100,
+        "letterbox_image":True,
     }
 
     @classmethod

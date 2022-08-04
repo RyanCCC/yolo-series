@@ -11,7 +11,7 @@ from nets.loss_yolox import get_lr_scheduler, get_yolo_loss
 from utils.callbacks import ModelCheckpoint
 from utils.dataloader_yolox import YoloDatasets, get_classes
 from tqdm import tqdm
-import config
+
 
 def get_train_step_fn():
     @tf.function
@@ -79,7 +79,7 @@ gpus = tf.config.experimental.list_physical_devices(device_type='GPU')
 for gpu in gpus:
     tf.config.experimental.set_memory_growth(gpu, True)
 
-def main():
+def main(config):
     classes_path = config.classes_path
     pretrain_model_path = config.pretrain_weight
     input_shape = [640,640]
@@ -107,7 +107,7 @@ def main():
     lr_decay_type = 'cos'
 
     log_dir = config.logdir
-    save_weight_name = config.save_model_name
+    save_weight_name = config.save_weight
 
     train_txt = config.train_txt
     val_txt = config.val_txt

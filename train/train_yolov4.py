@@ -13,7 +13,6 @@ from nets.loss import yolo_loss
 from nets.yolo4 import yolo_body
 from utils.utils import (ModelCheckpoint,
                          WarmUpCosineDecayScheduler)
-import config as sys_config
 from utils.dataloader import data_generator, get_classes, get_anchors, preprocess_true_boxes_tf, transform_targets
 from utils.tfrecord_create import load_tfrecord_dataset, transform_dataset
 from tqdm import tqdm
@@ -87,32 +86,32 @@ for gpu in gpus:
     tf.config.experimental.set_memory_growth(gpu, True)
 
 
-def main():
-    train_txt = sys_config.train_txt
-    log_dir = sys_config.logdir
-    classes_path = sys_config.classes_path
-    anchors_path = sys_config.anchors_path
-    weights_path = sys_config.pretrain_weight
-    save_model_name = sys_config.save_model_name
-    input_shape = (sys_config.imagesize,sys_config.imagesize)
-    anchor_mask = sys_config.ANCHOR_MASK
-    eager = sys_config.eager
-    normalize = sys_config.normalize
+def main(config):
+    train_txt = config.train_txt
+    log_dir = config.logdir
+    classes_path = config.classes_path
+    anchors_path = config.anchors_path
+    weights_path = config.pretrain_weight
+    save_weight = config.save_weight
+    input_shape = (config.imagesize,config.imagesize)
+    anchor_mask = config.ANCHOR_MASK
+    eager = config.eager
+    normalize = config.normalize
 
     class_names = get_classes(classes_path)
     anchors     = get_anchors(anchors_path)
     num_classes = len(class_names)
     num_anchors = len(anchors)
 
-    mosaic = sys_config.mosaic
-    Cosine_scheduler = sys_config.Cosine_scheduler
-    label_smoothing = sys_config.label_smoothing
+    mosaic = config.mosaic
+    Cosine_scheduler = config.Cosine_scheduler
+    label_smoothing = config.label_smoothing
 
-    regularization = sys_config.regularization
+    regularization = config.regularization
 
     image_input = Input(shape=(None, None, 3))
     h, w = input_shape
-    model_body = yolo_body(image_input, num_anchors//3, num_classes, sys_config.ATTENTION)
+    model_body = yolo_body(image_input, num_anchors//3, num_classes, config.ATTENTION)
     print('加载权重')
     model_body.load_weights(weights_path, by_name=True, skip_mismatch=True)
     
@@ -128,7 +127,7 @@ def main():
 
 
     logging = TensorBoard(log_dir=log_dir)
-    checkpoint = ModelCheckpoint(log_dir+save_model_name, save_weights_only=True, save_best_only=True, period=1)
+    checkpoint = ModelCheckpoint(log_dir+save_weight, save_weights_only=True, save_best_only=True, period=1)
     early_stopping = EarlyStopping(min_delta=0, patience=10, verbose=1)
 
     val_split = 0.1
@@ -140,15 +139,15 @@ def main():
     num_val = int(len(lines)*val_split)
     num_train = len(lines) - num_val
     
-    freeze_layers = sys_config.freeze_layers
+    freeze_layers = config.freeze_layers
     for i in range(freeze_layers): model_body.layers[i].trainable = False
     print('Freeze the first {} layers of total {} layers.'.format(freeze_layers, len(model_body.layers)))
 
     if True:
-        Init_epoch          = sys_config.Init_epoch
-        Freeze_epoch        = sys_config.Freeze_epoch
-        batch_size          = sys_config.batch_size
-        learning_rate_freeze  = sys_config.learning_rate_freeze
+        Init_epoch          = config.Init_epoch
+        Freeze_epoch        = config.Freeze_epoch
+        batch_size          = config.batch_size
+        learning_rate_freeze  = config.learning_rate_freeze
         
         epoch_size      = num_train // batch_size
         epoch_size_val  = num_val // batch_size
@@ -235,10 +234,10 @@ def main():
 
     # Transfer Learning
     if True:
-        Freeze_epoch        = sys_config.Freeze_epoch
-        Epoch               = sys_config.epoch
-        batch_size          = sys_config.batch_size
-        learning_rate_unfreeze  = sys_config.learning_rate_unfreeze
+        Freeze_epoch        = config.Freeze_epoch
+        Epoch               = config.epoch
+        batch_size          = config.batch_size
+        learning_rate_unfreeze  = config.learning_rate_unfreeze
 
         epoch_size      = num_train // batch_size
         epoch_size_val  = num_val // batch_size

@@ -58,11 +58,11 @@ def get_train_model(model_body, input_shape, num_classes, anchors, anchors_mask,
             'obj_ratio'         : 5 * (input_shape[0] * input_shape[1]) / (416 ** 2), 
             'cls_ratio'         : 1 * (num_classes / 80),
             'label_smoothing'   : label_smoothing,
-            'focal_loss'        : focal_loss, 
-            'focal_loss_ratio'  : 10,
-            'alpha'             : alpha, 
-            'gamma'             : gamma,
-            'iou_type'          : iou_type,
+            # 'focal_loss'        : focal_loss, 
+            # 'focal_loss_ratio'  : 10,
+            # 'alpha'             : alpha, 
+            # 'gamma'             : gamma,
+            # 'iou_type'          : iou_type,
         }
     )([*model_body.output, *y_true])
     model = Model([model_body.input, *y_true], model_loss)

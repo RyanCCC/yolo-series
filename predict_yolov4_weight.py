@@ -1,14 +1,14 @@
 import colorsys
 import os
 import time
-import config as sys_config
+from config import YOLOV4Config
 import numpy as np
 import tensorflow as tf
 from PIL import Image, ImageDraw, ImageFont
 from tensorflow.keras.layers import Input, Lambda
 from tensorflow.keras.models import Model
 
-if not sys_config.ISTINY:
+if not YOLOV4Config.ISTINY:
     from nets.yolo4 import yolo_body, yolo_eval
 else:
     from nets.yolo4_tiny import yolo_body, yolo_eval
@@ -64,10 +64,10 @@ class YOLOV4(object):
         
         num_anchors = len(self._anchors)
         num_classes = len(self._class_names)
-        if not sys_config.ISTINY:
-            self.yolo_model = yolo_body(Input(shape=(None,None,3)), num_anchors//3, num_classes, phi=sys_config.ATTENTION)
+        if not YOLOV4Config.ISTINY:
+            self.yolo_model = yolo_body(Input(shape=(None,None,3)), num_anchors//3, num_classes, phi=YOLOV4Config.ATTENTION)
         else:
-            self.yolo_model = yolo_body(Input(shape=(None,None,3)), num_anchors//2, num_classes, phi=sys_config.ATTENTION)
+            self.yolo_model = yolo_body(Input(shape=(None,None,3)), num_anchors//2, num_classes, phi=YOLOV4Config.ATTENTION)
         self.yolo_model.load_weights(self.model_path)
 
         print('{} model, anchors, and classes loaded.'.format(model_path))
@@ -131,7 +131,7 @@ class YOLOV4(object):
         elif isdrtxt:
             if len(out_boxes) == 0:
                 print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
-                dr_txt_path = os.path.join(sys_config.result, sys_config.pr_folder_name, image_id+'.txt')
+                dr_txt_path = os.path.join(YOLOV4Config.result, YOLOV4Config.pr_folder_name, image_id+'.txt')
                 with open(dr_txt_path, 'w') as f:
                     f.write(" ")
 
@@ -150,7 +150,7 @@ class YOLOV4(object):
                 bottom = min(image.size[1], np.floor(bottom + 0.5).astype('int32'))
                 right = min(image.size[0], np.floor(right + 0.5).astype('int32'))
 
-                dr_txt_path = os.path.join(sys_config.result, sys_config.pr_folder_name, image_id+'.txt')
+                dr_txt_path = os.path.join(YOLOV4Config.result, YOLOV4Config.pr_folder_name, image_id+'.txt')
                 with open(dr_txt_path, 'w') as f:
                     f.write("%s %s %s %s %s %s\n" % (predicted_class, str(score.numpy()), str(int(left)), str(int(top)), str(int(right)),str(int(bottom))))
         else:

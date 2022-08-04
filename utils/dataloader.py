@@ -1,7 +1,6 @@
 from utils.utils import get_random_data_with_Mosaic, get_random_data
 import numpy as np
 import tensorflow as tf
-import config
 from PIL import Image
 import cv2
 import math
@@ -46,12 +45,11 @@ def data_generator(annotation_lines, batch_size, input_shape, anchors, num_class
 #  详解：https://blog.csdn.net/weixin_38145317/article/details/95349201
 # https://zhuanlan.zhihu.com/p/79425557
 
-def preprocess_true_boxes(true_boxes, input_shape, anchors, num_classes):
+def preprocess_true_boxes(true_boxes, input_shape, anchors, num_classes, anchor_mask=[[6, 7, 8], [3, 4, 5], [0, 1, 2]]):
     # 该函数得到detectors_mask（最佳预测的anchor boxes，每一个true boxes都对应一个anchor boxes）
     # true_boxes：实际框的位置和类别,shape:(batch_size, max_box_number, 5),5表示(x_min, y_min, x_max, y_max, label)
     assert (true_boxes[..., 4]<num_classes).all()
     num_layers = len(anchors)//3
-    anchor_mask = config.ANCHOR_MASK
 
     # 归一化
     true_boxes = np.array(true_boxes, dtype='float32')
@@ -113,10 +111,9 @@ def preprocess_true_boxes(true_boxes, input_shape, anchors, num_classes):
 
 
 # tensorflow的numpy
-def preprocess_true_boxes_tf(true_boxes, input_shape, anchors, num_classes):
+def preprocess_true_boxes_tf(true_boxes, input_shape, anchors, num_classes, anchor_mask=[[6, 7, 8], [3, 4, 5], [0, 1, 2]]):
     # assert (true_boxes[..., 4]<num_classes).numpy().all()
     num_layers = len(anchors)//3
-    anchor_mask = config.ANCHOR_MASK
 
     true_boxes = tf.cast(true_boxes, tf.float32)
     input_shape = tf.cast(input_shape, tf.float32)

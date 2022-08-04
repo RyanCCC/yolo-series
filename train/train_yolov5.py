@@ -11,29 +11,29 @@ from yolov5.net import get_train_model, yolo_body
 from yolov5.loss import get_lr_scheduler
 from utils.utils import ModelCheckpoint
 from utils.dataloader_yolov5 import YoloDatasets, get_anchors, get_classes
-import config
-
-os.environ['CUDA_VISIABLE_DEVICES'] = '0'
 
 
-def train():
+
+
+def train(config):
+    os.environ['CUDA_VISIABLE_DEVICES'] = config.gpus
     classes_path = config.classes_path
     # yolov5_anchors.txt
     anchor_path = config.anchors_path
     anchor_mask = config.ANCHOR_MASK
     pre_train_model = config.pretrain_weight
-    input_shape = [416, 416]
+    input_shape = config.input_shape
     # 数据增强
-    mosaic = True
-    mosaic_prob = 0.5
+    mosaic = config.mosaic
+    mosaic_prob = config.mosaic_prob
     if mosaic:
         # mixup数据增强
-        mixup = True
-        mixup_prob = 0.5
+        mixup = config.mixup
+        mixup_prob = config.mixup_prob  
     else:
-        mixup = False
-    special_aug_ratio = 0.7
-    label_smoothing = 0
+        mixup = config.mixup
+    special_aug_ratio = config.special_aug_ratio
+    label_smoothing = config.label_smoothing
     epoch = config.epoch
     batch_size = config.batch_size
     learning_rate = config.learning_rate_unfreeze
@@ -45,12 +45,12 @@ def train():
     # options: cos, step
     learning_rate_decay_type = 'cos'
     # 是否使用focal loss
-    focal_loss = False
-    focal_alpha = 0.25
-    focal_gamma = 2
-    save_dir = './logs'
+    focal_loss = config.focal_loss
+    focal_alpha = config.focal_alpha
+    focal_gamma = config.focal_gamma
+    save_dir = config.logdir
     
-    saved_weight_name = config.save_model_name
+    saved_weight_name = config.save_weight
 
     train_annotation_path = config.train_txt
     val_annotation_path = config.val_txt
@@ -59,9 +59,10 @@ def train():
     num_classes = len(class_names)
     anchors= get_anchors(anchor_path)
     num_anchors = len(anchors)
+    phi = config.phi
 
     # 创建yolo模型
-    model_body  = yolo_body((None, None, 3), anchor_mask, num_classes, weight_decay)
+    model_body  = yolo_body((None, None, 3), anchor_mask, num_classes, phi)
     if pre_train_model != '':
         print('Load weights {}.'.format(pre_train_model))
         model_body.load_weights(pre_train_model, by_name=True, skip_mismatch=True)

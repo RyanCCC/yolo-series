@@ -1,7 +1,6 @@
 import colorsys
-from distutils.command.build import build
 import os
-import config
+from config import YOLOXConfig
 import numpy as np
 import tensorflow as tf
 from PIL import ImageDraw, ImageFont,Image
@@ -82,11 +81,11 @@ class YOLOX(object):
             grid = tf.reshape(tf.stack((grid_x, grid_y), 2), (1, -1, 2))
             shape  = tf.shape(grid)[:2]
             grids.append(tf.cast(grid, K.dtype(outputs)))
-            strides.append(tf.ones((shape[0], shape[1], 1)) * input_shape[0] / tf.cast(hw[i][0], K.dtype(outputs)))
+            strides.append(tf.ones((shape[0], shape[1], 1)) * self.input_shape[0] / tf.cast(hw[i][0], K.dtype(outputs)))
         grids = tf.concat(grids, axis=1)
         strides = tf.concat(strides, axis=1)
-        box_xy = (outputs[..., :2] + grids) * strides / K.cast(input_shape[::-1], K.dtype(outputs))
-        box_wh = tf.exp(outputs[..., 2:4]) * strides / K.cast(input_shape[::-1], K.dtype(outputs))
+        box_xy = (outputs[..., :2] + grids) * strides / K.cast(self.input_shape[::-1], K.dtype(outputs))
+        box_wh = tf.exp(outputs[..., 2:4]) * strides / K.cast(self.input_shape[::-1], K.dtype(outputs))
         box_confidence  = K.sigmoid(outputs[..., 4:5])
         box_class_probs = K.sigmoid(outputs[..., 5: ])
         boxes = self.yolo_correct_boxes(box_xy, box_wh, image_shape)
@@ -182,7 +181,7 @@ class YOLOX(object):
         elif isdrtxt:
             if len(out_boxes) == 0:
                 print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
-                dr_txt_path = os.path.join(config.result, config.pr_folder_name, image_id+'.txt')
+                dr_txt_path = os.path.join(YOLOXConfig.result, YOLOXConfig.pr_folder_name, image_id+'.txt')
                 with open(dr_txt_path, 'w') as f:
                     f.write(" ")
 
@@ -201,13 +200,13 @@ class YOLOX(object):
                 bottom = min(image.size[1], np.floor(bottom + 0.5).astype('int32'))
                 right = min(image.size[0], np.floor(right + 0.5).astype('int32'))
 
-                dr_txt_path = os.path.join(config.result, config.pr_folder_name, image_id+'.txt')
+                dr_txt_path = os.path.join(YOLOXConfig.result, YOLOXConfig.pr_folder_name, image_id+'.txt')
                 with open(dr_txt_path, 'w') as f:
                     f.write("%s %s %s %s %s %s\n" % (predicted_class, str(score.numpy()), str(int(left)), str(int(top)), str(int(right)),str(int(bottom))))
 
         else:
             font = ImageFont.truetype(font='data/simhei.ttf', size=np.floor(3e-2 * image.size[1] + 0.5).astype('int32'))
-            thickness = int(max((image.size[0] + image.size[1]) // np.mean(input_shape), 1))
+            thickness = int(max((image.size[0] + image.size[1]) // np.mean(self.input_shape), 1))
             if crop:
                 for i, c in list(enumerate(out_boxes)):
                     top, left, bottom, right = out_boxes[i]
@@ -251,21 +250,20 @@ class YOLOX(object):
 
 # 创建yolox
 model_path = './model/village_yolox_l_20220728.h5'
-input_shape = [640,640]
 yolox = YOLOX(
-    class_path = config.classes_path,
-    input_shape = input_shape,
-    confidence = 0.6,
-    nms_iou = 0.4,
-    max_boxes=100,
+    class_path = YOLOXConfig.classes_path,
+    input_shape = YOLOXConfig.input_shape,
+    confidence = YOLOXConfig.score,
+    nms_iou = YOLOXConfig.iou,
+    max_boxes=YOLOXConfig.max_boxes,
     letterbox_image = True,
     model_path = model_path,
-    phi='l'
+    phi=YOLOXConfig.phi
 )
 
 if __name__=='__main__':
     # num_classes, input_shape, max_boxes = 100, confidence=0.5, nms_iou=0.3, letterbox_image=True
-    classes_path = config.classes_path
+    classes_path = YOLOXConfig.classes_path
     path_pattern = './samples/*'
     
     letterbox_image = True
