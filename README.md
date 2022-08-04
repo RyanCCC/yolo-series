@@ -1,6 +1,6 @@
 # YoloSeries
 
-基于Tensorflow2实现YOLO系列的算法，当前实现的算法有：
+实现YOLO系列的算法，当前实现的算法有：
 
 - [x] YOLOV4
 - [x] YOLOX
