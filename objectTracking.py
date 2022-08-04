@@ -4,15 +4,16 @@ import numpy as np
 from PIL import Image
 # from predict_yolov4_weight import YOLOV4 as  YOLO
 import os
-import config as sys_config
 # deep sort imports
 from deep_sort import preprocessing, nn_matching
 from deep_sort.detection import Detection
 from deep_sort.tracker import Tracker
 from utils import generate_detections as gdet
-import config as sys_config
+from Customerconfig import YOLOXConfig
 from predict_yolox import yolox, get_classes
 
+video_save_path = ''
+video_fps       = 25
 
 # 加载yolo4模型
 # yolo = YOLO(
@@ -48,7 +49,7 @@ colors = Colors()  # create instance for 'from utils.plots import colors'
 
 
 if __name__ == '__main__':
-    video_path = sys_config.video_path
+    video_path = ''
     # Definition of the parameters
     max_cosine_distance = 0.4
     nn_budget = None
@@ -68,13 +69,10 @@ if __name__ == '__main__':
     image = Image.fromarray(frame) 
     image.show()
     n = 0
-    classname = get_classes(sys_config.classes_path)
-    
-    
+    classname = get_classes(YOLOXConfig.classes_path)
     hsv_tuples = [(x / len(classname), 1., 1.)
                       for x in range(len(classname))]
-    video_save_path = sys_config.video_save_path
-    video_fps       = sys_config.video_fps
+    
     colors = list(map(lambda x: colorsys.hsv_to_rgb(*x), hsv_tuples))
     fourcc = cv2.VideoWriter_fourcc(*'XVID')
     size = (int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)))

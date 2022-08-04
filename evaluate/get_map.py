@@ -9,7 +9,7 @@ import math
 
 import numpy as np
 sys.path.append(os.getcwd())
-import config as sys_config
+from Customerconfig import YOLOV4Config
 
 '''
 用于计算mAP
@@ -47,9 +47,9 @@ if args.set_class_iou is not None:
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-GT_PATH = os.path.join(sys_config.result, sys_config.gt_folder_name)
-DR_PATH = os.path.join(sys_config.result, sys_config.pr_folder_name)
-IMG_PATH = os.path.join(sys_config.result, sys_config.image_optional)
+GT_PATH = os.path.join(YOLOV4Config.result, YOLOV4Config.gt_folder_name)
+DR_PATH = os.path.join(YOLOV4Config.result, YOLOV4Config.pr_folder_name)
+IMG_PATH = os.path.join(YOLOV4Config.result, YOLOV4Config.image_optional)
 if os.path.exists(IMG_PATH): 
     for dirpath, dirnames, files in os.walk(IMG_PATH):
         if not files:

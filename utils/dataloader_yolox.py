@@ -1,6 +1,5 @@
 import numpy as np
 from PIL import Image
-import config
 import cv2
 import math
 from tensorflow import keras

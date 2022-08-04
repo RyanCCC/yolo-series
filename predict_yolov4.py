@@ -2,7 +2,7 @@ import tensorflow as tf
 from tensorflow.keras import backend as K
 from PIL import Image,ImageDraw, ImageFont
 from utils.utils import letterbox_image
-from config import YOLOV4Config
+from Customerconfig import YOLOV4Config
 import numpy as np
 import os
 from tqdm import tqdm

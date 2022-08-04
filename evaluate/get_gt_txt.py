@@ -3,7 +3,7 @@ import os
 sys.path.append(os.getcwd())
 import glob
 import xml.etree.ElementTree as ET
-import config as sys_config
+from Customerconfig import YOLOV4Config
 
 def get_classes(classes_path):
     '''loads the classes'''
@@ -12,15 +12,15 @@ def get_classes(classes_path):
     class_names = [c.strip() for c in class_names]
     return class_names
 
-image_ids = open(os.path.join(sys_config.test_txt, 'test.txt')).read().strip().split()
+image_ids = open(os.path.join(YOLOV4Config.test_txt, 'test.txt')).read().strip().split()
 
-gt_folder = os.path.join(sys_config.result, sys_config.gt_folder_name)
+gt_folder = os.path.join(YOLOV4Config.result, YOLOV4Config.gt_folder_name)
 if not os.path.exists(gt_folder):
     os.makedirs(gt_folder)
 
 for image_id in image_ids:
     with open(os.path.join(gt_folder, image_id+".txt"), "w") as new_f:
-        root = ET.parse( os.path.join(sys_config.dataset_base_path, "Annotations", image_id+".xml")).getroot()
+        root = ET.parse( os.path.join(YOLOV4Config.dataset_base_path, "Annotations", image_id+".xml")).getroot()
         for obj in root.findall('object'):
             
             # classes_path = 'model_data/voc_classes.txt'

@@ -14,7 +14,7 @@ from nets.yolo4_tiny import yolo_body
 from utils.utils import (ModelCheckpoint,
                          WarmUpCosineDecayScheduler, get_random_data,
                          get_random_data_with_Mosaic)
-import config as sys_config
+from Customerconfig import YOLOV4Config
 
 
 # 设置GPU自增长
@@ -129,7 +129,7 @@ def get_train_step_fn():
             # 计算loss
             P5_output, P4_output = net(imgs, training=True)
             args = [P5_output, P4_output] + targets
-            loss_value = yolo_loss(args,anchors,num_classes,label_smoothing=label_smoothing,normalize=normalize)
+            loss_value = yolo_loss(args,YOLOV4Config.anchors,YOLOV4Config.num_classes,label_smoothing=YOLOV4Config.label_smoothing,normalize=normalize)
             if regularization:
                 # 加入正则化损失
                 loss_value = tf.reduce_sum(net.losses) + loss_value
@@ -150,7 +150,7 @@ def fit_one_epoch(net, yolo_loss, optimizer, epoch, epoch_size, epoch_size_val, 
             images, target0, target1 = batch[0], batch[1], batch[2], batch[3]
             targets = [target0, target1]
             targets = [tf.convert_to_tensor(target) for target in targets]
-            loss_value = train_step(images, yolo_loss, targets, net, optimizer, regularization, normalize)
+            loss_value = train_step(images, yolo_loss, targets, net, optimizer, regularization, YOLOV4Config.normalize)
             loss = loss + loss_value
 
             pbar.set_postfix(**{'total_loss': float(loss) / (iteration + 1), 
@@ -169,7 +169,7 @@ def fit_one_epoch(net, yolo_loss, optimizer, epoch, epoch_size, epoch_size_val, 
 
             P5_output, P4_output = net(images)
             args = [P5_output, P4_output] + targets
-            loss_value = yolo_loss(args,anchors,num_classes,label_smoothing=label_smoothing, normalize=normalize)
+            loss_value = yolo_loss(args,anchors,num_classes,label_smoothing=label_smoothing, normalize=YOLOV4Config.normalize)
             if regularization:
                 # 加入正则化损失
                 loss_value = tf.reduce_sum(net.losses) + loss_value
@@ -188,31 +188,31 @@ for gpu in gpus:
     tf.config.experimental.set_memory_growth(gpu, True)
 
 def main():
-    train_txt = sys_config.train_txt
-    log_dir = sys_config.logdir
-    classes_path = sys_config.classes_path
-    anchors_path = sys_config.anchors_tiny_path
-    weights_path = sys_config.pretrain_weight_tiny
-    save_model_name = sys_config.save_model_name
-    input_shape = (sys_config.imagesize,sys_config.imagesize)
-    eager = sys_config.eager
-    normalize = sys_config.normalize
+    train_txt = YOLOV4Config.train_txt
+    log_dir = YOLOV4Config.logdir
+    classes_path = YOLOV4Config.classes_path
+    anchors_path = YOLOV4Config.anchors_tiny_path
+    weights_path = YOLOV4Config.pretrain_weight_tiny
+    save_model_name = YOLOV4Config.save_model_name
+    input_shape = (YOLOV4Config.imagesize,YOLOV4Config.imagesize)
+    eager = YOLOV4Config.eager
+    normalize = YOLOV4Config.normalize
 
     class_names = get_classes(classes_path)
     anchors     = get_anchors(anchors_path)
     num_classes = len(class_names)
     num_anchors = len(anchors)
 
-    mosaic = sys_config.mosaic
-    Cosine_scheduler = sys_config.Cosine_scheduler
-    label_smoothing = sys_config.label_smoothing
+    mosaic = YOLOV4Config.mosaic
+    Cosine_scheduler = YOLOV4Config.Cosine_scheduler
+    label_smoothing = YOLOV4Config.label_smoothing
 
-    regularization = sys_config.regularization
+    regularization = YOLOV4Config.regularization
 
     image_input = Input(shape=(None, None, 3))
     h, w = input_shape
     print('Create YOLOv4-Tiny model with {} anchors and {} classes.'.format(num_anchors, num_classes))
-    model_body = yolo_body(image_input, num_anchors//2, num_classes, sys_config.ATTENTION)
+    model_body = yolo_body(image_input, num_anchors//2, num_classes, YOLOV4Config.ATTENTION)
     
     print('Load weights {}.'.format(weights_path))
     model_body.load_weights(weights_path, by_name=True, skip_mismatch=True)
@@ -234,15 +234,15 @@ def main():
     num_val = int(len(lines)*val_split)
     num_train = len(lines) - num_val
     
-    freeze_layers = sys_config.freeze_layers_tiny
+    freeze_layers = YOLOV4Config.freeze_layers_tiny
     for i in range(freeze_layers): model_body.layers[i].trainable = False
     print('Freeze the first {} layers of total {} layers.'.format(freeze_layers, len(model_body.layers)))
 
     if True:
-        Init_epoch          = sys_config.Init_epoch
-        Freeze_epoch        = sys_config.Freeze_epoch
-        batch_size          = sys_config.batch_size
-        learning_rate_freeze  = sys_config.learning_rate_freeze
+        Init_epoch = YOLOV4Config.Init_epoch
+        Freeze_epoch = YOLOV4Config.Freeze_epoch
+        batch_size  = YOLOV4Config.batch_size
+        learning_rate_freeze  = YOLOV4Config.learning_rate_freeze
         
         epoch_size      = num_train // batch_size
         epoch_size_val  = num_val // batch_size
@@ -297,10 +297,10 @@ def main():
     for i in range(freeze_layers): model_body.layers[i].trainable = True
 
     if True:
-        Freeze_epoch        = sys_config.Freeze_epoch
-        Epoch               = sys_config.epoch
-        batch_size          = sys_config.batch_size
-        learning_rate_unfreeze  = sys_config.learning_rate_unfreeze
+        Freeze_epoch = YOLOV4Config.Freeze_epoch
+        Epoch = YOLOV4Config.epoch
+        batch_size = YOLOV4Config.batch_size
+        learning_rate_unfreeze  = YOLOV4Config.learning_rate_unfreeze
 
         epoch_size      = num_train // batch_size
         epoch_size_val  = num_val // batch_size

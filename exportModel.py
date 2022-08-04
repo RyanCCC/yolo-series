@@ -5,7 +5,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.layers import Input
 import os
-import config as sys_config
+from Customerconfig import YOLOV4Config as sys_config
 if not sys_config.ISTINY:
     from nets.yolo4 import yolo_body
 else:
