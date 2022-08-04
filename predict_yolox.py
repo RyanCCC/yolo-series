@@ -1,6 +1,6 @@
 import colorsys
 import os
-from Customerconfig import YOLOXConfig
+from customerConfig import YOLOXConfig
 import numpy as np
 import tensorflow as tf
 from PIL import ImageDraw, ImageFont,Image

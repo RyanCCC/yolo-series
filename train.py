@@ -1,5 +1,5 @@
 from train import train_tiny, train_yolov4, train_yolov5, train_yolox
-import Customerconfig
+import customerConfig
 import argparse
 
 
@@ -13,12 +13,12 @@ def parse_args():
 if __name__ == '__main__':
     args = parse_args()
     if args.model.upper() == 'YOLOX':
-        train_yolox.main(Customerconfig.YOLOXConfig)
+        train_yolox.main(customerConfig.YOLOXConfig)
     elif  args.model.upper() == 'YOLOV4':
-        train_yolov4.main(Customerconfig.YOLOV4Config)
+        train_yolov4.main(customerConfig.YOLOV4Config)
     elif args.model.upper() == 'YOLOV4-TINY':
-        train_tiny.main(Customerconfig.YOLOV4Config)
+        train_tiny.main(customerConfig.YOLOV4Config)
     elif args.model.upper() == 'YOLOV5':
-        train_yolov5.train(Customerconfig.YOLOV5Config)
+        train_yolov5.train(customerConfig.YOLOV5Config)
     else:
         pass

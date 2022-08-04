@@ -8,7 +8,7 @@ from PIL import Image, ImageFont, ImageDraw
 from yolov5.net import yolo_body
 from utils.dataloader_yolov5 import get_anchors, get_classes, cvtColor
 from yolov5.tools import DecodeBox
-import Customerconfig
+import customerConfig
 import os
 import numpy as np
 
@@ -16,10 +16,10 @@ import numpy as np
 
 class YOLO(object):
     _defaults = {
-        "model_path" : Customerconfig.model_path,
-        "classes_path" : Customerconfig.classes_path,
-        "anchors_path" : Customerconfig.anchors_path,
-        "anchors_mask" : Customerconfig.ANCHOR_MASK,
+        "model_path" : customerConfig.model_path,
+        "classes_path" : customerConfig.classes_path,
+        "anchors_path" : customerConfig.anchors_path,
+        "anchors_mask" : customerConfig.ANCHOR_MASK,
         "input_shape" : [640, 640],
         "phi" : 's',
         "confidence" : 0.7,

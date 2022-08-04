@@ -8,7 +8,7 @@ from tensorflow.keras.optimizers import Adam
 from nets.loss import yolo_loss
 from nets.yolo4 import yolo_body
 from utils.utils import ModelCheckpoint
-from Customerconfig import YOLOV4Config as sys_config
+from customerConfig import YOLOV4Config as sys_config
 from utils.dataloader import data_generator, get_classes, get_anchors
 import os
 import tensorflow_model_optimization as tfmot
