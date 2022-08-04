@@ -6,12 +6,12 @@ from .loss import yolo_loss
 
 # 构建网络
 def yolo_body(input_shape, anchors_mask, num_classes, phi, weight_decay=5e-4):
-    depth_dict          = {'n': 0.33, 's' : 0.33, 'm' : 0.67, 'l' : 1.00, 'x' : 1.33,}
-    width_dict          = {'n': 0.25, 's' : 0.50, 'm' : 0.75, 'l' : 1.00, 'x' : 1.25,}
-    dep_mul, wid_mul    = depth_dict[phi], width_dict[phi]
+    depth_dict = {'n': 0.33, 's' : 0.33, 'm' : 0.67, 'l' : 1.00, 'x' : 1.33,}
+    width_dict = {'n': 0.25, 's' : 0.50, 'm' : 0.75, 'l' : 1.00, 'x' : 1.25,}
+    dep_mul, wid_mul = depth_dict[phi], width_dict[phi]
 
-    base_channels       = int(wid_mul * 64)  # 64
-    base_depth          = max(round(dep_mul * 3), 1)  # 3
+    base_channels = int(wid_mul * 64)  # 64
+    base_depth = max(round(dep_mul * 3), 1)  # 3
 
     inputs      = Input(input_shape)
     feat1, feat2, feat3 = darknet_body(inputs, base_channels, base_depth, weight_decay)
@@ -41,7 +41,8 @@ def yolo_body(input_shape, anchors_mask, num_classes, phi, weight_decay=5e-4):
     out0 = DarknetConv2D_withL2(len(anchors_mask[0]) * (5 + num_classes), (1, 1), strides = (1, 1), weight_decay=weight_decay, name = 'yolo_head_P5')(P5_out)
     return Model(inputs, [out0, out1, out2])
 
-def get_train_model(model_body, input_shape, num_classes, anchors, anchors_mask, label_smoothing, focal_loss, alpha, gamma, iou_type):
+
+def get_train_model(model_body, input_shape, num_classes, anchors, anchors_mask, label_smoothing):
     y_true = [Input(shape = (input_shape[0] // {0:32, 1:16, 2:8}[l], input_shape[1] // {0:32, 1:16, 2:8}[l], \
                                 len(anchors_mask[l]), num_classes + 5)) for l in range(len(anchors_mask))]
     model_loss  = Lambda(
@@ -49,21 +50,16 @@ def get_train_model(model_body, input_shape, num_classes, anchors, anchors_mask,
         output_shape    = (1, ), 
         name            = 'yolo_loss', 
         arguments       = {
-            'input_shape'       : input_shape, 
-            'anchors'           : anchors, 
-            'anchors_mask'      : anchors_mask, 
-            'num_classes'       : num_classes, 
-            'balance'           : [0.4, 1.0, 4],
-            'box_ratio'         : 0.05,
-            'obj_ratio'         : 5 * (input_shape[0] * input_shape[1]) / (416 ** 2), 
-            'cls_ratio'         : 1 * (num_classes / 80),
-            'label_smoothing'   : label_smoothing,
-            # 'focal_loss'        : focal_loss, 
-            # 'focal_loss_ratio'  : 10,
-            # 'alpha'             : alpha, 
-            # 'gamma'             : gamma,
-            # 'iou_type'          : iou_type,
+            'input_shape' : input_shape, 
+            'anchors' : anchors, 
+            'anchors_mask' : anchors_mask, 
+            'num_classes' : num_classes, 
+            'label_smoothing': label_smoothing, 
+            'balance' : [0.4, 1.0, 4],
+            'box_ratio'  : 0.05,
+            'obj_ratio'  : 1 * (input_shape[0] * input_shape[1]) / (640 ** 2), 
+            'cls_ratio'  : 0.5 * (num_classes / 80)
         }
     )([*model_body.output, *y_true])
-    model = Model([model_body.input, *y_true], model_loss)
+    model       = Model([model_body.input, *y_true], model_loss)
     return model

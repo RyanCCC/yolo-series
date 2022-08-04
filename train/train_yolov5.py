@@ -1,7 +1,6 @@
 import datetime
 import os
 from functools import partial
-
 import tensorflow as tf
 import tensorflow.keras.backend as K
 from tensorflow.keras.callbacks import EarlyStopping, LearningRateScheduler, TensorBoard
@@ -44,17 +43,11 @@ def train(config):
     weight_decay = 5e-4
     # options: cos, step
     learning_rate_decay_type = 'cos'
-    # 是否使用focal loss
-    focal_loss = config.focal_loss
-    focal_alpha = config.focal_alpha
-    focal_gamma = config.focal_gamma
     save_dir = config.logdir
-    
     saved_weight_name = config.save_weight
-
     train_annotation_path = config.train_txt
     val_annotation_path = config.val_txt
-
+    anchors_mask = config.ANCHOR_MASK
     class_names = get_classes(classes_path)
     num_classes = len(class_names)
     anchors= get_anchors(anchor_path)
@@ -66,7 +59,7 @@ def train(config):
     if pre_train_model != '':
         print('Load weights {}.'.format(pre_train_model))
         model_body.load_weights(pre_train_model, by_name=True, skip_mismatch=True)
-    model = get_train_model(model_body, input_shape, num_classes, anchors, anchor_mask, label_smoothing, focal_loss, focal_alpha, focal_gamma, iou_type='ciou')
+    model =  get_train_model(model_body, input_shape, num_classes, anchors, anchors_mask, label_smoothing)
 
     # 获取数据集
     with open(train_annotation_path, encoding='utf-8') as f:
