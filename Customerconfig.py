@@ -85,7 +85,7 @@ class YOLOXConfig(Config):
     epoch = 100
     batch_size = 16
 
-    phi= 'l'
+    phi= 's'
     score=0.3
     iou=0.5
     input_shape = [640, 640]

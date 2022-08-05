@@ -126,11 +126,35 @@ YOLOX的代码可以直接运行```train_yolox.py```即可。
 
 ## 模型转换
 
-模型转换主要应用在生产环境中，关于模型转换用了YOLOX作为例子，详情可以参考：[TF2ONNX](https://github.com/RyanCCC/Deployment/tree/main/ONNXDemo/Tensorflow)，当中有YOLOX转换成ONNX的例子。转换成ONNX之后需后续就可以为所欲为了，比如需要部署到TensorRT或者Openvino中等都可以通过ONNX转换成对应的格式的模型。
+模型转换主要应用在生产环境中，关于模型转换用了YOLOX作为例子，详情可以参考：[TF2ONNX](https://github.com/RyanCCC/Deployment/tree/main/ONNXDemo/Tensorflow)，当中有YOLOX转换成ONNX的例子。转换成ONNX之后需后续就可以为所欲为了，比如需要部署到TensorRT或者Openvino中等都可以通过ONNX转换成对应的格式的模型。模型转换之后至于模型的性能，如精确度、速度等有没有损失，在此我没有做相应的测试，感兴趣的可以自行测评一下模型性能差异。
 
-模型转换之后至于模型的性能，如精确度、速度等有没有损失，在此我没有做相应的测试，感兴趣的可以自行测评一下模型性能差异。
+模型导出脚本：`export.py`，相关参数说明如下：
 
+- `weight`：YOLO模型的权重路径，用于从权重路径中导出pb模型或者ONNX模型
+- `saved_pb`：是否保存Tensorfow的PB模型，带上这个参数后需要指定`saved_pb_dir`参数，表示模型保存的路径。
+- `saved_pb_dir`：保存PB模型的路径。
+- `yolo`：选择需要导出的YOLO算法。
+- `saved_model`：该参数用于直接加载Tensorflow的PB模型，并导出成ONNX模型。
+- `save_onnx`：ONNX模型保存的路径。
+- `opset`：ONNX的算子类型，默认12
+- `flag`：带上这个参数表示从Tensorflow的PB模型进行导出，否则从权重中导出。
 
+注意：使用权重模型的时候要在`customerConfig.py`文件中核实类别文件和anchor文件是否配置正确。另外后续需要导出成TensorRT的Engine模型或者Openvino的模型可以自行定义。当前的参数已经足以使用，后续假设㓟更多参数需求会持续更新优化。
+
+使用例子：
+
+1. 从Tensorflow模型导出：
+
+```
+python .\export.py --saved_model .\village_model\ --save_onnx './tmp.onnx' --yolo yolox --flag
+```
+
+2. 从Tensorflow权重导出：
+
+记住：**一定要先在配置文件中配置好模型再进行导出！**
+```
+python .\export.py --yolo yolox --weight .\model\village_yolox.h5 --save_onnx './tmp_yolox.onnx'
+```
 
 ## 参考
 

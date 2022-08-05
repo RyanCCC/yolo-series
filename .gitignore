@@ -10,3 +10,4 @@ video/*
 model
 samples
 *.mp4
+*.onnx
