@@ -4,7 +4,8 @@
 2. 从权重模型导出ONNX模型
 3. 从pb模型导出成ONNX模型
 
-Tensorflow 模型命名规则：数据集（功能）_
+Tensorflow 模型命名规则：数据集（功能）_算法模型_版本.h5
+ONNX模型命名规则：数据集功能_算法模型_OP_输入维度_版本.onnx
 '''
 
 import argparse
