@@ -69,6 +69,7 @@ class YOLOX(object):
 
     def DecodeBox(self, outputs):
         num_classes = len(self.class_names)
+        outputs = outputs[:-1]
         image_shape = K.reshape(outputs[-1], [-1])
         batch_size = K.shape(outputs[0])[0]
         grids = []
