@@ -70,11 +70,19 @@ class YOLOX(object):
     def DecodeBox(self, outputs):
         num_classes = len(self.class_names)
         image_shape = K.reshape(outputs[-1], [-1])
-        outputs = outputs[:-1]
         batch_size = K.shape(outputs[0])[0]
         grids = []
         strides = []
         hw = [K.shape(x)[1:3] for x in outputs]
+        '''
+        outputs before:
+        batch_size, 80, 80, 4+1+num_classes
+        batch_size, 40, 40, 4+1+num_classes
+        batch_size, 20, 20, 4+1+num_classes
+
+        outputs after:
+        batch_size, 8400, 8400, 4+1+num_classes
+        '''
         outputs = tf.concat([tf.reshape(x, [batch_size, -1, 5 + num_classes]) for x in outputs], axis = 1)
         for i in range(len(hw)):
             grid_x, grid_y  = tf.meshgrid(tf.range(hw[i][1]), tf.range(hw[i][0]))
