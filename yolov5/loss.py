@@ -14,15 +14,15 @@ def yolo_loss(
     anchors, 
     anchors_mask, 
     num_classes, 
-    balance         = [0.4, 1.0, 4], 
+    balance  = [0.4, 1.0, 4], 
     label_smoothing = 0.01, 
-    box_ratio       = 0.05, 
-    obj_ratio       = 1, 
-    cls_ratio       = 0.5
+    box_ratio = 0.05, 
+    obj_ratio = 1, 
+    cls_ratio = 0.5
 ):
     num_layers = len(anchors_mask)
 
-    y_true          = args[num_layers:]
+    y_true = args[num_layers:]
     yolo_outputs    = args[:num_layers]
 
     # input_shpae：416,416 
@@ -39,21 +39,21 @@ def yolo_loss(
         
         pred_box = K.concatenate([pred_xy, pred_wh])
 
-        raw_true_box    = y_true[l][...,0:4]
-        ciou            = box_ciou(pred_box, raw_true_box)
-        ciou_loss       = object_mask * (1 - ciou)
+        raw_true_box = y_true[l][...,0:4]
+        ciou = box_ciou(pred_box, raw_true_box)
+        ciou_loss = object_mask * (1 - ciou)
         
        
-        tobj            = tf.where(tf.equal(object_mask, 1), tf.maximum(ciou, tf.zeros_like(ciou)), tf.zeros_like(ciou))
+        tobj = tf.where(tf.equal(object_mask, 1), tf.maximum(ciou, tf.zeros_like(ciou)), tf.zeros_like(ciou))
         confidence_loss = K.binary_crossentropy(tobj, raw_pred[..., 4:5], from_logits=True)
-        class_loss      = object_mask * K.binary_crossentropy(true_class_probs, raw_pred[...,5:], from_logits=True)
-        num_pos         = tf.maximum(K.sum(K.cast(object_mask, tf.float32)), 1)
+        class_loss = object_mask * K.binary_crossentropy(true_class_probs, raw_pred[...,5:], from_logits=True)
+        num_pos = tf.maximum(K.sum(K.cast(object_mask, tf.float32)), 1)
 
-        location_loss   = K.sum(ciou_loss) * box_ratio / num_pos
+        location_loss = K.sum(ciou_loss) * box_ratio / num_pos
         confidence_loss = K.mean(confidence_loss) * balance[l] * obj_ratio
-        class_loss      = K.sum(class_loss) * cls_ratio / num_pos / num_classes
+        class_loss  = K.sum(class_loss) * cls_ratio / num_pos / num_classes
 
-        loss    += location_loss + confidence_loss + class_loss
+        loss += location_loss + confidence_loss + class_loss
         # if print_loss:
         # loss = tf.Print(loss, [loss, location_loss, confidence_loss, class_loss], message='loss: ')
         

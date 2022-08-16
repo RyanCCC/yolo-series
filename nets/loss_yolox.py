@@ -31,33 +31,33 @@ def get_yolo_loss(input_shape, num_layers, num_classes):
             grid_x, grid_y  = tf.meshgrid(tf.range(grid_shape[1]), tf.range(grid_shape[0]))
             grid = tf.cast(tf.reshape(tf.stack((grid_x, grid_y), 2), (1, -1, 2)), K.dtype(output))
             
-            output          = tf.reshape(output, [tf.shape(y_pred[i])[0], grid_shape[0] * grid_shape[1], -1])
-            output_xy       = (output[..., :2] + grid) * stride
-            output_wh       = tf.exp(output[..., 2:4]) * stride
-            output          = tf.concat([output_xy, output_wh, output[..., 4:]], -1)
+            output = tf.reshape(output, [tf.shape(y_pred[i])[0], grid_shape[0] * grid_shape[1], -1])
+            output_xy = (output[..., :2] + grid) * stride
+            output_wh = tf.exp(output[..., 2:4]) * stride
+            output = tf.concat([output_xy, output_wh, output[..., 4:]], -1)
 
             x_shifts.append(grid[..., 0])
             y_shifts.append(grid[..., 1])
             expanded_strides.append(tf.ones_like(grid[..., 0]) * stride)
             outputs.append(output)
-        x_shifts            = tf.concat(x_shifts, 1)
-        y_shifts            = tf.concat(y_shifts, 1)
-        expanded_strides    = tf.concat(expanded_strides, 1)
-        outputs             = tf.concat(outputs, 1)
+        x_shifts = tf.concat(x_shifts, 1)
+        y_shifts = tf.concat(y_shifts, 1)
+        expanded_strides = tf.concat(expanded_strides, 1)
+        outputs = tf.concat(outputs, 1)
         return get_losses(x_shifts, y_shifts, expanded_strides, outputs, labels, num_classes)
     return yolo_loss
 
 
 def get_losses(x_shifts, y_shifts, expanded_strides, outputs, labels, num_classes):
-    bbox_preds  = outputs[:, :, :4]  
-    obj_preds   = outputs[:, :, 4:5]
-    cls_preds   = outputs[:, :, 5:]  
+    bbox_preds = outputs[:, :, :4]  
+    obj_preds = outputs[:, :, 4:5]
+    cls_preds = outputs[:, :, 5:]  
     nlabel = tf.reduce_sum(tf.cast(tf.reduce_sum(labels, -1) > 0, K.dtype(outputs)), -1)
     total_num_anchors = tf.shape(outputs)[1]
 
-    num_fg      = 0.0
-    loss_obj    = 0.0
-    loss_cls    = 0.0
+    num_fg = 0.0
+    loss_obj = 0.0
+    loss_cls = 0.0
     loss_iou    = 0.0
     def loop_body(b, num_fg, loss_iou, loss_obj, loss_cls):
         # num_gt 单张图片的真实框的数量
@@ -69,34 +69,34 @@ def get_losses(x_shifts, y_shifts, expanded_strides, outputs, labels, num_classe
         obj_preds_per_image     [n_anchors_all, 1]
         cls_preds_per_image     [n_anchors_all, num_classes]
         '''
-        gt_bboxes_per_image     = labels[b][:num_gt, :4]
-        gt_classes              = labels[b][:num_gt,  4]
+        gt_bboxes_per_image  = labels[b][:num_gt, :4]
+        gt_classes = labels[b][:num_gt,  4]
         bboxes_preds_per_image  = bbox_preds[b]
-        obj_preds_per_image     = obj_preds[b]
-        cls_preds_per_image     = cls_preds[b]
+        obj_preds_per_image  = obj_preds[b]
+        cls_preds_per_image = cls_preds[b]
 
         def f1():
-            num_fg_img  = tf.cast(tf.constant(0), K.dtype(outputs))
-            cls_target  = tf.cast(tf.zeros((0, num_classes)), K.dtype(outputs))
-            reg_target  = tf.cast(tf.zeros((0, 4)), K.dtype(outputs))
-            obj_target  = tf.cast(tf.zeros((total_num_anchors, 1)), K.dtype(outputs))
-            fg_mask     = tf.cast(tf.zeros(total_num_anchors), tf.bool)
+            num_fg_img = tf.cast(tf.constant(0), K.dtype(outputs))
+            cls_target = tf.cast(tf.zeros((0, num_classes)), K.dtype(outputs))
+            reg_target = tf.cast(tf.zeros((0, 4)), K.dtype(outputs))
+            obj_target = tf.cast(tf.zeros((total_num_anchors, 1)), K.dtype(outputs))
+            fg_mask = tf.cast(tf.zeros(total_num_anchors), tf.bool)
             return num_fg_img, cls_target, reg_target, obj_target, fg_mask
         def f2():
             gt_matched_classes, fg_mask, pred_ious_this_matching, matched_gt_inds, num_fg_img = get_assignments( 
                 gt_bboxes_per_image, gt_classes, bboxes_preds_per_image, obj_preds_per_image, cls_preds_per_image,
                 x_shifts, y_shifts, expanded_strides, num_classes, num_gt, total_num_anchors, 
             )
-            reg_target  = tf.cast(tf.gather_nd(gt_bboxes_per_image, tf.reshape(matched_gt_inds, [-1, 1])), K.dtype(outputs))
-            cls_target  = tf.cast(tf.one_hot(tf.cast(gt_matched_classes, tf.int32), num_classes) * tf.expand_dims(pred_ious_this_matching, -1), K.dtype(outputs))
-            obj_target  = tf.cast(tf.expand_dims(fg_mask, -1), K.dtype(outputs))
+            reg_target = tf.cast(tf.gather_nd(gt_bboxes_per_image, tf.reshape(matched_gt_inds, [-1, 1])), K.dtype(outputs))
+            cls_target = tf.cast(tf.one_hot(tf.cast(gt_matched_classes, tf.int32), num_classes) * tf.expand_dims(pred_ious_this_matching, -1), K.dtype(outputs))
+            obj_target = tf.cast(tf.expand_dims(fg_mask, -1), K.dtype(outputs))
             return num_fg_img, cls_target, reg_target, obj_target, fg_mask
             
         num_fg_img, cls_target, reg_target, obj_target, fg_mask = tf.cond(tf.equal(num_gt, 0), f1, f2)
-        num_fg      += num_fg_img
-        loss_iou    += K.sum(1 - box_ciou(reg_target, tf.boolean_mask(bboxes_preds_per_image, fg_mask)))
-        loss_obj    += K.sum(K.binary_crossentropy(obj_target, obj_preds_per_image, from_logits=True))
-        loss_cls    += K.sum(K.binary_crossentropy(cls_target, tf.boolean_mask(cls_preds_per_image, fg_mask), from_logits=True))
+        num_fg += num_fg_img
+        loss_iou += K.sum(1 - box_ciou(reg_target, tf.boolean_mask(bboxes_preds_per_image, fg_mask)))
+        loss_obj += K.sum(K.binary_crossentropy(obj_target, obj_preds_per_image, from_logits=True))
+        loss_cls += K.sum(K.binary_crossentropy(cls_target, tf.boolean_mask(cls_preds_per_image, fg_mask), from_logits=True))
         return b + 1, num_fg, loss_iou, loss_obj, loss_cls
     _, num_fg, loss_iou, loss_obj, loss_cls = tf.while_loop(lambda b,*args: b < tf.cast(tf.shape(outputs)[0], tf.int32), loop_body, [0, num_fg, loss_iou, loss_obj, loss_cls])
     
