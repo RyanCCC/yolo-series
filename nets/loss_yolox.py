@@ -8,12 +8,12 @@ import tensorflow.keras.backend as K
 
 def get_yolo_loss(input_shape, num_layers, num_classes):
     def yolo_loss(args):
-        #-----------------------------------------------#
-        #   ground true:[batch_size, num_gt, 4 + 1]
-        #   y_pred :[[batch_size, 20, 20, num_classes + 5]
-        #            [batch_size, 40, 40, num_classes + 5]
-        #            [batch_size, 80, 80, num_classes + 5]]
-        #-----------------------------------------------#
+        '''
+        ground true:[batch_size, num_gt, 4 + 1]
+        y_pred :[[batch_size, 20, 20, num_classes + 5]
+                [batch_size, 40, 40, num_classes + 5]
+                [batch_size, 80, 80, num_classes + 5]]
+        '''
         labels, y_pred = args[-1], args[:-1]
         x_shifts            = []
         y_shifts            = []

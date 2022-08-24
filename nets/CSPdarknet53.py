@@ -78,7 +78,7 @@ def DarknetConv2D_withL2(*args, **kwargs):
     return Conv2D(*args, **darknet_conv_kwargs)
 
 
-#   DarknetConv2D + BatchNormalization + Mish
+#DarknetConv2D + BatchNormalization + Mish
 def DarknetConv2D_BN_Mish(*args, **kwargs):
     no_bias_kwargs = {'use_bias': False}
     no_bias_kwargs.update(kwargs)
@@ -114,11 +114,7 @@ def resblock_body(x, num_filters, num_blocks, all_narrow=True):
     route = Concatenate()([postconv, shortconv])
     return DarknetConv2D_BN_Mish(num_filters, (1,1))(route)
 
-#---------------------------------------------------#
-#   CSPdarknet53 的主体部分
-#   输入为一张416x416x3的图片
-#   输出为三个有效特征层
-#---------------------------------------------------#
+# CSPDarknet主体
 def darknet_body(x):
     x = DarknetConv2D_BN_Mish(32, (3,3))(x)
     x = resblock_body(x, 64, 1, False)
