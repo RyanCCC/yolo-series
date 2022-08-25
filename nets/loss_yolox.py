@@ -20,9 +20,11 @@ def get_yolo_loss(input_shape, num_layers, num_classes):
         expanded_strides    = []
         outputs             = []
         '''
-        outputs   [[batch_size, 400, num_classes + 5]
+        outputs:[
+            [batch_size, 400, num_classes + 5]
             [batch_size, 1600, num_classes + 5]
-            [batch_size, 6400, num_classes + 5]]
+            [batch_size, 6400, num_classes + 5]
+        ]
         '''
         for i in range(num_layers):
             output = y_pred[i]
@@ -63,11 +65,11 @@ def get_losses(x_shifts, y_shifts, expanded_strides, outputs, labels, num_classe
         # num_gt 单张图片的真实框的数量
         num_gt  = tf.cast(nlabel[b], tf.int32)
         '''
-        gt_bboxes_per_image     [num_gt, 4]
-        gt_classes              [num_gt]
-        bboxes_preds_per_image  [n_anchors_all, 4]
-        obj_preds_per_image     [n_anchors_all, 1]
-        cls_preds_per_image     [n_anchors_all, num_classes]
+        gt_bboxes_per_image: [num_gt, 4]
+        gt_classes: [num_gt]
+        bboxes_preds_per_image: [n_anchors_all, 4]
+        obj_preds_per_image: [n_anchors_all, 1]
+        cls_preds_per_image: [n_anchors_all, num_classes]
         '''
         gt_bboxes_per_image  = labels[b][:num_gt, :4]
         gt_classes = labels[b][:num_gt,  4]
@@ -187,18 +189,18 @@ def bboxes_iou(b1, b2):
     return iou
 
 def dynamic_k_matching(cost, pair_wise_ious, fg_mask, gt_classes, num_gt):
-    #-------------------------------------------------------#
-    #   matching_matrix     [num_gt, fg_mask]
-    #   cost                [num_gt, fg_mask]
-    #   pair_wise_ious      [num_gt, fg_mask] 每一个真实框和预测框的重合情况
-    #   gt_classes          [num_gt]        
-    #   fg_mask             [n_anchors_all]
-    #-------------------------------------------------------#
-    matching_matrix         = tf.zeros_like(cost)
-    n_candidate_k           = tf.minimum(10, tf.shape(pair_wise_ious)[1])
-    topk_ious, _            = tf.nn.top_k(pair_wise_ious, n_candidate_k)
-    dynamic_ks              = tf.maximum(tf.reduce_sum(topk_ious, 1), 1)
-    # dynamic_ks              = tf.Print(dynamic_ks, [topk_ious, dynamic_ks], summarize = 100)
+    '''
+    matching_matrix: [num_gt, fg_mask]
+    cost: [num_gt, fg_mask]
+    pair_wise_ious: [num_gt, fg_mask] 每一个真实框和预测框的重合情况
+    gt_classes: [num_gt]        
+    fg_mask: [n_anchors_all]
+    '''
+    matching_matrix = tf.zeros_like(cost)
+    n_candidate_k = tf.minimum(10, tf.shape(pair_wise_ious)[1])
+    topk_ious, _ = tf.nn.top_k(pair_wise_ious, n_candidate_k)
+    dynamic_ks = tf.maximum(tf.reduce_sum(topk_ious, 1), 1)
+    # dynamic_ks = tf.Print(dynamic_ks, [topk_ious, dynamic_ks], summarize = 100)
     
     def loop_body_1(b, matching_matrix):
         _, pos_idx = tf.nn.top_k(-cost[b], k=tf.cast(dynamic_ks[b], tf.int32))
@@ -211,8 +213,8 @@ def dynamic_k_matching(cost, pair_wise_ious, fg_mask, gt_classes, num_gt):
     anchor_matching_gt = tf.reduce_sum(matching_matrix, 0)
     biger_one_indice = tf.reshape(tf.where(anchor_matching_gt > 1), [-1])
     def loop_body_2(b, matching_matrix):
-        indice_anchor   = tf.cast(biger_one_indice[b], tf.int32)
-        indice_gt       = tf.math.argmin(cost[:, indice_anchor])
+        indice_anchor = tf.cast(biger_one_indice[b], tf.int32)
+        indice_gt = tf.math.argmin(cost[:, indice_anchor])
         matching_matrix = tf.concat(
             [
                 matching_matrix[:, :indice_anchor], 
@@ -223,14 +225,14 @@ def dynamic_k_matching(cost, pair_wise_ious, fg_mask, gt_classes, num_gt):
         return b + 1, matching_matrix
     _, matching_matrix = tf.while_loop(lambda b,*args: b < tf.cast(tf.shape(biger_one_indice)[0], tf.int32), loop_body_2, [0, matching_matrix])
     fg_mask_inboxes = tf.reduce_sum(matching_matrix, 0) > 0.0
-    num_fg          = tf.reduce_sum(tf.cast(fg_mask_inboxes, K.dtype(cost)))
+    num_fg = tf.reduce_sum(tf.cast(fg_mask_inboxes, K.dtype(cost)))
 
-    fg_mask_indices         = tf.reshape(tf.where(fg_mask), [-1])
+    fg_mask_indices = tf.reshape(tf.where(fg_mask), [-1])
     fg_mask_inboxes_indices = tf.reshape(tf.where(fg_mask_inboxes), [-1, 1])
     fg_mask_select_indices  = tf.gather_nd(fg_mask_indices, fg_mask_inboxes_indices)
-    fg_mask                 = tf.cast(tf.reduce_max(tf.one_hot(fg_mask_select_indices, tf.shape(fg_mask)[0]), 0), K.dtype(fg_mask))
-    matched_gt_inds     = tf.math.argmax(tf.boolean_mask(matching_matrix, fg_mask_inboxes, axis = 1), 0)
-    gt_matched_classes  = tf.gather_nd(gt_classes, tf.reshape(matched_gt_inds, [-1, 1]))
+    fg_mask  = tf.cast(tf.reduce_max(tf.one_hot(fg_mask_select_indices, tf.shape(fg_mask)[0]), 0), K.dtype(fg_mask))
+    matched_gt_inds  = tf.math.argmax(tf.boolean_mask(matching_matrix, fg_mask_inboxes, axis = 1), 0)
+    gt_matched_classes = tf.gather_nd(gt_classes, tf.reshape(matched_gt_inds, [-1, 1]))
 
     pred_ious_this_matching = tf.boolean_mask(tf.reduce_sum(matching_matrix * pair_wise_ious, 0), fg_mask_inboxes)
     return gt_matched_classes, fg_mask, pred_ious_this_matching, matched_gt_inds, num_fg
@@ -263,8 +265,8 @@ def get_lr_scheduler(lr_decay_type, lr, min_lr, total_iters, warmup_iters_ratio 
 
     if lr_decay_type == "cos":
         warmup_total_iters  = min(max(warmup_iters_ratio * total_iters, 1), 3)
-        warmup_lr_start     = max(warmup_lr_ratio * lr, 1e-6)
-        no_aug_iter         = min(max(no_aug_iter_ratio * total_iters, 1), 15)
+        warmup_lr_start = max(warmup_lr_ratio * lr, 1e-6)
+        no_aug_iter = min(max(no_aug_iter_ratio * total_iters, 1), 15)
         func = partial(yolox_warm_cos_lr ,lr, min_lr, total_iters, warmup_total_iters, warmup_lr_start, no_aug_iter)
     else:
         decay_rate  = (min_lr / lr) ** (1 / (step_num - 1))
