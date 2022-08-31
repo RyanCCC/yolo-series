@@ -50,8 +50,8 @@ def main(args):
         '''
         saved_model = args.saved_model
         assert len(saved_model) > 0, 'saved_model cannot be none or empty.'
-        maskrcnn_model = tf.keras.models.load_model(saved_model)
-        model_proto, _ = tf2onnx.convert.from_keras(maskrcnn_model, opset=opset, output_path=onnx_save_path)
+        yolo_model = tf.keras.models.load_model(saved_model)
+        model_proto, _ = tf2onnx.convert.from_keras(yolo_model, opset=opset, output_path=onnx_save_path)
         output_names = [n.name for n in model_proto.graph.output]
         print(output_names)
     else:
