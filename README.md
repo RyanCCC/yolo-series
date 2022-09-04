@@ -6,6 +6,7 @@
 - [x] YOLOV5
 - [x] YOLOX
 - [ ] YOLOV7
+- [ ] YOLOP
 
 后续将追踪关于YOLO的一些成果，并及时复现当中的算法。具体可以参考本人的博客：[目标检测2022最新进展](https://blog.csdn.net/u012655441/article/details/123552537)。关于YOLO的部署可以参考我的仓库：[Deployment](https://github.com/RyanCCC/Deployment)。
 
