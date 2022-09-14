@@ -9,8 +9,8 @@ from deep_sort import preprocessing, nn_matching
 from deep_sort.detection import Detection
 from deep_sort.tracker import Tracker
 from utils import generate_detections as gdet
-from customerConfig import YOLOXConfig
-from predict_yolox import yolox, get_classes
+from customerConf import YOLOXConfig
+from predict.predict_yolox import yolox, get_classes
 
 video_save_path = ''
 video_fps       = 25
