@@ -26,7 +26,6 @@
 |---doc：存放YOLO资料文档
 |---evaluate：存放模型评估方法
 |---logs：存放训练日志的文档
-|---method：一些基础方法，如划分数据集训练集，生成训练集文档等
 |---model：存放模型和权重
 |   +---yolo4_voc_weights.h5：VOC预训练权重
 |   \---yolo4_weight.h5：COCO预训练权重
@@ -43,6 +42,8 @@
 |   \---predict_yolox.py：YOLOX推理
 |---utils：基础模块
 |---video：视频存放
+|---yolov5：yolov5实现算法
+|---yolop：yolop实现算法
 \---datasets：数据集，以VOC数据集格式
     +---Annotations：数据集标注
     +---ImageSets

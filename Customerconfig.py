@@ -89,3 +89,6 @@ class YOLOXConfig(Config):
     score=0.3
     iou=0.5
     input_shape = [640, 640]
+
+class YOLOPConfig(Config):
+    pass
