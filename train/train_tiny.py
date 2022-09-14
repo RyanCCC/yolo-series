@@ -14,7 +14,7 @@ from nets.yolo4_tiny import yolo_body
 from utils.utils import (ModelCheckpoint,
                          WarmUpCosineDecayScheduler, get_random_data,
                          get_random_data_with_Mosaic)
-from customerConfig import YOLOV4Config
+from customerConf import YOLOV4Config
 
 
 # 设置GPU自增长

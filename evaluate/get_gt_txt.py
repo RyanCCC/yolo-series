@@ -3,7 +3,7 @@ import os
 sys.path.append(os.getcwd())
 import glob
 import xml.etree.ElementTree as ET
-from customerConfig import YOLOV4Config
+from customerConf import YOLOV4Config
 
 def get_classes(classes_path):
     '''loads the classes'''

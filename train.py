@@ -1,4 +1,4 @@
-import customerConfig
+import customerConf
 import argparse
 
 
@@ -18,15 +18,15 @@ if __name__ == '__main__':
     args = parse_args()
     if args.model.upper() == 'YOLOX':
         from train import train_yolox
-        train_yolox.main(customerConfig.YOLOXConfig)
+        train_yolox.main(customerConf.YOLOXConfig)
     elif  args.model.upper() == 'YOLOV4':
         from train import train_yolov4
-        train_yolov4.main(customerConfig.YOLOV4Config)
+        train_yolov4.main(customerConf.YOLOV4Config)
     elif args.model.upper() == 'YOLOV4-TINY':
         from train import train_tiny
-        train_tiny.main(customerConfig.YOLOV4Config)
+        train_tiny.main(customerConf.YOLOV4Config)
     elif args.model.upper() == 'YOLOV5':
         from train import train_yolov5
-        train_yolov5.train(customerConfig.YOLOV5Config)
+        train_yolov5.train(customerConf.YOLOV5Config)
     else:
         pass

@@ -1,7 +1,7 @@
 import colorsys
 import os
 import time
-from customerConfig import YOLOV4Config
+from customerConf import YOLOV4Config
 import numpy as np
 import tensorflow as tf
 from PIL import Image, ImageDraw, ImageFont

@@ -9,7 +9,7 @@ import math
 
 import numpy as np
 sys.path.append(os.getcwd())
-from customerConfig import YOLOV4Config
+from customerConf import YOLOV4Config
 
 '''
 用于计算mAP

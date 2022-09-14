@@ -63,7 +63,7 @@ def main(args):
         weights = args.weight
         assert len(weights) > 0, 'weights cannot be none or empty.'
         if yolo_type == 'yolov4':
-            from customerConfig import YOLOV4Config
+            from customerConf import YOLOV4Config
             from nets.yolo4 import yolo_body
             anchors = get_anchors(YOLOV4Config.anchors_path)
             class_names = get_class(YOLOV4Config.classes_path)
@@ -83,7 +83,7 @@ def main(args):
             output_names = [n.name for n in model_proto.graph.output]
             print(f'Model output names: ',output_names)
         elif yolo_type == 'yolov4_tiny':
-            from customerConfig import YOLOV4Config
+            from customerConf import YOLOV4Config
             from nets.yolo4_tiny import yolo_body
             anchors = get_anchors(YOLOV4Config.anchors_path)
             class_names = get_class(YOLOV4Config.classes_path)
@@ -105,7 +105,7 @@ def main(args):
         elif yolo_type == 'yolov5':
             pass
         elif yolo_type == 'yolox':
-            from customerConfig import YOLOXConfig
+            from customerConf import YOLOXConfig
             from nets.yolox import yolo_body
             class_names = get_class(YOLOXConfig.classes_path)
             num_classes = len(class_names)
