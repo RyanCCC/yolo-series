@@ -18,7 +18,7 @@ import numpy as np
 import torchvision.transforms as transforms
 import PIL.Image as image
 
-from lib.config import cfg
+import config as cfg
 from config import update_config
 from utils.utils import create_logger, select_device, time_synchronized
 from models import get_net

@@ -16,7 +16,7 @@ from utils import DataLoaderX
 from tensorboardX import SummaryWriter
 
 import dataset as dataset
-import config
+import config as cfg
 from config import update_config
 from core.loss import get_loss
 from core.function import validate

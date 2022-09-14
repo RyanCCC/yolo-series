@@ -39,10 +39,10 @@ LOSS_LL_IOU_GAIN = 0.2 # lane line iou loss gain
 
 
 # DATASET related params
-DATASET_DATAROOT = '/home/zwt/bdd/bdd100k/images/100k'       # the path of images folder
-DATASET_LABELROOT = '/home/zwt/bdd/bdd100k/labels/100k'      # the path of det_annotations folder
-DATASET_MASKROOT = '/home/zwt/bdd/bdd_seg_gt'                # the path of da_seg_annotations folder
-DATASET_LANEROOT = '/home/zwt/bdd/bdd_lane_gt'               # the path of ll_seg_annotations folder
+DATASET_DATAROOT = '/home/bdd/bdd100k/images/100k'       # the path of images folder
+DATASET_LABELROOT = '/home/bdd/bdd100k/labels/100k'      # the path of det_annotations folder
+DATASET_MASKROOT = '/home/bdd/bdd_seg_gt'                # the path of da_seg_annotations folder
+DATASET_LANEROOT = '/home/bdd/bdd_lane_gt'               # the path of ll_seg_annotations folder
 DATASET_DATASET = 'BddDataset'
 DATASET_TRAIN_SET = 'train'
 DATASET_TEST_SET = 'val'

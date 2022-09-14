@@ -21,18 +21,22 @@ from utils import DataLoaderX, torch_distributed_zero_first
 from tensorboardX import SummaryWriter
 
 import dataset as dataset
-from lib.config import cfg
-from lib.config import update_config
-from lib.core.loss import get_loss
-from lib.core.function import train
-from lib.core.function import validate
-from lib.core.general import fitness
-from lib.models import get_net
-from lib.utils import is_parallel
-from lib.utils.utils import get_optimizer
-from lib.utils.utils import save_checkpoint
-from lib.utils.utils import create_logger, select_device
-from lib.utils import run_anchor
+import config as cfg
+from config import update_config
+from core.loss import get_loss
+from core.function import train
+from core.function import validate
+from core.general import fitness
+from models import get_net
+from utils import is_parallel
+from utils.utils import get_optimizer
+from utils.utils import save_checkpoint
+from utils.utils import create_logger, select_device
+from utils import run_anchor
+
+'''
+参考：https://github.com/hustvl/YOLOP
+'''
 
 
 def parse_args():
