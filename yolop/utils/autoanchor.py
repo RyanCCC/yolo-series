@@ -5,7 +5,7 @@ import torch
 import yaml
 from scipy.cluster.vq import kmeans
 from tqdm import tqdm
-from lib.utils import is_parallel
+from utils import is_parallel
 
 
 def check_anchor_order(m):

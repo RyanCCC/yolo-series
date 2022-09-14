@@ -2,7 +2,7 @@ import torch.nn as nn
 import torch
 from .general import bbox_iou
 from .postprocess import build_targets
-from lib.core.evaluate import SegmentationMetric
+from utils.evaluate import SegmentationMetric
 
 class MultiHeadLoss(nn.Module):
     """

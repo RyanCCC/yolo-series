@@ -4,7 +4,7 @@ import torch
 import argparse
 import onnxruntime as ort
 import numpy as np
-from lib.core.general import non_max_suppression
+from core.general import non_max_suppression
 
 
 def resize_unscale(img, new_shape=(640, 640), color=114):

@@ -17,10 +17,10 @@ import torch.utils.data
 import torch.utils.data.distributed
 import torchvision.transforms as transforms
 import numpy as np
-from lib.utils import DataLoaderX, torch_distributed_zero_first
+from utils import DataLoaderX, torch_distributed_zero_first
 from tensorboardX import SummaryWriter
 
-import lib.dataset as dataset
+import dataset as dataset
 from lib.config import cfg
 from lib.config import update_config
 from lib.core.loss import get_loss

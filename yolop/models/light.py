@@ -8,11 +8,11 @@ sys.path.append(os.getcwd())
 from lib.utils import initialize_weights
 # from lib.models.common2 import DepthSeperabelConv2d as Conv
 # from lib.models.common2 import SPP, Bottleneck, BottleneckCSP, Focus, Concat, Detect
-from lib.models.common import Conv, SPP, Bottleneck, BottleneckCSP, Focus, Concat, Detect
+from models.common import Conv, SPP, Bottleneck, BottleneckCSP, Focus, Concat, Detect
 from torch.nn import Upsample
-from lib.utils import check_anchor_order
-from lib.core.evaluate import SegmentationMetric
-from lib.utils.utils import time_synchronized
+from utils import check_anchor_order
+from utils.evaluate import SegmentationMetric
+from utils.utils import time_synchronized
 
 CSPDarknet_s = [
 [ -1, Focus, [3, 32, 3]],

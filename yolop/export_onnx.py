@@ -1,9 +1,9 @@
 import torch
 import torch.nn as nn
-from lib.models.common import Conv, SPP, Bottleneck, BottleneckCSP, Focus, Concat, Detect, SharpenConv
+from models.common import Conv, SPP, Bottleneck, BottleneckCSP, Focus, Concat, Detect, SharpenConv
 from torch.nn import Upsample
-from lib.utils import check_anchor_order
-from lib.utils import initialize_weights
+from utils import check_anchor_order
+from utils import initialize_weights
 import argparse
 import onnx
 import onnxruntime as ort

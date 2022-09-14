@@ -1,5 +1,5 @@
 import torch
-from lib.utils import is_parallel
+from utils import is_parallel
 import numpy as np
 np.set_printoptions(threshold=np.inf)
 import cv2

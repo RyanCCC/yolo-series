@@ -1,8 +1,8 @@
 import time
-from lib.core.evaluate import ConfusionMatrix,SegmentationMetric
-from lib.core.general import non_max_suppression,check_img_size,scale_coords,xyxy2xywh,xywh2xyxy,box_iou,coco80_to_coco91_class,plot_images,ap_per_class,output_to_target
-from lib.utils.utils import time_synchronized
-from lib.utils import plot_img_and_mask,plot_one_box,show_seg_result
+from utils.evaluate import ConfusionMatrix,SegmentationMetric
+from core.general import non_max_suppression,check_img_size,scale_coords,xyxy2xywh,xywh2xyxy,box_iou,coco80_to_coco91_class,plot_images,ap_per_class,output_to_target
+from utils.utils import time_synchronized
+from utils import plot_img_and_mask,plot_one_box,show_seg_result
 import torch
 from threading import Thread
 import numpy as np

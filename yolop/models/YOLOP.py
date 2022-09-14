@@ -1,5 +1,4 @@
 import torch
-from torch import tensor
 import torch.nn as nn
 import sys,os
 import math
@@ -8,14 +7,14 @@ sys.path.append(os.getcwd())
 #sys.path.append("lib/models")
 #sys.path.append("lib/utils")
 #sys.path.append("/workspace/wh/projects/DaChuang")
-from lib.utils import initialize_weights
+from utils import initialize_weights
 # from lib.models.common2 import DepthSeperabelConv2d as Conv
 # from lib.models.common2 import SPP, Bottleneck, BottleneckCSP, Focus, Concat, Detect
-from lib.models.common import Conv, SPP, Bottleneck, BottleneckCSP, Focus, Concat, Detect, SharpenConv
+from models.common import Conv, SPP, Bottleneck, BottleneckCSP, Focus, Concat, Detect, SharpenConv
 from torch.nn import Upsample
-from lib.utils import check_anchor_order
-from lib.core.evaluate import SegmentationMetric
-from lib.utils.utils import time_synchronized
+from utils import check_anchor_order
+from utils.evaluate import SegmentationMetric
+from utils.utils import time_synchronized
 
 """
 MCnet_SPP = [

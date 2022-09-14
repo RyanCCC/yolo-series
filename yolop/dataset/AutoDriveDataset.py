@@ -8,7 +8,7 @@ import torchvision.transforms as transforms
 from pathlib import Path
 from PIL import Image
 from torch.utils.data import Dataset
-from ..utils import letterbox, augment_hsv, random_perspective, xyxy2xywh, cutout
+from utils import letterbox, augment_hsv, random_perspective, xyxy2xywh, cutout
 
 
 class AutoDriveDataset(Dataset):
