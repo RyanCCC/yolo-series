@@ -36,6 +36,11 @@
 |   +---train_tiny.py：YOLOV4 TINY训练
 |   +---train_yolox.py：YOLOX训练
 |   \---train.py：YOLOV4训练
+|---predict：推理文档，
+|   +---predict_yolov4_weight.py：YOLOV4加载权重推理
+|   +---predict_yolov4.py：YOLOV4推理
+|   +---predict_yolov5.py：YOLOV5推理
+|   \---predict_yolox.py：YOLOX推理
 |---utils：基础模块
 |---video：视频存放
 \---datasets：数据集，以VOC数据集格式
