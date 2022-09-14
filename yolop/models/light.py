@@ -5,7 +5,7 @@ import sys,os
 import math
 import sys
 sys.path.append(os.getcwd())
-from lib.utils import initialize_weights
+from utils import initialize_weights
 # from lib.models.common2 import DepthSeperabelConv2d as Conv
 # from lib.models.common2 import SPP, Bottleneck, BottleneckCSP, Focus, Concat, Detect
 from models.common import Conv, SPP, Bottleneck, BottleneckCSP, Focus, Concat, Detect
