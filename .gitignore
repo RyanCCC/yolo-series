@@ -11,4 +11,5 @@ model
 samples
 *.mp4
 *.onnx
-BDD100K
+BddDataset
+weights

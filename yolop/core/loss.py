@@ -139,23 +139,23 @@ class MultiHeadLoss(nn.Module):
         liou_ll *= cfg.LOSS.LL_IOU_GAIN * self.lambdas[5]
 
         
-        if cfg.TRAIN.DET_ONLY or cfg.TRAIN.ENC_DET_ONLY or cfg.TRAIN.DET_ONLY:
+        if cfg.TRAIN_DET_ONLY or cfg.TRAIN_ENC_DET_ONLY or cfg.TRAIN_DET_ONLY:
             lseg_da = 0 * lseg_da
             lseg_ll = 0 * lseg_ll
             liou_ll = 0 * liou_ll
             
-        if cfg.TRAIN.SEG_ONLY or cfg.TRAIN.ENC_SEG_ONLY:
+        if cfg.TRAIN_SEG_ONLY or cfg.TRAIN_ENC_SEG_ONLY:
             lcls = 0 * lcls
             lobj = 0 * lobj
             lbox = 0 * lbox
 
-        if cfg.TRAIN.LANE_ONLY:
+        if cfg.TRAIN_LANE_ONLY:
             lcls = 0 * lcls
             lobj = 0 * lobj
             lbox = 0 * lbox
             lseg_da = 0 * lseg_da
 
-        if cfg.TRAIN.DRIVABLE_ONLY:
+        if cfg.TRAIN_DRIVABLE_ONLY:
             lcls = 0 * lcls
             lobj = 0 * lobj
             lbox = 0 * lbox
@@ -182,18 +182,18 @@ def get_loss(cfg, device):
 
     """
     # class loss criteria
-    BCEcls = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor([cfg.LOSS.CLS_POS_WEIGHT])).to(device)
+    BCEcls = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor([cfg.LOSS_CLS_POS_WEIGHT])).to(device)
     # object loss criteria
-    BCEobj = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor([cfg.LOSS.OBJ_POS_WEIGHT])).to(device)
+    BCEobj = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor([cfg.LOSS_OBJ_POS_WEIGHT])).to(device)
     # segmentation loss criteria
-    BCEseg = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor([cfg.LOSS.SEG_POS_WEIGHT])).to(device)
+    BCEseg = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor([cfg.LOSS_SEG_POS_WEIGHT])).to(device)
     # Focal loss
-    gamma = cfg.LOSS.FL_GAMMA  # focal loss gamma
+    gamma = cfg.LOSS_FL_GAMMA  # focal loss gamma
     if gamma > 0:
         BCEcls, BCEobj = FocalLoss(BCEcls, gamma), FocalLoss(BCEobj, gamma)
 
     loss_list = [BCEcls, BCEobj, BCEseg]
-    loss = MultiHeadLoss(loss_list, cfg=cfg, lambdas=cfg.LOSS.MULTI_HEAD_LAMBDA)
+    loss = MultiHeadLoss(loss_list, cfg=cfg, lambdas=cfg.LOSS_MULTI_HEAD_LAMBDA)
     return loss
 
 # example

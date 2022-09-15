@@ -46,7 +46,7 @@ def build_targets(cfg, predictions, targets, model):
         if nt:
             # Matches
             r = t[:, :, 4:6] / anchors[:, None]  # wh ratio
-            j = torch.max(r, 1. / r).max(2)[0] < cfg.TRAIN.ANCHOR_THRESHOLD  # compare
+            j = torch.max(r, 1. / r).max(2)[0] < cfg.TRAIN_ANCHOR_THRESHOLD  # compare
             # j = wh_iou(anchors, t[:, 4:6]) > model.hyp['iou_t']  # iou(3,n)=wh_iou(anchors(3,2), gwh(n,2))
             t = t[j]  # filter
 

@@ -32,14 +32,14 @@ class AutoDriveDataset(Dataset):
         self.transform = transform
         self.inputsize = inputsize
         self.Tensor = transforms.ToTensor()
-        img_root = Path(cfg.DATASET.DATAROOT)
-        label_root = Path(cfg.DATASET.LABELROOT)
-        mask_root = Path(cfg.DATASET.MASKROOT)
-        lane_root = Path(cfg.DATASET.LANEROOT)
+        img_root = Path(cfg.DATASET_DATAROOT)
+        label_root = Path(cfg.DATASET_LABELROOT)
+        mask_root = Path(cfg.DATASET_MASKROOT)
+        lane_root = Path(cfg.DATASET_LANEROOT)
         if is_train:
-            indicator = cfg.DATASET.TRAIN_SET
+            indicator = cfg.DATASET_TRAIN_SET
         else:
-            indicator = cfg.DATASET.TEST_SET
+            indicator = cfg.DATASET_TEST_SET
         self.img_root = img_root / indicator
         self.label_root = label_root / indicator
         self.mask_root = mask_root / indicator
@@ -49,15 +49,15 @@ class AutoDriveDataset(Dataset):
 
         self.db = []
 
-        self.data_format = cfg.DATASET.DATA_FORMAT
+        self.data_format = cfg.DATASET_DATA_FORMAT
 
-        self.scale_factor = cfg.DATASET.SCALE_FACTOR
-        self.rotation_factor = cfg.DATASET.ROT_FACTOR
-        self.flip = cfg.DATASET.FLIP
-        self.color_rgb = cfg.DATASET.COLOR_RGB
+        self.scale_factor = cfg.DATASET_SCALE_FACTOR
+        self.rotation_factor = cfg.DATASET_ROT_FACTOR
+        self.flip = cfg.DATASET_FLIP
+        self.color_rgb = cfg.DATASET_COLOR_RGB
 
         # self.target_type = cfg.MODEL.TARGET_TYPE
-        self.shapes = np.array(cfg.DATASET.ORG_IMG_SIZE)
+        self.shapes = np.array(cfg.DATASET_ORG_IMG_SIZE)
     
     def _get_db(self):
         """
@@ -141,13 +141,13 @@ class AutoDriveDataset(Dataset):
             (img, seg_label, lane_label), labels = random_perspective(
                 combination=combination,
                 targets=labels,
-                degrees=self.cfg.DATASET.ROT_FACTOR,
-                translate=self.cfg.DATASET.TRANSLATE,
-                scale=self.cfg.DATASET.SCALE_FACTOR,
-                shear=self.cfg.DATASET.SHEAR
+                degrees=self.cfg.DATASET_ROT_FACTOR,
+                translate=self.cfg.DATASET_TRANSLATE,
+                scale=self.cfg.DATASET_SCALE_FACTOR,
+                shear=self.cfg.DATASET_SHEAR
             )
             #print(labels.shape)
-            augment_hsv(img, hgain=self.cfg.DATASET.HSV_H, sgain=self.cfg.DATASET.HSV_S, vgain=self.cfg.DATASET.HSV_V)
+            augment_hsv(img, hgain=self.cfg.DATASET_HSV_H, sgain=self.cfg.DATASET_HSV_S, vgain=self.cfg.DATASET_HSV_V)
             # img, seg_label, labels = cutout(combination=combination, labels=labels)
 
             if len(labels):

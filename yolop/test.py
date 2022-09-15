@@ -101,7 +101,7 @@ def main():
         mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
     )
 
-    valid_dataset = eval('dataset.' + cfg.DATASET.DATASET)(
+    valid_dataset = eval('dataset.' + cfg.DATASET_DATASET)(
         cfg=cfg,
         is_train=False,
         inputsize=cfg.MODEL.IMAGE_SIZE,

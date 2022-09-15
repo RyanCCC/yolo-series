@@ -19,9 +19,9 @@ def clean_str(s):
 
 def create_logger(cfg, cfg_path, phase='train', rank=-1):
     # set up logger dir
-    dataset = cfg.DATASET.DATASET
+    dataset = cfg.DATASET_DATASET
     dataset = dataset.replace(':', '_')
-    model = cfg.MODEL.NAME
+    model = cfg.MODEL_NAME
     cfg_path = os.path.basename(cfg_path).split('.')[0]
 
     if rank in [-1, 0]:
@@ -80,20 +80,20 @@ def select_device(logger=None, device='', batch_size=None):
 
 def get_optimizer(cfg, model):
     optimizer = None
-    if cfg.TRAIN.OPTIMIZER == 'sgd':
+    if cfg.TRAIN_OPTIMIZER == 'sgd':
         optimizer = optim.SGD(
             filter(lambda p: p.requires_grad, model.parameters()),
-            lr=cfg.TRAIN.LR0,
-            momentum=cfg.TRAIN.MOMENTUM,
-            weight_decay=cfg.TRAIN.WD,
-            nesterov=cfg.TRAIN.NESTEROV
+            lr=cfg.TRAIN_LR0,
+            momentum=cfg.TRAIN_MOMENTUM,
+            weight_decay=cfg.TRAIN_WD,
+            nesterov=cfg.TRAIN_NESTEROV
         )
-    elif cfg.TRAIN.OPTIMIZER == 'adam':
+    elif cfg.TRAIN_OPTIMIZER == 'adam':
         optimizer = optim.Adam(
             filter(lambda p: p.requires_grad, model.parameters()),
             #model.parameters(),
-            lr=cfg.TRAIN.LR0,
-            betas=(cfg.TRAIN.MOMENTUM, 0.999)
+            lr=cfg.TRAIN_LR0,
+            betas=(cfg.TRAIN_MOMENTUM, 0.999)
         )
 
     return optimizer

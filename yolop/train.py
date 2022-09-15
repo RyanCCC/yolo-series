@@ -77,7 +77,7 @@ def parse_args():
 def main():
     # set all the configurations
     args = parse_args()
-    update_config(cfg, args)
+    update_config(args)
 
     # Set DDP variables
     world_size = int(os.environ['WORLD_SIZE']) if 'WORLD_SIZE' in os.environ else 1
@@ -104,15 +104,15 @@ def main():
         writer_dict = None
 
     # cudnn related setting
-    cudnn.benchmark = cfg.CUDNN.BENCHMARK
-    torch.backends.cudnn.deterministic = cfg.CUDNN.DETERMINISTIC
-    torch.backends.cudnn.enabled = cfg.CUDNN.ENABLED
+    cudnn.benchmark = cfg.CUDNN_BENCHMARK
+    torch.backends.cudnn.deterministic = cfg.CUDNN_DETERMINISTIC
+    torch.backends.cudnn.enabled = cfg.CUDNN_ENABLED
 
     # bulid up model
     # start_time = time.time()
     print("begin to bulid up model...")
     # DP mode
-    device = select_device(logger, batch_size=cfg.TRAIN.BATCH_SIZE_PER_GPU* len(cfg.GPUS)) if not cfg.DEBUG \
+    device = select_device(logger, batch_size=cfg.TRAIN_BATCH_SIZE_PER_GPU* len(cfg.GPUS)) if not cfg.DEBUG \
         else select_device(logger, 'cpu')
 
     if args.local_rank != -1:
@@ -143,32 +143,32 @@ def main():
     Da_Seg_Head_para_idx = [str(i) for i in range(25, 34)]
     Ll_Seg_Head_para_idx = [str(i) for i in range(34,43)]
 
-    lf = lambda x: ((1 + math.cos(x * math.pi / cfg.TRAIN.END_EPOCH)) / 2) * \
-                   (1 - cfg.TRAIN.LRF) + cfg.TRAIN.LRF  # cosine
+    lf = lambda x: ((1 + math.cos(x * math.pi / cfg.TRAIN_END_EPOCH)) / 2) * \
+                   (1 - cfg.TRAIN_LRF) + cfg.TRAIN_LRF  # cosine
     lr_scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
-    begin_epoch = cfg.TRAIN.BEGIN_EPOCH
+    begin_epoch = cfg.TRAIN_BEGIN_EPOCH
 
     if rank in [-1, 0]:
         checkpoint_file = os.path.join(
-            os.path.join(cfg.LOG_DIR, cfg.DATASET.DATASET), 'checkpoint.pth'
+            os.path.join(cfg.LOG_DIR, cfg.DATASET_DATASET), 'checkpoint.pth'
         )
-        if os.path.exists(cfg.MODEL.PRETRAINED):
-            logger.info("=> loading model '{}'".format(cfg.MODEL.PRETRAINED))
-            checkpoint = torch.load(cfg.MODEL.PRETRAINED)
+        if os.path.exists(cfg.MODEL_PRETRAINED):
+            logger.info("=> loading model '{}'".format(cfg.MODEL_PRETRAINED))
+            checkpoint = torch.load(cfg.MODEL_PRETRAINED)
             begin_epoch = checkpoint['epoch']
             # best_perf = checkpoint['perf']
             last_epoch = checkpoint['epoch']
             model.load_state_dict(checkpoint['state_dict'])
             optimizer.load_state_dict(checkpoint['optimizer'])
             logger.info("=> loaded checkpoint '{}' (epoch {})".format(
-                cfg.MODEL.PRETRAINED, checkpoint['epoch']))
+                cfg.MODEL_PRETRAINED, checkpoint['epoch']))
             #cfg.NEED_AUTOANCHOR = False     #disable autoanchor
         
-        if os.path.exists(cfg.MODEL.PRETRAINED_DET):
-            logger.info("=> loading model weight in det branch from '{}'".format(cfg.MODEL.PRETRAINED))
+        if os.path.exists(cfg.MODEL_PRETRAINED_DET):
+            logger.info("=> loading model weight in det branch from '{}'".format(cfg.MODEL_PRETRAINED))
             det_idx_range = [str(i) for i in range(0,25)]
             model_dict = model.state_dict()
-            checkpoint_file = cfg.MODEL.PRETRAINED_DET
+            checkpoint_file = cfg.MODEL_PRETRAINED_DET
             checkpoint = torch.load(checkpoint_file)
             begin_epoch = checkpoint['epoch']
             last_epoch = checkpoint['epoch']
@@ -191,7 +191,7 @@ def main():
             #cfg.NEED_AUTOANCHOR = False     #disable autoanchor
         # model = model.to(device)
 
-        if cfg.TRAIN.SEG_ONLY:  #Only train two segmentation branchs
+        if cfg.TRAIN_SEG_ONLY:  #Only train two segmentation branchs
             logger.info('freeze encoder and Det head...')
             for k, v in model.named_parameters():
                 v.requires_grad = True  # train all layers
@@ -199,7 +199,7 @@ def main():
                     print('freezing %s' % k)
                     v.requires_grad = False
 
-        if cfg.TRAIN.DET_ONLY:  #Only train detection branch
+        if cfg.TRAIN_DET_ONLY:  #Only train detection branch
             logger.info('freeze encoder and two Seg heads...')
             # print(model.named_parameters)
             for k, v in model.named_parameters():
@@ -208,7 +208,7 @@ def main():
                     print('freezing %s' % k)
                     v.requires_grad = False
 
-        if cfg.TRAIN.ENC_SEG_ONLY:  # Only train encoder and two segmentation branchs
+        if cfg.TRAIN_ENC_SEG_ONLY:  # Only train encoder and two segmentation branchs
             logger.info('freeze Det head...')
             for k, v in model.named_parameters():
                 v.requires_grad = True  # train all layers 
@@ -216,7 +216,7 @@ def main():
                     print('freezing %s' % k)
                     v.requires_grad = False
 
-        if cfg.TRAIN.ENC_DET_ONLY or cfg.TRAIN.DET_ONLY:    # Only train encoder and detection branchs
+        if cfg.TRAIN_ENC_DET_ONLY or cfg.TRAIN_DET_ONLY:    # Only train encoder and detection branchs
             logger.info('freeze two Seg heads...')
             for k, v in model.named_parameters():
                 v.requires_grad = True  # train all layers
@@ -225,7 +225,7 @@ def main():
                     v.requires_grad = False
 
 
-        if cfg.TRAIN.LANE_ONLY: 
+        if cfg.TRAIN_LANE_ONLY: 
             logger.info('freeze encoder and Det head and Da_Seg heads...')
             # print(model.named_parameters)
             for k, v in model.named_parameters():
@@ -234,7 +234,7 @@ def main():
                     print('freezing %s' % k)
                     v.requires_grad = False
 
-        if cfg.TRAIN.DRIVABLE_ONLY:
+        if cfg.TRAIN_DRIVABLE_ONLY:
             logger.info('freeze encoder and Det head and Ll_Seg heads...')
             # print(model.named_parameters)
             for k, v in model.named_parameters():
@@ -262,10 +262,10 @@ def main():
         mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
     )
 
-    train_dataset = eval('dataset.' + cfg.DATASET.DATASET)(
+    train_dataset = eval('dataset.' + cfg.DATASET_DATASET)(
         cfg=cfg,
         is_train=True,
-        inputsize=cfg.MODEL.IMAGE_SIZE,
+        inputsize=cfg.MODEL_IMAGE_SIZE,
         transform=transforms.Compose([
             transforms.ToTensor(),
             normalize,
@@ -275,8 +275,8 @@ def main():
 
     train_loader = DataLoaderX(
         train_dataset,
-        batch_size=cfg.TRAIN.BATCH_SIZE_PER_GPU * len(cfg.GPUS),
-        shuffle=(cfg.TRAIN.SHUFFLE & rank == -1),
+        batch_size=cfg.TRAIN_BATCH_SIZE_PER_GPU * len(cfg.GPUS),
+        shuffle=(cfg.TRAIN_SHUFFLE & rank == -1),
         num_workers=cfg.WORKERS,
         sampler=train_sampler,
         pin_memory=cfg.PIN_MEMORY,
@@ -285,10 +285,10 @@ def main():
     num_batch = len(train_loader)
 
     if rank in [-1, 0]:
-        valid_dataset = eval('dataset.' + cfg.DATASET.DATASET)(
+        valid_dataset = eval('dataset.' + cfg.DATASET_DATASET)(
             cfg=cfg,
             is_train=False,
-            inputsize=cfg.MODEL.IMAGE_SIZE,
+            inputsize=cfg.MODEL_IMAGE_SIZE,
             transform=transforms.Compose([
                 transforms.ToTensor(),
                 normalize,
@@ -308,7 +308,7 @@ def main():
     if rank in [-1, 0]:
         if cfg.NEED_AUTOANCHOR:
             logger.info("begin check anchors")
-            run_anchor(logger,train_dataset, model=model, thr=cfg.TRAIN.ANCHOR_THRESHOLD, imgsz=min(cfg.MODEL.IMAGE_SIZE))
+            run_anchor(logger,train_dataset, model=model, thr=cfg.TRAIN_ANCHOR_THRESHOLD, imgsz=min(cfg.MODEL_IMAGE_SIZE))
         else:
             logger.info("anchors loaded successfully")
             det = model.module.model[model.module.detector_index] if is_parallel(model) \
@@ -316,10 +316,10 @@ def main():
             logger.info(str(det.anchors))
 
     # training
-    num_warmup = max(round(cfg.TRAIN.WARMUP_EPOCHS * num_batch), 1000)
+    num_warmup = max(round(cfg.TRAIN_WARMUP_EPOCHS * num_batch), 1000)
     scaler = amp.GradScaler(enabled=device.type != 'cpu')
     print('=> start training...')
-    for epoch in range(begin_epoch+1, cfg.TRAIN.END_EPOCH+1):
+    for epoch in range(begin_epoch+1, cfg.TRAIN_END_EPOCH+1):
         if rank != -1:
             train_loader.sampler.set_epoch(epoch)
         # train for one epoch
@@ -329,7 +329,7 @@ def main():
         lr_scheduler.step()
 
         # evaluate on validation set
-        if (epoch % cfg.TRAIN.VAL_FREQ == 0 or epoch == cfg.TRAIN.END_EPOCH) and rank in [-1, 0]:
+        if (epoch % cfg.TRAIN_VAL_FREQ == 0 or epoch == cfg.TRAIN_END_EPOCH) and rank in [-1, 0]:
             # print('validate')
             da_segment_results,ll_segment_results,detect_results, total_loss,maps, times = validate(
                 epoch,cfg, valid_loader, valid_dataset, model, criterion,
@@ -361,7 +361,7 @@ def main():
             logger.info('=> saving checkpoint to {}'.format(savepath))
             save_checkpoint(
                 epoch=epoch,
-                name=cfg.MODEL.NAME,
+                name=cfg.MODEL_NAME,
                 model=model,
                 # 'best_state_dict': model.module.state_dict(),
                 # 'perf': perf_indicator,
@@ -371,12 +371,12 @@ def main():
             )
             save_checkpoint(
                 epoch=epoch,
-                name=cfg.MODEL.NAME,
+                name=cfg.MODEL_NAME,
                 model=model,
                 # 'best_state_dict': model.module.state_dict(),
                 # 'perf': perf_indicator,
                 optimizer=optimizer,
-                output_dir=os.path.join(cfg.LOG_DIR, cfg.DATASET.DATASET),
+                output_dir=os.path.join(cfg.LOG_DIR, cfg.DATASET_DATASET),
                 filename='checkpoint.pth'
             )
 

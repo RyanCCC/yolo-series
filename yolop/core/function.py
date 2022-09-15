@@ -55,15 +55,15 @@ def train(cfg, train_loader, model, criterion, optimizer, scaler, epoch, num_bat
 
         if num_iter < num_warmup:
             # warm up
-            lf = lambda x: ((1 + math.cos(x * math.pi / cfg.TRAIN.END_EPOCH)) / 2) * \
-                           (1 - cfg.TRAIN.LRF) + cfg.TRAIN.LRF  # cosine
+            lf = lambda x: ((1 + math.cos(x * math.pi / cfg.TRAIN_END_EPOCH)) / 2) * \
+                           (1 - cfg.TRAIN_LRF) + cfg.TRAIN_LRF  # cosine
             xi = [0, num_warmup]
             # model.gr = np.interp(ni, xi, [0.0, 1.0])  # iou loss ratio (obj_loss = 1.0 or iou)
             for j, x in enumerate(optimizer.param_groups):
                 # bias lr falls from 0.1 to lr0, all other lrs rise from 0.0 to lr0
-                x['lr'] = np.interp(num_iter, xi, [cfg.TRAIN.WARMUP_BIASE_LR if j == 2 else 0.0, x['initial_lr'] * lf(epoch)])
+                x['lr'] = np.interp(num_iter, xi, [cfg.TRAIN_WARMUP_BIASE_LR if j == 2 else 0.0, x['initial_lr'] * lf(epoch)])
                 if 'momentum' in x:
-                    x['momentum'] = np.interp(num_iter, xi, [cfg.TRAIN.WARMUP_MOMENTUM, cfg.TRAIN.MOMENTUM])
+                    x['momentum'] = np.interp(num_iter, xi, [cfg.TRAIN_WARMUP_MOMENTUM, cfg.TRAIN_MOMENTUM])
 
         data_time.update(time.time() - start)
         if not cfg.DEBUG:
@@ -137,7 +137,7 @@ def validate(epoch,config, val_loader, val_dataset, model, criterion, output_dir
 
     # print(save_dir)
     _, imgsz = [check_img_size(x, s=max_stride) for x in config.MODEL.IMAGE_SIZE] #imgsz is multiple of max_stride
-    batch_size = config.TRAIN.BATCH_SIZE_PER_GPU * len(config.GPUS)
+    batch_size = config.TRAIN_BATCH_SIZE_PER_GPU * len(config.GPUS)
     test_batch_size = config.TEST.BATCH_SIZE_PER_GPU * len(config.GPUS)
     training = False
     is_coco = False #is coco dataset

@@ -1,4 +1,4 @@
-LOG_DIR = 'runs/'
+LOG_DIR = './logs'
 GPUS = (0,1)     
 WORKERS = 8
 PIN_MEMORY = False
@@ -39,10 +39,10 @@ LOSS_LL_IOU_GAIN = 0.2 # lane line iou loss gain
 
 
 # DATASET related params
-DATASET_DATAROOT = '/home/bdd/bdd100k/images/100k'       # the path of images folder
-DATASET_LABELROOT = '/home/bdd/bdd100k/labels/100k'      # the path of det_annotations folder
-DATASET_MASKROOT = '/home/bdd/bdd_seg_gt'                # the path of da_seg_annotations folder
-DATASET_LANEROOT = '/home/bdd/bdd_lane_gt'               # the path of ll_seg_annotations folder
+DATASET_DATAROOT = './BDD100k/images'       # the path of images folder
+DATASET_LABELROOT = './det_annotations'      # the path of det_annotations folder
+DATASET_MASKROOT = './da_seg_annotations'                # the path of da_seg_annotations folder
+DATASET_LANEROOT = './ll_seg_annotations'               # the path of ll_seg_annotations folder
 DATASET_DATASET = 'BddDataset'
 DATASET_TRAIN_SET = 'train'
 DATASET_TEST_SET = 'val'
