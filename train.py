@@ -1,6 +1,8 @@
 import customerConf
 import argparse
 
+from yolov7.nets import yolov7
+
 
 # TODO: Add Command arg
 def parse_args():
@@ -8,7 +10,7 @@ def parse_args():
     parser.add_argument(
         '--model', 
         help='YOLOV4, YOLOV4-TINY, YOLOV5 or YOLOX', 
-        choices=['YOLOV4', 'YOLOV4-TINY', 'YOLOV5', 'YOLOX'],
+        choices=['YOLOV4', 'YOLOV4-TINY', 'YOLOV5', 'YOLOX', 'YOLOV7'],
         default='YOLOV5', 
         type=str)
     args = parser.parse_args()
@@ -28,5 +30,8 @@ if __name__ == '__main__':
     elif args.model.upper() == 'YOLOV5':
         from train import train_yolov5
         train_yolov5.train(customerConf.YOLOV5Config)
+    elif args.model.upper() == 'YOLOV7':
+        from train import train_yolov7
+        train_yolov7.train(customerConf.YOLOXV7)
     else:
         pass

@@ -84,7 +84,7 @@ def main(config):
     pretrain_model_path = config.pretrain_weight
     input_shape = [640,640]
     # yolox的版本：tiny、s、m、l、x
-    phi = 's'
+    phi = config.phi
     mosaic = True
 
     Init_Epoch = config.Init_epoch

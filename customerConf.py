@@ -85,10 +85,30 @@ class YOLOXConfig(Config):
     epoch = 100
     batch_size = 16
 
-    phi= 'l'
+    phi= 's'
     score=0.3
     iou=0.5
     input_shape = [640, 640]
+
+
+class YOLOXV7Config(Config):
+    logdir = './logs/'
+    dataset_base_path = r'.\villages'
+    classes_path = os.path.join(dataset_base_path, 'village.names') 
+    train_txt= os.path.join(dataset_base_path, 'train.txt')
+    val_txt= os.path.join(dataset_base_path, 'val.txt')
+    test_txt = os.path.join(dataset_base_path, 'ImageSets/Main')
+    Init_epoch = 0
+    Freeze_epoch = 50
+    epoch = 100
+    batch_size = 16
+    classes_path = './yolov7/data/voc.names'
+    anchor_path = './yolov7/data/yolo_anchors.txt'
+    phi= 's'
+    score=0.3
+    iou=0.5
+    input_shape = [640, 640]
+
 
 class YOLOPConfig(Config):
     pass
