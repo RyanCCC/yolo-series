@@ -116,33 +116,43 @@ python get_map.py
 
 ## YOLOV4
 
+**论文：**[YOLOV4论文](https://arxiv.org/pdf/2004.10934.pdf)
+
+**代码：**[YOLOV4代码实现](https://github.com/AlexeyAB/darknet)
+
+**网络结构：**
+
 ![image](https://user-images.githubusercontent.com/27406337/178643886-4602cfc9-ccc3-4a87-8b59-76e80e18cc65.png)
 
-
-更多的YOLOV4资料可以参考：[yolov4](./doc/yolov4.md)
+更多的YOLOV4资料可以参考：[yolov4](./doc/yolov4.md)、[目标检测算法Yolov4详解](https://cloud.tencent.com/developer/article/1748630) 
 
 ## YOLOX
+
+**论文：**[YOLOX Paper](https://arxiv.org/abs/2107.08430)
+
+**代码：** [YOLOX Code](https://github.com/Megvii-BaseDetection/YOLOX)
+
+**网络结构：**
 
 ![image](https://user-images.githubusercontent.com/27406337/178643992-8d3149e3-b54b-4949-81db-e7baf94cbf27.png)
 
 YOLOX的代码可以直接运行```train_yolox.py```即可。
 
+## YOLOV5
+
+**代码：**[YOLOV5 Code](https://github.com/ultralytics/yolov5)
 
 ## YOLOV7
 
-1. 论文
+**论文：**[YOLOv7: Trainable bag-of-freebies sets new state-of-the-art for real-time object detectors](https://arxiv.org/abs/2207.02696)
 
-[YOLOv7: Trainable bag-of-freebies sets new state-of-the-art for real-time object detectors](https://arxiv.org/abs/2207.02696)
+**代码：**[CODE:yolov7](https://github.com/WongKinYiu/yolov7)
 
-2. 代码
-
-[CODE:yolov7](https://github.com/WongKinYiu/yolov7)
-
-3. 模型结构
+**模型结构**
 
 ![image](https://user-images.githubusercontent.com/27406337/192188598-0d3fd9e4-7c76-48b2-af0f-2aa3fc972661.png)
 
-4. 性能
+**性能**
 
 ![image](https://user-images.githubusercontent.com/27406337/192188766-30bf2071-d6a4-4e92-a617-842f7b7f05ab.png)
 
@@ -184,22 +194,10 @@ python .\export.py --yolo yolox --weight .\model\village_yolox.h5 --save_onnx '.
 
 ## 参考
 
-1. [YOLOV4代码实现](https://github.com/AlexeyAB/darknet)
+1. [Object-Detection-Metrics](./doc/Object-Detection-Metrics.md)
 
-2. [YOLOV4](./doc/yolov4.md)
+2. [mAP计算代码](https://github.com/Cartucho/mAP)
 
-3. [YOLOV4论文](https://arxiv.org/pdf/2004.10934.pdf)
+3. [YOLOV3-tf2](https://github.com/zzh8829/yolov3-tf2)
 
-4. [Object-Detection-Metrics](./doc/Object-Detection-Metrics.md)
 
-5. [目标检测算法Yolov4详解](https://cloud.tencent.com/developer/article/1748630)
-
-6. [mAP计算代码](https://github.com/Cartucho/mAP)
-
-7. [YOLOV3-tf2](https://github.com/zzh8829/yolov3-tf2)
-
-8. [YOLOX Code](https://github.com/Megvii-BaseDetection/YOLOX)
-
-9. [YOLOX Paper](https://arxiv.org/abs/2107.08430)
-
-10. [YOLOV5 Code](https://github.com/ultralytics/yolov5)
