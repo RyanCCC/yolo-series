@@ -5,7 +5,7 @@
 - [x] YOLOV4
 - [x] YOLOV5
 - [x] YOLOX
-- [ ] YOLOV7
+- [x] YOLOV7
 - [ ] YOLOP
 
 后续将追踪关于YOLO的一些成果，并及时复现当中的算法。具体可以参考本人的博客：[目标检测2022最新进展](https://blog.csdn.net/u012655441/article/details/123552537)。关于YOLO的部署可以参考我的仓库：[Deployment](https://github.com/RyanCCC/Deployment)。
@@ -130,6 +130,25 @@ YOLOX的代码可以直接运行```train_yolox.py```即可。
 
 ## YOLOV7
 
+1. 论文
+
+[YOLOv7: Trainable bag-of-freebies sets new state-of-the-art for real-time object detectors](https://arxiv.org/abs/2207.02696)
+
+2. 代码
+
+[CODE:yolov7](https://github.com/WongKinYiu/yolov7)
+
+3. 模型结构
+
+![image](https://user-images.githubusercontent.com/27406337/192188598-0d3fd9e4-7c76-48b2-af0f-2aa3fc972661.png)
+
+4. 性能
+
+![image](https://user-images.githubusercontent.com/27406337/192188766-30bf2071-d6a4-4e92-a617-842f7b7f05ab.png)
+
+![image](https://user-images.githubusercontent.com/27406337/192188827-9bf1f99c-8754-4032-8375-9f39277ed972.png)
+
+![image](https://user-images.githubusercontent.com/27406337/192188811-78912328-a279-4127-9be6-9bbb071a035f.png)
 
 ## 模型转换
 
