@@ -13,7 +13,7 @@ from customerConf import YOLOXConfig
 from predict.predict_yolox import yolox, get_classes
 
 video_save_path = ''
-video_fps       = 25
+video_fps  = 25
 
 # 加载yolo4模型
 # yolo = YOLO(
