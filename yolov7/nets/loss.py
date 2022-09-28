@@ -3,7 +3,7 @@ from functools import partial
 
 import tensorflow as tf
 from keras import backend as K
-from lib.utils_bbox import get_anchors_and_decode
+from yolov7.lib.tools import get_anchors_and_decode
 
 
 def box_ciou(b1, b2):
@@ -212,7 +212,7 @@ def get_assignments(fg_mask, gt_bboxes_per_image, gt_classes, bboxes_preds_per_i
     num_in_boxes_anchor     = tf.shape(bboxes_preds_per_image)[0]
     # gt_bboxes_per_image = tf.Print(gt_bboxes_per_image, [gt_bboxes_per_image, bboxes_preds_per_image], summarize=1000)
     pair_wise_ious      = box_iou(gt_bboxes_per_image, bboxes_preds_per_image)
-    pair_wise_ious_loss = -tf.log(pair_wise_ious + 1e-8)
+    pair_wise_ious_loss = -tf.math.log(pair_wise_ious + 1e-8)
     gt_cls_per_image    = tf.tile(tf.expand_dims(tf.one_hot(tf.cast(gt_classes, tf.int32), num_classes), 1), (1, num_in_boxes_anchor, 1))
     cls_preds_          = K.sigmoid(tf.tile(tf.expand_dims(cls_preds_, 0), (num_gt, 1, 1))) *\
                           K.sigmoid(tf.tile(tf.expand_dims(obj_preds_, 0), (num_gt, 1, 1)))

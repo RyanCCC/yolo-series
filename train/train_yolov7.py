@@ -9,9 +9,8 @@ from tensorflow.keras.optimizers import SGD, Adam
 from tensorflow.keras.regularizers import l2
 from yolov7 import get_train_model, yolo_body, get_lr_scheduler, YoloDatasets, get_anchors, get_classes, show_config
 
-tf.logging.set_verbosity(tf.logging.ERROR)
 
-def main(config):
+def train(config):
     train_gpu       = config.gpus
     classes_path    = config.classes_path
     anchors_path    = config.anchors_path
@@ -87,9 +86,11 @@ def main(config):
 
     for layer in model_body.layers:
         if isinstance(layer, DepthwiseConv2D):
-                layer.add_loss(l2(weight_decay)(layer.depthwise_kernel))
+                layer.add_loss(lambda x=layer: l2(weight_decay)(x.depthwise_kernel))
+                # layer.add_loss(l2(weight_decay)(layer.depthwise_kernel))
         elif isinstance(layer, Conv2D) or isinstance(layer, Dense):
-                layer.add_loss(l2(weight_decay)(layer.kernel))
+                layer.add_loss(lambda x=layer: l2(weight_decay)(x.kernel))
+                # layer.add_loss(l2(weight_decay)(layer.kernel))
 
     if True:
         if Freeze_Train:

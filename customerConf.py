@@ -104,10 +104,12 @@ class YOLOXV7Config(Config):
     batch_size = 16
     classes_path = './yolov7/data/voc.names'
     anchor_path = './yolov7/data/yolo_anchors.txt'
-    phi= 's'
+    # x or l
+    phi= 'x'
     score=0.3
     iou=0.5
     input_shape = [640, 640]
+    gpus = '1'
 
 
 class YOLOPConfig(Config):

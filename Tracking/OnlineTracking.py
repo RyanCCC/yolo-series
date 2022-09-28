@@ -14,7 +14,7 @@ https://blog.stormbirds.cn/articles/2021/11/07/1636277190085.html
 '''
 
 q = queue.Queue()
-src_path = "rtsp://***:****@***.**.**.**:***/Streaming/Channels/101"
+src_path = "rtsp://admin:abcd1234@172.18.27.54:554/Streaming/Channels/101"
 
 def Receive():
     print('start Reveive')

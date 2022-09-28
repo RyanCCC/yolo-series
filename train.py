@@ -32,6 +32,6 @@ if __name__ == '__main__':
         train_yolov5.train(customerConf.YOLOV5Config)
     elif args.model.upper() == 'YOLOV7':
         from train import train_yolov7
-        train_yolov7.train(customerConf.YOLOXV7)
+        train_yolov7.train(customerConf.YOLOXV7Config)
     else:
         pass
