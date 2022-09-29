@@ -134,7 +134,7 @@ def train(config):
         monitor = 'val_loss', save_weights_only = True, save_best_only = False, period = save_period)
     early_stopping  = EarlyStopping(monitor='val_loss', min_delta = 0, patience = 10, verbose = 1)
     time_str = datetime.datetime.strftime(datetime.datetime.now(),'%Y_%m_%d')
-    checkpoint_best = ModelCheckpoint(os.path.join(save_dir, f'./model/,{config.task}_yolov7_{phi}_{time_str}'+'_val_loss{val_loss:.3f}.h5'),\
+    checkpoint_best = ModelCheckpoint(os.path.join(save_dir, f'/{config.task}_yolov7_{phi}_{time_str}'+'_val_loss{val_loss:.3f}.h5'),\
          monitor = 'val_loss', save_weights_only = True, save_best_only = True, period = 1)
     lr_scheduler    = LearningRateScheduler(lr_scheduler_func, verbose = 1)
     callbacks  = [logging, checkpoint, checkpoint_best, lr_scheduler, early_stopping]
