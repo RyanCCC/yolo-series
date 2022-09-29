@@ -27,6 +27,7 @@ class YOLOV4Config(Config):
     predict_weight_path = './model/yolo4_voc_weights.h5'
     score=0.3
     iou=0.5
+    imagesize=512
 
 
 class YOLOV5Config(Config):
@@ -84,7 +85,8 @@ class YOLOXConfig(Config):
     Freeze_epoch = 50
     epoch = 100
     batch_size = 16
-
+    pretrain_weight = './model/yolo4tf2_weight.h5'
+    save_weight = 'village_yolox.h5'
     phi= 's'
     score=0.3
     iou=0.5
@@ -102,7 +104,6 @@ class YOLOXV7Config(Config):
     Freeze_epoch = 50
     epoch = 100
     batch_size = 16
-    classes_path = './yolov7/data/voc.names'
     anchor_path = './yolov7/data/yolo_anchors.txt'
     # x or l
     phi= 'x'
@@ -110,6 +111,9 @@ class YOLOXV7Config(Config):
     iou=0.5
     input_shape = [640, 640]
     gpus = '1'
+    pretrain_weight = './yolov7/checkpoints/yolov7_x_weights.h5'
+    save_weight = 'village_yolov7.h5'
+
 
 
 class YOLOPConfig(Config):

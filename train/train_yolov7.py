@@ -11,31 +11,31 @@ from yolov7 import get_train_model, yolo_body, get_lr_scheduler, YoloDatasets, g
 
 
 def train(config):
-    train_gpu       = config.gpus
-    classes_path    = config.classes_path
-    anchors_path    = config.anchors_path
-    anchors_mask    = [[6, 7, 8], [3, 4, 5], [0, 1, 2]]
+    train_gpu = config.gpus
+    classes_path = config.classes_path
+    anchors_path = config.anchor_path
+    anchors_mask = config.ANCHOR_MASK
     model_path  = config.pretrain_weight
     input_shape = config.input_shape
     phi  = config.phi
     mosaic = True
     mosaic_prob = 0.5
     mixup  = True
-    mixup_prob          = 0.5
+    mixup_prob = 0.5
     special_aug_ratio   = 0.7
     label_smoothing     = 0
-    Init_Epoch          = config.Init_epoch
-    Freeze_Epoch        = config.Freeze_epoch
+    Init_Epoch = config.Init_epoch
+    Freeze_Epoch  = config.Freeze_epoch
     Freeze_batch_size   = config.batch_size
     UnFreeze_Epoch = config.epoch
     Unfreeze_batch_size = 4
     Freeze_Train        = True
     
-    Init_lr             = 1e-2
-    Min_lr              = Init_lr * 0.01
-    optimizer_type      = "sgd"
-    momentum            = 0.937
-    weight_decay        = 5e-4
+    Init_lr = 1e-2
+    Min_lr = Init_lr * 0.01
+    optimizer_type = "sgd"
+    momentum = 0.937
+    weight_decay = 5e-4
     #   lr_decay_type   使用到的学习率下降方式，可选的有'step'、'cos'
     lr_decay_type       = 'cos'
     save_period         = 10

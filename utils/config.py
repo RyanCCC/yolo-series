@@ -2,10 +2,6 @@ import os
 
 
 class Config(object):
-    anchors_path = './data/yolo_anchors.txt'
-    pretrain_weight = './model/yolo4tf2_weight.h5'
-    save_weight = 'village_tf2.h5'
-    imagesize=512
     eager=False
     # 是否对损失进行归一化，用于改变loss的大小
     normalize = False
@@ -30,7 +26,6 @@ class Config(object):
     learning_rate_unfreeze = 1e-4
     # predict
     ISTINY=False
-    predict_weight_path = './model/yolo4_voc_weights.h5'
     score=0.3
     iou=0.5
     max_boxes=100
