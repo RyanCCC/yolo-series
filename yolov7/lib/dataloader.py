@@ -129,14 +129,10 @@ class YoloDatasets(keras.utils.Sequence):
 
         image_data      = np.array(image, np.uint8)
         r               = np.random.uniform(-1, 1, 3) * [hue, sat, val] + 1
-        #---------------------------------#
-        #   将图像转到HSV上
-        #---------------------------------#
+        
         hue, sat, val   = cv2.split(cv2.cvtColor(image_data, cv2.COLOR_RGB2HSV))
         dtype           = image_data.dtype
-        #---------------------------------#
-        #   应用变换
-        #---------------------------------#
+        
         x       = np.arange(0, 256, dtype=r.dtype)
         lut_hue = ((x * r[0]) % 180).astype(dtype)
         lut_sat = np.clip(x * r[1], 0, 255).astype(dtype)
@@ -145,9 +141,7 @@ class YoloDatasets(keras.utils.Sequence):
         image_data = cv2.merge((cv2.LUT(hue, lut_hue), cv2.LUT(sat, lut_sat), cv2.LUT(val, lut_val)))
         image_data = cv2.cvtColor(image_data, cv2.COLOR_HSV2RGB)
 
-        #---------------------------------#
-        #   对真实框进行调整
-        #---------------------------------#
+        # 调整真实框
         box_data = np.zeros((max_boxes,5))
         if len(box)>0:
             np.random.shuffle(box)
@@ -298,14 +292,7 @@ class YoloDatasets(keras.utils.Sequence):
         new_image = cv2.merge((cv2.LUT(hue, lut_hue), cv2.LUT(sat, lut_sat), cv2.LUT(val, lut_val)))
         new_image = cv2.cvtColor(new_image, cv2.COLOR_HSV2RGB)
 
-        #---------------------------------#
-        #   对框进行进一步的处理
-        #---------------------------------#
         new_boxes = self.merge_bboxes(box_datas, cutx, cuty)
-
-        #---------------------------------#
-        #   将box进行调整
-        #---------------------------------#
         box_data = np.zeros((max_boxes, 5))
         if len(new_boxes)>0:
             if len(new_boxes)>max_boxes: new_boxes = new_boxes[:max_boxes]
@@ -322,9 +309,6 @@ class YoloDatasets(keras.utils.Sequence):
         box_2_valid = box_2_wh[:, 0] > 0
         
         new_boxes = np.concatenate([box_1[box_1_valid, :], box_2[box_2_valid, :]], axis=0)
-        #---------------------------------#
-        #   将box进行调整
-        #---------------------------------#
         box_data = np.zeros((max_boxes, 5))
         if len(new_boxes)>0:
             if len(new_boxes)>max_boxes: new_boxes = new_boxes[:max_boxes]
@@ -344,7 +328,7 @@ class YoloDatasets(keras.utils.Sequence):
             return [[0, 0], [1, 0], [0, -1]]
 
     def preprocess_true_boxes(self, true_boxes, input_shape, anchors, num_classes):
-        assert (true_boxes[..., 4]<num_classes).all(), 'class id must be less than num_classes'
+        assert (true_boxes[..., 4]<num_classes).all(), f'class id must be less than num_classes({num_classes})'
         true_boxes  = np.array(true_boxes, dtype='float32')
         input_shape = np.array(input_shape, dtype='int32')
         num_layers  = len(self.anchors_mask)

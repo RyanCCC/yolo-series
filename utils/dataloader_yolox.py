@@ -21,17 +21,15 @@ def preprocess_input(image):
 
 class YoloDatasets(keras.utils.Sequence):
     def __init__(self, annotation_lines, input_shape, batch_size, num_classes, epoch_now, epoch_length, mosaic, train, mosaic_ratio = 0.7):
-        self.annotation_lines   = annotation_lines
-        self.length             = len(self.annotation_lines)
-        
-        self.input_shape        = input_shape
-        self.batch_size         = batch_size
-        self.num_classes        = num_classes
-        self.epoch_now          = epoch_now - 1
-        self.epoch_length       = epoch_length
-        self.mosaic             = mosaic
-        self.train              = train
-
+        self.annotation_lines = annotation_lines
+        self.length = len(self.annotation_lines)
+        self.input_shape = input_shape
+        self.batch_size  = batch_size
+        self.num_classes = num_classes
+        self.epoch_now = epoch_now - 1
+        self.epoch_length = epoch_length
+        self.mosaic = mosaic
+        self.train  = train
         self.mosaic_ratio       = mosaic_ratio
 
     def __len__(self):
@@ -297,13 +295,12 @@ class YoloDatasets(keras.utils.Sequence):
         new_image[cuty:, :cutx, :] = image_datas[1][cuty:, :cutx, :]
         new_image[cuty:, cutx:, :] = image_datas[2][cuty:, cutx:, :]
         new_image[:cuty, cutx:, :] = image_datas[3][:cuty, cutx:, :]
-
-        new_image       = np.array(new_image, np.uint8)
-        r               = np.random.uniform(-1, 1, 3) * [hue, sat, val] + 1
+        new_image = np.array(new_image, np.uint8)
+        r = np.random.uniform(-1, 1, 3) * [hue, sat, val] + 1
         #---------------------------------#
         hue, sat, val   = cv2.split(cv2.cvtColor(new_image, cv2.COLOR_RGB2HSV))
-        dtype           = new_image.dtype
-        x       = np.arange(0, 256, dtype=r.dtype)
+        dtype = new_image.dtype
+        x = np.arange(0, 256, dtype=r.dtype)
         lut_hue = ((x * r[0]) % 180).astype(dtype)
         lut_sat = np.clip(x * r[1], 0, 255).astype(dtype)
         lut_val = np.clip(x * r[2], 0, 255).astype(dtype)

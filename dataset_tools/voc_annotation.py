@@ -17,7 +17,7 @@ sets=['train', 'val', 'test']
 def convert_annotation(image_id, list_file):
     # huo
     with open(class_file) as f:
-        classes = f.read().strip().split()
+        classes = f.read().strip().splitlines()
 
     annotation_file = f'Annotations/{image_id}.xml'
     annotation = os.path.join(base_path, annotation_file)
