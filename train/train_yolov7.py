@@ -11,6 +11,8 @@ from yolov7 import get_train_model, yolo_body, get_lr_scheduler, YoloDatasets, g
 
 
 def train(config):
+    # 设置日志级别
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = config.log_level
     train_gpu = config.gpus
     classes_path = config.classes_path
     anchors_path = config.anchor_path
@@ -36,7 +38,7 @@ def train(config):
     optimizer_type = "sgd"
     momentum = 0.937
     weight_decay = 5e-4
-    #   lr_decay_type   使用到的学习率下降方式，可选的有'step'、'cos'
+    #   lr_decay_type   option:['step'、'cos']
     lr_decay_type       = 'cos'
     save_period         = 10
     save_dir            = config.logdir
@@ -78,7 +80,7 @@ def train(config):
     total_step  = num_train // Unfreeze_batch_size * UnFreeze_Epoch
     if total_step <= wanted_step:
         if num_train // Unfreeze_batch_size == 0:
-            raise ValueError('数据集过小，无法进行训练，请扩充数据集。')
+            raise ValueError('Dataset ERROR: Dataset is too small.')
         wanted_epoch = wanted_step // (num_train // Unfreeze_batch_size) + 1
         print("\n\033[1;33;44m[Warning] 使用%s优化器时，建议将训练总步长设置到%d以上。\033[0m"%(optimizer_type, wanted_step))
         print("\033[1;33;44m[Warning] 本次运行的总训练数据量为%d，Unfreeze_batch_size为%d，共训练%d个Epoch，计算出总训练步长为%d。\033[0m"%(num_train, Unfreeze_batch_size, UnFreeze_Epoch, total_step))
@@ -92,98 +94,97 @@ def train(config):
                 layer.add_loss(lambda x=layer: l2(weight_decay)(x.kernel))
                 # layer.add_loss(l2(weight_decay)(layer.kernel))
 
-    if True:
-        if Freeze_Train:
-            freeze_layers = {'n':118, 's': 118, 'm': 167, 'l': 216, 'x': 265}[phi]
-            for i in range(freeze_layers): model_body.layers[i].trainable = False
-            print('Freeze the first {} layers of total {} layers.'.format(freeze_layers, len(model_body.layers)))
 
-        batch_size  = Freeze_batch_size if Freeze_Train else Unfreeze_batch_size
-        start_epoch = Init_Epoch
-        end_epoch   = Freeze_Epoch if Freeze_Train else UnFreeze_Epoch
+    if Freeze_Train:
+        freeze_layers = {'n':118, 's': 118, 'm': 167, 'l': 216, 'x': 265}[phi]
+        for i in range(freeze_layers): 
+            model_body.layers[i].trainable = False
+        print('Freeze the first {} layers of total {} layers.'.format(freeze_layers, len(model_body.layers)))
+
+    batch_size  = Freeze_batch_size if Freeze_Train else Unfreeze_batch_size
+    start_epoch = Init_Epoch
+    end_epoch   = Freeze_Epoch if Freeze_Train else UnFreeze_Epoch
         
-        nbs             = 64
-        lr_limit_max    = 1e-3 if optimizer_type == 'adam' else 5e-2
-        lr_limit_min    = 3e-4 if optimizer_type == 'adam' else 5e-4
-        Init_lr_fit     = min(max(batch_size / nbs * Init_lr, lr_limit_min), lr_limit_max)
-        Min_lr_fit      = min(max(batch_size / nbs * Min_lr, lr_limit_min * 1e-2), lr_limit_max * 1e-2)
+    nbs = 64
+    lr_limit_max  = 1e-3 if optimizer_type == 'adam' else 5e-2
+    lr_limit_min = 3e-4 if optimizer_type == 'adam' else 5e-4
+    Init_lr_fit = min(max(batch_size / nbs * Init_lr, lr_limit_min), lr_limit_max)
+    Min_lr_fit = min(max(batch_size / nbs * Min_lr, lr_limit_min * 1e-2), lr_limit_max * 1e-2)
 
-        optimizer = {
-            'adam'  : Adam(lr = Init_lr_fit, beta_1 = momentum),
-            'sgd'   : SGD(lr = Init_lr_fit, momentum = momentum, nesterov=True)
-        }[optimizer_type]
-        model.compile(optimizer = optimizer, loss={'yolo_loss': lambda y_true, y_pred: y_pred})
-    
+    optimizer = {
+        'adam'  : Adam(lr = Init_lr_fit, beta_1 = momentum),
+        'sgd'   : SGD(lr = Init_lr_fit, momentum = momentum, nesterov=True)
+    }[optimizer_type]
+    model.compile(optimizer = optimizer, loss={'yolo_loss': lambda y_true, y_pred: y_pred})
+    lr_scheduler_func = get_lr_scheduler(lr_decay_type, Init_lr_fit, Min_lr_fit, UnFreeze_Epoch)
+    epoch_step = num_train // batch_size
+    epoch_step_val = num_val // batch_size
+
+    if epoch_step == 0 or epoch_step_val == 0:
+        raise ValueError('Dataset ERROR: Dataset is too small.')
+    # 加载数据集
+    train_dataloader = YoloDatasets(train_lines, input_shape, anchors, batch_size, num_classes, anchors_mask, Init_Epoch, UnFreeze_Epoch, \
+                                            mosaic=mosaic, mixup=mixup, mosaic_prob=mosaic_prob, mixup_prob=mixup_prob, train=True, special_aug_ratio=special_aug_ratio)
+    val_dataloader = YoloDatasets(val_lines, input_shape, anchors, batch_size, num_classes, anchors_mask, Init_Epoch, UnFreeze_Epoch, \
+                                            mosaic=False, mixup=False, mosaic_prob=0, mixup_prob=0, train=False, special_aug_ratio=0)
+    log_dir  = os.path.join(save_dir, config.task)
+    logging = TensorBoard(log_dir)
+       
+    checkpoint = ModelCheckpoint(os.path.join(save_dir, f"{config.task}_yolov7_{phi}"), \
+        monitor = 'val_loss', save_weights_only = True, save_best_only = False, period = save_period)
+    early_stopping  = EarlyStopping(monitor='val_loss', min_delta = 0, patience = 10, verbose = 1)
+    time_str = datetime.datetime.strftime(datetime.datetime.now(),'%Y_%m_%d')
+    checkpoint_best = ModelCheckpoint(os.path.join(save_dir, f'./model/,{config.task}_yolov7_{phi}_{time_str}'+'_val_loss{val_loss:.3f}.h5'),\
+         monitor = 'val_loss', save_weights_only = True, save_best_only = True, period = 1)
+    lr_scheduler    = LearningRateScheduler(lr_scheduler_func, verbose = 1)
+    callbacks  = [logging, checkpoint, checkpoint_best, lr_scheduler, early_stopping]
+
+    if start_epoch < end_epoch:
+        print('Train on {} samples, val on {} samples, with batch size {}.'.format(num_train, num_val, batch_size))
+        model.fit_generator(
+            generator = train_dataloader,
+            steps_per_epoch = epoch_step,
+                validation_data = val_dataloader,
+                validation_steps = epoch_step_val,
+                epochs = end_epoch,
+                initial_epoch = start_epoch,
+                callbacks = callbacks
+        )
+    if Freeze_Train:
+        batch_size = Unfreeze_batch_size
+        start_epoch = Freeze_Epoch if start_epoch < Freeze_Epoch else start_epoch
+        end_epoch = UnFreeze_Epoch
+                
+        nbs  = 64
+        lr_limit_max = 1e-3 if optimizer_type == 'adam' else 5e-2
+        lr_limit_min = 3e-4 if optimizer_type == 'adam' else 5e-4
+        Init_lr_fit = min(max(batch_size / nbs * Init_lr, lr_limit_min), lr_limit_max)
+        Min_lr_fit = min(max(batch_size / nbs * Min_lr, lr_limit_min * 1e-2), lr_limit_max * 1e-2)
+
         lr_scheduler_func = get_lr_scheduler(lr_decay_type, Init_lr_fit, Min_lr_fit, UnFreeze_Epoch)
+        lr_scheduler  = LearningRateScheduler(lr_scheduler_func, verbose = 1)
+        callbacks = [logging, checkpoint, checkpoint_best, lr_scheduler]
+                
+        for i in range(len(model_body.layers)): 
+            model_body.layers[i].trainable = True
+        model.compile(optimizer = optimizer, loss={'yolo_loss': lambda y_true, y_pred: y_pred})
 
-        epoch_step          = num_train // batch_size
-        epoch_step_val      = num_val // batch_size
+        epoch_step = num_train // batch_size
+        epoch_step_val  = num_val // batch_size
 
         if epoch_step == 0 or epoch_step_val == 0:
-            raise ValueError('数据集过小，无法进行训练，请扩充数据集。')
+            raise ValueError("数据集过小，无法继续进行训练，请扩充数据集。")
 
-        train_dataloader    = YoloDatasets(train_lines, input_shape, anchors, batch_size, num_classes, anchors_mask, Init_Epoch, UnFreeze_Epoch, \
-                                            mosaic=mosaic, mixup=mixup, mosaic_prob=mosaic_prob, mixup_prob=mixup_prob, train=True, special_aug_ratio=special_aug_ratio)
-        val_dataloader      = YoloDatasets(val_lines, input_shape, anchors, batch_size, num_classes, anchors_mask, Init_Epoch, UnFreeze_Epoch, \
-                                            mosaic=False, mixup=False, mosaic_prob=0, mixup_prob=0, train=False, special_aug_ratio=0)
-        time_str        = datetime.datetime.strftime(datetime.datetime.now(),'%Y_%m_%d_%H_%M_%S')
-        log_dir         = os.path.join(save_dir, "loss_" + str(time_str))
-        logging         = TensorBoard(log_dir)
-       
-        checkpoint      = ModelCheckpoint(os.path.join(save_dir, "ep{epoch:03d}-loss{loss:.3f}-val_loss{val_loss:.3f}.h5"), \
-            monitor = 'val_loss', save_weights_only = True, save_best_only = False, period = save_period)
-        checkpoint_last = ModelCheckpoint(os.path.join(save_dir, "last_epoch_weights.h5"), monitor = 'val_loss', save_weights_only = True, save_best_only = False, period = 1)
-        checkpoint_best = ModelCheckpoint(os.path.join(save_dir, "best_epoch_weights.h5"), monitor = 'val_loss', save_weights_only = True, save_best_only = True, period = 1)
-        early_stopping  = EarlyStopping(monitor='val_loss', min_delta = 0, patience = 10, verbose = 1)
-        lr_scheduler    = LearningRateScheduler(lr_scheduler_func, verbose = 1)
-        callbacks       = [logging, checkpoint, checkpoint_last, checkpoint_best, lr_scheduler]
+        train_dataloader.batch_size    = Unfreeze_batch_size
+        val_dataloader.batch_size      = Unfreeze_batch_size
 
-        if start_epoch < end_epoch:
-            print('Train on {} samples, val on {} samples, with batch size {}.'.format(num_train, num_val, batch_size))
-            model.fit_generator(
-                generator           = train_dataloader,
-                steps_per_epoch     = epoch_step,
-                validation_data     = val_dataloader,
-                validation_steps    = epoch_step_val,
-                epochs              = end_epoch,
-                initial_epoch       = start_epoch,
-                callbacks           = callbacks
-            )
-        if Freeze_Train:
-            batch_size  = Unfreeze_batch_size
-            start_epoch = Freeze_Epoch if start_epoch < Freeze_Epoch else start_epoch
-            end_epoch   = UnFreeze_Epoch
-                
-            nbs             = 64
-            lr_limit_max    = 1e-3 if optimizer_type == 'adam' else 5e-2
-            lr_limit_min    = 3e-4 if optimizer_type == 'adam' else 5e-4
-            Init_lr_fit     = min(max(batch_size / nbs * Init_lr, lr_limit_min), lr_limit_max)
-            Min_lr_fit      = min(max(batch_size / nbs * Min_lr, lr_limit_min * 1e-2), lr_limit_max * 1e-2)
-
-            lr_scheduler_func = get_lr_scheduler(lr_decay_type, Init_lr_fit, Min_lr_fit, UnFreeze_Epoch)
-            lr_scheduler    = LearningRateScheduler(lr_scheduler_func, verbose = 1)
-            callbacks       = [logging, checkpoint, checkpoint_last, checkpoint_best, lr_scheduler]
-                
-            for i in range(len(model_body.layers)): 
-                model_body.layers[i].trainable = True
-            model.compile(optimizer = optimizer, loss={'yolo_loss': lambda y_true, y_pred: y_pred})
-
-            epoch_step      = num_train // batch_size
-            epoch_step_val  = num_val // batch_size
-
-            if epoch_step == 0 or epoch_step_val == 0:
-                raise ValueError("数据集过小，无法继续进行训练，请扩充数据集。")
-
-            train_dataloader.batch_size    = Unfreeze_batch_size
-            val_dataloader.batch_size      = Unfreeze_batch_size
-
-            print('Train on {} samples, val on {} samples, with batch size {}.'.format(num_train, num_val, batch_size))
-            model.fit_generator(
-                generator           = train_dataloader,
-                steps_per_epoch     = epoch_step,
-                validation_data     = val_dataloader,
-                validation_steps    = epoch_step_val,
-                epochs              = end_epoch,
-                initial_epoch       = start_epoch,
-                callbacks           = callbacks
-            )
+        print('Train on {} samples, val on {} samples, with batch size {}.'.format(num_train, num_val, batch_size))
+        model.fit_generator(
+            generator = train_dataloader,
+            steps_per_epoch = epoch_step,
+            validation_data = val_dataloader,
+            validation_steps = epoch_step_val,
+            epochs = end_epoch,
+            initial_epoch = start_epoch,
+            callbacks = callbacks
+        )

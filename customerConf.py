@@ -95,6 +95,7 @@ class YOLOXConfig(Config):
 
 
 class YOLOXV7Config(Config):
+    task = "village_Detection"
     logdir = './logs/'
     dataset_base_path = r'./villages'
     classes_path = os.path.join(dataset_base_path, 'village.names') 
@@ -114,6 +115,8 @@ class YOLOXV7Config(Config):
     gpus = '1'
     pretrain_weight = './yolov7/checkpoints/yolov7_x_weights.h5'
     save_weight = 'village_yolov7.h5'
+    # 0:DEBUG；1：INFO；2：warning；3：error
+    log_level = '1'
 
 
 
