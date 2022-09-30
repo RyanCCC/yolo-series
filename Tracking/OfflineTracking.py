@@ -10,7 +10,7 @@ from deep_sort.detection import Detection
 from deep_sort.tracker import Tracker
 from utils import generate_detections as gdet
 from customerConf import YOLOXConfig
-from predict.predict_yolox import yolox, get_classes
+from predict_yolox import yolox, get_classes
 
 video_save_path = ''
 video_fps  = 25
