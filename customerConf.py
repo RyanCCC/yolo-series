@@ -94,7 +94,7 @@ class YOLOXConfig(Config):
     input_shape = [640, 640]
 
 
-class YOLOXV7Config(Config):
+class YOLOV7Config(Config):
     task = "village_Detection"
     logdir = './logs/'
     dataset_base_path = r'./villages'

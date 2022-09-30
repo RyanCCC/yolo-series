@@ -6,7 +6,7 @@ import gc
 import numpy as np
 from keras import backend as K
 from PIL import ImageDraw, ImageFont
-from customerConf import YOLOXV7Config
+from customerConf import YOLOV7Config
 from yolov7 import yolo_body, fusion_rep_vgg, cvtColor, get_anchors, get_classes, preprocess_input, resize_image, show_config, DecodeBox
 from PIL import Image 
 from glob import glob
@@ -186,14 +186,14 @@ class YOLO(object):
 
 # 初始化模型
 yolo = YOLO(
-    class_path = YOLOXV7Config.classes_path,
-    input_shape = YOLOXV7Config.input_shape,
-    confidence = YOLOXV7Config.score,
-    nms_iou = YOLOXV7Config.iou,
-    max_boxes=YOLOXV7Config.max_boxes,
+    model_path = './model/village_Detection_yolov7_x_2022_09_30.h5',
+    class_path = YOLOV7Config.classes_path,
+    input_shape = YOLOV7Config.input_shape,
+    confidence = YOLOV7Config.score,
+    nms_iou = YOLOV7Config.iou,
+    max_boxes=YOLOV7Config.max_boxes,
     letterbox_image = True,
-    model_path = '',
-    phi=YOLOXV7Config.phi
+    phi=YOLOV7Config.phi
 )
 
 if __name__ == '__main__':
