@@ -103,6 +103,7 @@ def main(args):
             output_names = [n.name for n in model_proto.graph.output]
             print(f'Model output names: ',output_names)
         elif yolo_type == 'yolov5':
+            # TODO
             pass
         elif yolo_type == 'yolox':
             from customerConf import YOLOXConfig
@@ -121,6 +122,9 @@ def main(args):
             model_proto, _ = tf2onnx.convert.from_keras(yolo_model, opset=opset, output_path=onnx_save_path)
             output_names = [n.name for n in model_proto.graph.output]
             print(f'Model output names: ',output_names)
+        elif yolo_type == 'yolov7':
+            # TODO
+            pass
 if __name__ == '__main__':
     parser = parse_arg()
     args = parser.parse_args()
