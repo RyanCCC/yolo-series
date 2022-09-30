@@ -78,7 +78,7 @@ class YOLOXConfig(Config):
     gpus = '0'
     logdir = './logs/'
     dataset_base_path = r'.\villages'
-    classes_path = os.path.join(dataset_base_path, 'village.names') 
+    classes_path = os.path.join(dataset_base_path, 'village.names2022') 
     train_txt= os.path.join(dataset_base_path, 'train.txt')
     val_txt= os.path.join(dataset_base_path, 'val.txt')
     test_txt = os.path.join(dataset_base_path, 'ImageSets/Main')

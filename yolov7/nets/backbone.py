@@ -64,9 +64,6 @@ def Multi_Concat_Block(x, c2, c3, n=4, e=1, ids=[0], name = ""):
     return y
 
 def darknet_body(x, transition_channels, block_channels, n, phi):
-    #-----------------------------------------------#
-    #   输入图片是640, 640, 3
-    #-----------------------------------------------#
     ids = {
         'l' : [-1, -3, -5, -6],
         'x' : [-1, -3, -5, -7, -8], 

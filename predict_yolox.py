@@ -256,7 +256,7 @@ class YOLOX(object):
             return image
 
 # 创建yolox
-model_path = './model/village_yolox_202207.h5'
+model_path = './model/village_yolox.h5'
 yolox = YOLOX(
     class_path = YOLOXConfig.classes_path,
     input_shape = YOLOXConfig.input_shape,
