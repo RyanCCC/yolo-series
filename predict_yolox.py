@@ -1,5 +1,6 @@
 import colorsys
 import os
+import sys 
 from customerConf import YOLOXConfig
 import numpy as np
 import tensorflow as tf
@@ -258,7 +259,7 @@ class YOLOX(object):
             return image
 
 # 创建yolox
-model_path = './model/village_yolox_l_20220728.h5'
+model_path = './model/village_yolox_202207.h5'
 yolox = YOLOX(
     class_path = YOLOXConfig.classes_path,
     input_shape = YOLOXConfig.input_shape,
