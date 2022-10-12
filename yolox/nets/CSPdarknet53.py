@@ -6,7 +6,7 @@ from tensorflow.keras.layers import (Add, BatchNormalization, Concatenate,
                                      Conv2D, Layer, LeakyReLU, MaxPooling2D,
                                      UpSampling2D, ZeroPadding2D)
 from tensorflow.keras.regularizers import l2
-from yolox.lib.utils import compose
+from ..lib.utils import compose
 import tensorflow_model_optimization as tfmot
 
 class Mish(Layer, tfmot.sparsity.keras.PrunableLayer):  

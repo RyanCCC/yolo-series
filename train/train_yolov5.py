@@ -1,15 +1,10 @@
 import datetime
 import os
-from functools import partial
-import tensorflow as tf
 import tensorflow.keras.backend as K
 from tensorflow.keras.callbacks import EarlyStopping, LearningRateScheduler, TensorBoard
 from tensorflow.keras.optimizers import SGD, Adam
 
-from yolov5.nets.net import get_train_model, yolo_body
-from yolov5.lib.loss import get_lr_scheduler
-from yolov5.lib.utils import ModelCheckpoint
-from yolov5.lib.dataloader import YoloDatasets, get_anchors, get_classes
+from yolov5 import get_train_model, yolo_body, get_lr_scheduler, ModelCheckpoint, YoloDatasets, get_anchors, get_classes
 
 
 

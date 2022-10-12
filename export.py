@@ -107,7 +107,7 @@ def main(args):
             pass
         elif yolo_type == 'yolox':
             from customerConf import YOLOXConfig
-            from yolox.nets.yolox import yolo_body
+            from yolox import yolo_body
             class_names = get_class(YOLOXConfig.classes_path)
             num_classes = len(class_names)
             yolo_model = yolo_body([None, None, 3], num_classes=num_classes, phi=YOLOXConfig.phi)

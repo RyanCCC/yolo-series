@@ -1,4 +1,4 @@
-from yolox.lib.ious import box_ciou
+from .ious import box_ciou
 import math
 from functools import partial
 

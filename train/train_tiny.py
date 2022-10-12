@@ -9,9 +9,7 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
 from tqdm import tqdm
 
-from yolov4.lib.loss_tiny import yolo_loss
-from yolov4.nets.yolo4_tiny import yolo_body
-from yolov4.lib.utils import (ModelCheckpoint,
+from yolov4 import (yolo_loss, yolo_body,ModelCheckpoint,
                          WarmUpCosineDecayScheduler, get_random_data,
                          get_random_data_with_Mosaic)
 from customerConf import YOLOV4Config

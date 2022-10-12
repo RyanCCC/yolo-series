@@ -1,10 +1,10 @@
 import tensorflow as tf
 from tensorflow.keras.layers import Concatenate, Input, Lambda, UpSampling2D, ZeroPadding2D
 from tensorflow.keras.models import Model
-from nets.CSPdarknet53 import CSPLayer, DarknetConv2D_BN_SiLU
-from nets.CSPdarknet53 import darknet_body_yolox as darknet_body
-from nets.CSPdarknet53 import DarknetConv2D_withL2 as DarknetConv2D
-from yolox.lib.loss_yolox import get_yolo_loss
+from .CSPdarknet53 import CSPLayer, DarknetConv2D_BN_SiLU
+from .CSPdarknet53 import darknet_body_yolox as darknet_body
+from .CSPdarknet53 import DarknetConv2D_withL2 as DarknetConv2D
+from ..lib.loss_yolox import get_yolo_loss
 
 
 def yolo_body(input_shape, num_classes, phi, weight_decay=5e-4):

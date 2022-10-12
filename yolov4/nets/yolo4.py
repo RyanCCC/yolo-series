@@ -10,9 +10,9 @@ from tensorflow.keras.layers import (Add, BatchNormalization, Concatenate,
                                      UpSampling2D, ZeroPadding2D)
 from tensorflow.keras.models import Model
 from tensorflow.keras.regularizers import l2
-from yolov4.lib.utils import compose
+from ..lib.utils import compose
 
-from nets.CSPdarknet53 import darknet_body
+from .CSPdarknet53 import darknet_body
 from Attention.attention import cbam_block, eca_block, se_block
 import customerConf
 
