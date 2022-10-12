@@ -5,9 +5,9 @@ import colorsys
 from tensorflow.keras.layers import Input, Lambda
 from tensorflow.keras.models import Model
 from PIL import Image, ImageFont, ImageDraw
-from yolov5.net import yolo_body
-from utils.dataloader_yolov5 import get_anchors, get_classes, cvtColor
-from yolov5.tools import DecodeBox
+from yolov5.nets.net import yolo_body
+from yolov5.lib.dataloader import get_anchors, get_classes, cvtColor
+from yolov5.lib.tools import DecodeBox
 import customerConf
 import os
 import numpy as np

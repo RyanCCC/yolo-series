@@ -6,10 +6,10 @@ import tensorflow.keras.backend as K
 from tensorflow.keras.callbacks import EarlyStopping, LearningRateScheduler, TensorBoard
 from tensorflow.keras.optimizers import SGD, Adam
 
-from nets.yolox import yolo_body, get_yolox_model
-from nets.loss_yolox import get_lr_scheduler, get_yolo_loss
+from yolox.nets.yolox import yolo_body, get_yolox_model
+from yolox.lib.loss_yolox import get_lr_scheduler, get_yolo_loss
 from utils.callbacks import ModelCheckpoint
-from utils.dataloader_yolox import YoloDatasets, get_classes
+from yolox.lib.dataloader import YoloDatasets, get_classes
 from tqdm import tqdm
 
 

@@ -6,7 +6,7 @@ from tensorflow.keras.layers import (BatchNormalization, Concatenate,
                                      Conv2D, Lambda, LeakyReLU,
                                      MaxPooling2D, ZeroPadding2D)
 from tensorflow.keras.regularizers import l2
-from utils.utils import compose
+from yolov4.lib.utils import compose
 
 
 def route_group(input_layer, groups, group_id):

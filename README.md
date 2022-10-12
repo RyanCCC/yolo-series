@@ -17,39 +17,44 @@
 ``` python
 
 +---Attention： 实现注意力机制
-|---data：基础配置
-|   +---simhei.ttf：字体
-|   +---yolo_anchors.txt：预设置的anchorbox
-|   \---voc.names：存放类别名称，同理可换成customer类别名称
-|---dataset_tools:存放处理数据集的工具：包括生成训练文档、类别统计等
+|---tools:存放工具：包括生成训练文档、类别统计等。
 |---deep_sort：目标跟踪Deepsort算法
 |---doc：存放YOLO资料文档
 |---evaluate：存放模型评估方法
+|---font：字体
 |---logs：存放训练日志的文档
 |---model：存放模型和权重
 |   +---yolo4_voc_weights.h5：VOC预训练权重
 |   \---yolo4_weight.h5：COCO预训练权重
-|---nets：Yolo实现代码，包括YOLOV4和YOLOX
 |---result：推理结果保存的文件夹
 |---train：训练文档，
 |   +---train_tiny.py：YOLOV4 TINY训练
 |   +---train_yolox.py：YOLOX训练
 |   \---train.py：YOLOV4训练
-|---predict：推理文档，
-|   +---predict_yolov4_weight.py：YOLOV4加载权重推理
-|   +---predict_yolov4.py：YOLOV4推理
-|   +---predict_yolov5.py：YOLOV5推理
-|   \---predict_yolox.py：YOLOX推理
-|---utils：基础模块
+|---utils：基础模块，如配置文件，训callbacks练设置以及一些jupty notebook
 |---video：视频存放
-|---yolov5：yolov5实现算法
 |---yolop：yolop实现算法
+|---yolov4：yolov4实现算法
+|---yolov5：yolov5实现算法
+|---yolov7：yolov7实现算法
+|---yolox：yolox实现算法
 \---datasets：数据集，以VOC数据集格式
     +---Annotations：数据集标注
     +---ImageSets
     |   \---Main：划分训练集、测试集、验证集的txt文档
     \---JPEGImages：图像
 ```
+
+每个算法文件夹下的结构如下，以`yolov4`为例：
+
+```
++---checkppoints： 存放训练过程中的checkpoints
+|---data：anchor的文件、字体等。
+|---lib：基础模块，如数据加载模块，损失函数设置模块。
+|---net：网络算法的实现
+\---predict.py：推理实现脚本
+```
+
 
 ## 执行步骤：
 

@@ -1,7 +1,7 @@
 
-from utils.tfrecord_create import main_create_tfrecord
+from tools.tfrecord_create import main_create_tfrecord
 import numpy as np
-from utils.dataloader import preprocess_true_boxes
+from yolov4.lib.dataloader import preprocess_true_boxes
 tfrecord_save_path= './validate.tfrecord'
 dataset_root = './villages'
 class_path = './villages/village.names'

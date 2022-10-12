@@ -64,7 +64,7 @@ def main(args):
         assert len(weights) > 0, 'weights cannot be none or empty.'
         if yolo_type == 'yolov4':
             from customerConf import YOLOV4Config
-            from nets.yolo4 import yolo_body
+            from yolov4.nets.yolo4 import yolo_body
             anchors = get_anchors(YOLOV4Config.anchors_path)
             class_names = get_class(YOLOV4Config.classes_path)
             model_path = os.path.expanduser(weights)
@@ -84,7 +84,7 @@ def main(args):
             print(f'Model output names: ',output_names)
         elif yolo_type == 'yolov4_tiny':
             from customerConf import YOLOV4Config
-            from nets.yolo4_tiny import yolo_body
+            from yolov4.nets.yolo4_tiny import yolo_body
             anchors = get_anchors(YOLOV4Config.anchors_path)
             class_names = get_class(YOLOV4Config.classes_path)
             weight_path = os.path.expanduser(weights)
@@ -107,7 +107,7 @@ def main(args):
             pass
         elif yolo_type == 'yolox':
             from customerConf import YOLOXConfig
-            from nets.yolox import yolo_body
+            from yolox.nets.yolox import yolo_body
             class_names = get_class(YOLOXConfig.classes_path)
             num_classes = len(class_names)
             yolo_model = yolo_body([None, None, 3], num_classes=num_classes, phi=YOLOXConfig.phi)

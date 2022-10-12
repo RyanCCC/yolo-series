@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow.keras import backend as K
 
-from nets.ious import box_ciou_tiny as box_ciou
+from yolov4.lib.ious import box_ciou_tiny as box_ciou
 
 
 def _smooth_labels(y_true, label_smoothing):

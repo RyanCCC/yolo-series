@@ -7,8 +7,8 @@ import tensorflow as tf
 from PIL import ImageDraw, ImageFont,Image
 from tensorflow.keras.layers import Input, Lambda
 from tensorflow.keras.models import Model
-from nets.yolox import yolo_body
-from utils.dataloader_yolox import cvtColor, get_classes, preprocess_input
+from yolox.nets.yolox import yolo_body
+from yolox.lib.dataloader import cvtColor, get_classes, preprocess_input
 import tensorflow.keras.backend as K
 import gc
 from glob import glob

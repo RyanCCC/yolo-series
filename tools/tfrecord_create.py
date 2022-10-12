@@ -5,7 +5,7 @@ import hashlib
 import os
 import cv2
 import numpy as np
-from .dataloader import get_classes
+from yolov4.lib.dataloader import get_classes
 
 IMAGE_FEATURE_MAP = {
     # 'image/width': tf.io.FixedLenFeature([], tf.int64),

@@ -1,4 +1,4 @@
-from utils.utils import get_random_data_with_Mosaic, get_random_data
+from yolov4.lib.utils import get_random_data_with_Mosaic, get_random_data
 import numpy as np
 import tensorflow as tf
 from PIL import Image

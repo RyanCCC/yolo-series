@@ -3,10 +3,13 @@ import math
 from functools import partial
 import tensorflow as tf
 from tensorflow.keras import backend as K
-from nets.loss import _smooth_labels
 from .tools import get_anchors_and_decode
-from nets.ious import box_ciou
+from yolov4.lib.ious import box_ciou
 
+def _smooth_labels(y_true, label_smoothing):
+    num_classes = tf.cast(K.shape(y_true)[-1], dtype=K.floatx())
+    label_smoothing = K.constant(label_smoothing, dtype=K.floatx())
+    return y_true * (1.0 - label_smoothing) + label_smoothing / num_classes
 
 def yolo_loss(
     args, 

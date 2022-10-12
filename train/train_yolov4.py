@@ -9,12 +9,12 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
 from tqdm import tqdm
 
-from nets.loss import yolo_loss
-from nets.yolo4 import yolo_body
-from utils.utils import (ModelCheckpoint,
+from yolov4.lib.loss import yolo_loss
+from yolov4.nets.yolo4 import yolo_body
+from yolov4.lib.utils import (ModelCheckpoint,
                          WarmUpCosineDecayScheduler)
-from utils.dataloader import data_generator, get_classes, get_anchors, preprocess_true_boxes_tf, transform_targets
-from utils.tfrecord_create import load_tfrecord_dataset, transform_dataset
+from yolov4.lib.dataloader import data_generator, get_classes, get_anchors, preprocess_true_boxes_tf, transform_targets
+from tools.tfrecord_create import load_tfrecord_dataset, transform_dataset
 from tqdm import tqdm
 
 # 防止bug

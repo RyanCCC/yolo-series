@@ -4,7 +4,7 @@ from keras import backend as K
 from keras.initializers import random_normal
 from keras.layers import (BatchNormalization, Concatenate, Conv2D, Layer,
                           MaxPooling2D, ZeroPadding2D)
-from utils.utils import compose
+from yolov7.lib.utils import compose
 
 
 class SiLU(Layer):

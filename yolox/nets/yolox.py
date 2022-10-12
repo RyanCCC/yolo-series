@@ -4,7 +4,7 @@ from tensorflow.keras.models import Model
 from nets.CSPdarknet53 import CSPLayer, DarknetConv2D_BN_SiLU
 from nets.CSPdarknet53 import darknet_body_yolox as darknet_body
 from nets.CSPdarknet53 import DarknetConv2D_withL2 as DarknetConv2D
-from nets.loss_yolox import get_yolo_loss
+from yolox.lib.loss_yolox import get_yolo_loss
 
 
 def yolo_body(input_shape, num_classes, phi, weight_decay=5e-4):
