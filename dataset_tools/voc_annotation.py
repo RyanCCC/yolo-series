@@ -4,12 +4,12 @@ from tqdm import tqdm
 
 
 
-base_path = os.path.join(os.getcwd(), 'village')
-class_file =os.path.join(base_path, 'village.names')
+base_path = os.path.join(os.getcwd(), 'villages')
+class_file =os.path.join(base_path, 'village.names2022')
 
 
 '''
-生成训练集、测试集、验证集文件
+生成训练集、测试集、验证集文件。COCO格式保存数据。
 '''
 
 sets=['train', 'val', 'test']
