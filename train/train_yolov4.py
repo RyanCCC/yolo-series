@@ -83,7 +83,7 @@ for gpu in gpus:
     tf.config.experimental.set_memory_growth(gpu, True)
 
 
-def main(config):
+def yolov4(config):
     train_txt = config.train_txt
     log_dir = config.logdir
     classes_path = config.classes_path

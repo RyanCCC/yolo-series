@@ -9,7 +9,7 @@ from yolov5 import get_train_model, yolo_body, get_lr_scheduler, ModelCheckpoint
 
 
 
-def train(config):
+def yolov5(config):
     os.environ['CUDA_VISIABLE_DEVICES'] = config.gpus
     classes_path = config.classes_path
     # yolov5_anchors.txt

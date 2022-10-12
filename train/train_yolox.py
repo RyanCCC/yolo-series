@@ -73,7 +73,7 @@ gpus = tf.config.experimental.list_physical_devices(device_type='GPU')
 for gpu in gpus:
     tf.config.experimental.set_memory_growth(gpu, True)
 
-def main(config):
+def yolox(config):
     os.environ["CUDA_VISIBLE_DEVICES"]  = config.gpus
     classes_path = config.classes_path
     pretrain_model_path = config.pretrain_weight

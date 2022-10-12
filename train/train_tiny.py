@@ -185,7 +185,7 @@ gpus = tf.config.experimental.list_physical_devices(device_type='GPU')
 for gpu in gpus:
     tf.config.experimental.set_memory_growth(gpu, True)
 
-def main():
+def yolov4tiny():
     train_txt = YOLOV4Config.train_txt
     log_dir = YOLOV4Config.logdir
     classes_path = YOLOV4Config.classes_path

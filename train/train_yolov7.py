@@ -10,7 +10,7 @@ from tensorflow.keras.regularizers import l2
 from yolov7 import get_train_model, yolo_body, get_lr_scheduler, YoloDatasets, get_anchors, get_classes, show_config
 
 
-def train(config):
+def yolov7(config):
     # 设置日志级别
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = config.log_level
     train_gpu = config.gpus
