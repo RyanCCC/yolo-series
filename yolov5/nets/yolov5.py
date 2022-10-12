@@ -1,7 +1,7 @@
 from tensorflow.keras.layers import Concatenate, Input, Lambda, UpSampling2D, ZeroPadding2D
 from tensorflow.keras.models import Model
 from yolov5.nets.CSPdarknet_yolov5 import C3, darknet_body
-from nets.CSPdarknet53 import DarknetConv2D_BN_SiLU, DarknetConv2D_withL2
+from .CSPdarknet53 import DarknetConv2D_BN_SiLU, DarknetConv2D_withL2
 from ..lib.loss import yolo_loss
 
 # 构建网络
