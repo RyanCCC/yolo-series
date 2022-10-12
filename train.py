@@ -1,8 +1,6 @@
 import customerConf
 import argparse
 
-from train.train_tiny import yolov4tiny
-
 
 # TODO: Add Command arg
 def parse_args():
