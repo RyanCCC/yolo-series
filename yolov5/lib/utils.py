@@ -10,11 +10,36 @@ from tensorflow import keras
 from tensorflow.keras import backend as K
 
 
+def get_classes(classes_path):
+    '''loads the classes'''
+    with open(classes_path) as f:
+        class_names = f.readlines()
+    class_names = [c.strip() for c in class_names]
+    return class_names, len(class_names)
+
+def get_anchors(anchors_path):
+    '''loads the anchors from a file'''
+    with open(anchors_path) as f:
+        anchors = f.readline()
+    anchors = [float(x) for x in anchors.split(',')]
+    return np.array(anchors).reshape(-1, 2)
+
 def compose(*funcs):
     if funcs:
         return reduce(lambda f, g: lambda *a, **kw: g(f(*a, **kw)), funcs)
     else:
         raise ValueError('Composition of empty sequence not supported.')
+
+def cvtColor(image):
+    if len(np.shape(image)) == 3 and np.shape(image)[2] == 3:
+        return image 
+    else:
+        image = image.convert('RGB')
+        return image
+
+def preprocess_input(image):
+    image /= 255.0
+    return image
 
 def letterbox_image(image, size):
     iw, ih = image.size
@@ -414,6 +439,7 @@ class WarmUpCosineDecayScheduler(keras.callbacks.Callback):
         if self.verbose > 0:
             print('\nBatch %05d: setting learning '
                   'rate to %s.' % (self.global_step + 1, lr))
+
 
 class ModelCheckpoint(keras.callbacks.Callback):
     def __init__(self, filepath, monitor='val_loss', verbose=0,

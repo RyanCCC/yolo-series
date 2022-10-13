@@ -9,7 +9,7 @@ def parse_args():
         '--model', 
         help='YOLOV4, YOLOV4-TINY, YOLOV5 or YOLOX', 
         choices=['YOLOV4', 'YOLOV4-TINY', 'YOLOV5', 'YOLOX', 'YOLOV7'],
-        default='YOLOV7', 
+        default='YOLOV5', 
         type=str)
     args = parser.parse_args()
     return args

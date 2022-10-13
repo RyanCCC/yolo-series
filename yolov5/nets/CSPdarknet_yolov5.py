@@ -13,19 +13,10 @@ def SPPBottleneck(x, out_channels, weight_decay=5e-4, name = ""):
 
 def C3(x, num_filters, num_blocks, shortcut=True, expansion=0.5, weight_decay=5e-4, name=""):
     hidden_channels = int(num_filters * expansion)
-    #----------------------------------------------------------------#
-    #   主干部分会对num_blocks进行循环，循环内部是残差结构。
-    #----------------------------------------------------------------#
     x_1 = DarknetConv2D_BN_SiLU(hidden_channels, (1, 1), weight_decay=weight_decay, name = name + '.cv1')(x)
-    #--------------------------------------------------------------------#
-    #   然后建立一个大的残差边shortconv、这个大残差边绕过了很多的残差结构
-    #--------------------------------------------------------------------#
     x_2 = DarknetConv2D_BN_SiLU(hidden_channels, (1, 1), weight_decay=weight_decay, name = name + '.cv2')(x)
     for i in range(num_blocks):
         x_1 = Bottleneck(x_1, hidden_channels, shortcut=shortcut, weight_decay=weight_decay, name = name + '.m.' + str(i))
-    #----------------------------------------------------------------#
-    #   将大残差边再堆叠回来
-    #----------------------------------------------------------------#
     route = Concatenate()([x_1, x_2])
     return DarknetConv2D_BN_SiLU(num_filters, (1, 1), weight_decay=weight_decay, name = name + '.cv3')(route)
 
@@ -39,11 +30,7 @@ def resblock_body(x, num_filters, num_blocks, expansion=0.5, shortcut=True, last
         x = SPPBottleneck(x, num_filters, weight_decay=weight_decay, name = name + '.2')
     return x
 
-#---------------------------------------------------#
-#   CSPdarknet的主体部分
-#   输入为一张640x640x3的图片
-#   输出为三个有效特征层
-#---------------------------------------------------#
+
 def darknet_body(x, base_channels, base_depth, weight_decay=5e-4):
     # 640, 640, 3 => 320, 320, 64
     x = ZeroPadding2D(((2, 2),(2, 2)))(x)

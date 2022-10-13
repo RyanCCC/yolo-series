@@ -184,8 +184,8 @@ def yolox(config):
 
         epoch_step = num_train // batch_size
         epoch_step_val  = num_val // batch_size
-        train_dataloader.batch_size    = batch_size
-        val_dataloader.batch_size      = batch_size
+        train_dataloader.batch_size = batch_size
+        val_dataloader.batch_size = batch_size
 
         print('Train on {} samples, val on {} samples, with batch size {}.'.format(num_train, num_val, batch_size))
         model.fit_generator(

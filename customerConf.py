@@ -34,7 +34,7 @@ class Config(object):
 
 class YOLOV4Config(Config):
     # Train
-    logdir = './logs/'
+    logdir = './yolov4/logs/'
     dataset_base_path = r'.\villages'
     classes_path = os.path.join(dataset_base_path, 'village.names') 
     train_txt= os.path.join(dataset_base_path, 'train.txt')
@@ -62,10 +62,9 @@ class YOLOV4Config(Config):
 
 class YOLOV5Config(Config):
     # Train
-    logdir = './logs/'
-    dataset_base_path = r'.\villages'
-    # classes_path = os.path.join(dataset_base_path, 'village.names') 
-    classes_path = './data/voc.names'
+    logdir = './yolov5/logs/'
+    dataset_base_path = r'./villages'
+    classes_path = os.path.join(dataset_base_path, 'village.names') 
     train_txt= os.path.join(dataset_base_path, 'train.txt')
     val_txt= os.path.join(dataset_base_path, 'val.txt')
     test_txt = os.path.join(dataset_base_path, 'ImageSets/Main')
@@ -81,7 +80,7 @@ class YOLOV5Config(Config):
     learning_rate_unfreeze = 1e-4
     pretrain_weight = './model/yolov5_s_v6.1.h5'
     save_weight = 'village_yolov5_tf2.h5'
-    anchors_path = './data/yolo_anchors.txt'
+    anchors_path = './yolov5/data/yolov5_anchors.txt'
     phi='s'
     # Inference
     predict_weight = './model/yolov5_s_v6.1.h5'
@@ -106,7 +105,7 @@ class YOLOV5Config(Config):
 
 class YOLOXConfig(Config):
     gpus = '0'
-    logdir = './logs/'
+    logdir = './yolox/logs/'
     learning_rate = 1e-2
     dataset_base_path = r'.\villages'
     classes_path = os.path.join(dataset_base_path, 'village.names') 
@@ -126,7 +125,7 @@ class YOLOXConfig(Config):
 
 class YOLOV7Config(Config):
     task = "village_Detection"
-    logdir = './logs/'
+    logdir = './yolov7/logs/'
     dataset_base_path = r'./villages'
     classes_path = os.path.join(dataset_base_path, 'village.names') 
     train_txt= os.path.join(dataset_base_path, 'train.txt')

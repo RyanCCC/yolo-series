@@ -3,7 +3,8 @@ import os
 import tensorflow.keras.backend as K
 from tensorflow.keras.callbacks import EarlyStopping, LearningRateScheduler, TensorBoard
 from tensorflow.keras.optimizers import SGD, Adam
-
+import tensorflow as tf
+from functools import partial
 from yolov5 import get_train_model, yolo_body, get_lr_scheduler, ModelCheckpoint, YoloDatasets, get_anchors, get_classes
 
 
@@ -43,11 +44,16 @@ def yolov5(config):
     train_annotation_path = config.train_txt
     val_annotation_path = config.val_txt
     anchors_mask = config.ANCHOR_MASK
-    class_names = get_classes(classes_path)
-    num_classes = len(class_names)
+    class_names, num_classes = get_classes(classes_path)
     anchors= get_anchors(anchor_path)
     num_anchors = len(anchors)
     phi = config.phi
+
+    # 冻结训练
+    Freeze_Train = True
+    Freeze_Epoch = 50
+    UnFreeze_Epoch = 100
+
 
     # 创建yolo模型
     model_body  = yolo_body((None, None, 3), anchor_mask, num_classes, phi)
@@ -73,50 +79,88 @@ def yolov5(config):
         print("\n\033[1;33;44m[Warning] 使用%s优化器时，建议将训练总步长设置到%d以上。\033[0m"%(optimizer_type, wanted_step))
         print("\033[1;33;44m[Warning] 本次运行的总训练数据量为%d，Unfreeze_batch_size为%d，共训练%d个Epoch，计算出总训练步长为%d。\033[0m"%(num_train, batch_size, epoch, total_step))
         print("\033[1;33;44m[Warning] 由于总训练步长为%d，小于建议总步长%d，建议设置总世代为%d。\033[0m"%(total_step, wanted_step, wanted_epoch))
+    
+    # 数据集加载
+    train_dataloader = YoloDatasets(train_lines, input_shape, anchors, batch_size, num_classes, anchor_mask, 0, epoch, \
+                                            mosaic=mosaic, mixup=mixup, mosaic_prob=mosaic_prob, mixup_prob=mixup_prob, train=True, special_aug_ratio=special_aug_ratio)
+    val_dataloader = YoloDatasets(val_lines, input_shape, anchors, batch_size, num_classes, anchor_mask, 0, epoch, \
+                                        mosaic=False, mixup=False, mosaic_prob=0, mixup_prob=0, train=False, special_aug_ratio=0)
 
+                                        
     # 设置超参数
     nbs = 64
     lr_limit_max = 1e-3 if optimizer_type == 'adam' else 5e-2
     lr_limit_min = 3e-4 if optimizer_type == 'adam' else 5e-4
     Init_lr_fit = min(max(batch_size / nbs * learning_rate, lr_limit_min), lr_limit_max)
-    Min_lr_fit  = min(max(batch_size / nbs * min_learning_rate, lr_limit_min * 1e-2), lr_limit_max * 1e-2)
+    Min_lr_fit = min(max(batch_size / nbs * min_learning_rate, lr_limit_min * 1e-2), lr_limit_max * 1e-2)
+
+    # 设置callbacks
+    time_str = datetime.datetime.strftime(datetime.datetime.now(),'%Y_%m_%d_%H_%M_%S')
+    log_dir = os.path.join(save_dir, "loss_" + str(time_str))
+    logging = TensorBoard(log_dir)
+    checkpoint = ModelCheckpoint(os.path.join(save_dir, saved_weight_name), 
+                                    monitor = 'val_loss', save_weights_only = True, save_best_only = False, period = 10)
+    checkpoint_best = ModelCheckpoint(os.path.join(save_dir, "best_epoch_weights.h5"), 
+                                    monitor = 'val_loss', save_weights_only = True, save_best_only = True, period = 1)
+    early_stopping = EarlyStopping(monitor='val_loss', min_delta = 0, patience = 10, verbose = 1)
+    lr_scheduler_func = get_lr_scheduler(learning_rate_decay_type, Init_lr_fit, Min_lr_fit, epoch)
+    lr_scheduler = LearningRateScheduler(lr_scheduler_func, verbose = 1)
+    callbacks = [logging, early_stopping, checkpoint, lr_scheduler]
+
+    epoch_step = num_train // batch_size
+    epoch_step_val  = num_val // batch_size
+    train_dataloader.batch_size = batch_size
+    val_dataloader.batch_size = batch_size
+
+    # 设置Freeze train
+    if Freeze_Train:
+        freeze_layers = {'s': 125, 'm': 179, 'l': 234, 'x': 290}[phi]
+        for i in range(freeze_layers): model_body.layers[i].trainable = False
+        print('Freeze the first {} layers of total {} layers.'.format(freeze_layers, len(model_body.layers)))
+        optimizer = {
+            'adam'  : Adam(lr = learning_rate, beta_1 = momentum),
+            'sgd'   : SGD(lr = learning_rate, momentum = momentum, nesterov=True)
+            }[optimizer_type]
+        model.compile(optimizer = optimizer, loss={'yolo_loss': lambda y_true, y_pred: y_pred})
+
+        print('Freeze Train on {} samples, val on {} samples, with batch size {}.'.format(num_train, num_val, batch_size))
+        model.fit(
+            x = train_dataloader,
+            steps_per_epoch = epoch_step,
+            validation_data = val_dataloader,
+            validation_steps = epoch_step_val,
+            epochs = Freeze_Epoch,
+            callbacks = callbacks
+        )
+    for i in range(freeze_layers): model_body.layers[i].trainable = True
+    print('Freeze the first {} layers of total {} layers.'.format(freeze_layers, len(model_body.layers)))
+    # 设置超参数
+    nbs = 64
+    lr_limit_max = 1e-3 if optimizer_type == 'adam' else 5e-2
+    lr_limit_min = 3e-4 if optimizer_type == 'adam' else 5e-4
+    Init_lr_fit = min(max(batch_size / nbs * learning_rate, lr_limit_min), lr_limit_max)
+    Min_lr_fit = min(max(batch_size / nbs * min_learning_rate, lr_limit_min * 1e-2), lr_limit_max * 1e-2)
 
     lr_scheduler_func = get_lr_scheduler(learning_rate_decay_type, Init_lr_fit, Min_lr_fit, epoch)
-    epoch_step      = num_train // batch_size
-    epoch_step_val  = num_val // batch_size
 
-    train_dataloader    = YoloDatasets(train_lines, input_shape, anchors, batch_size, num_classes, anchor_mask, 0, epoch, \
+    train_dataloader = YoloDatasets(train_lines, input_shape, anchors, batch_size, num_classes, anchor_mask, 0, epoch, \
                                             mosaic=mosaic, mixup=mixup, mosaic_prob=mosaic_prob, mixup_prob=mixup_prob, train=True, special_aug_ratio=special_aug_ratio)
-    val_dataloader      = YoloDatasets(val_lines, input_shape, anchors, batch_size, num_classes, anchor_mask, 0, epoch, \
+    val_dataloader = YoloDatasets(val_lines, input_shape, anchors, batch_size, num_classes, anchor_mask, 0, epoch, \
                                             mosaic=False, mixup=False, mosaic_prob=0, mixup_prob=0, train=False, special_aug_ratio=0)
     optimizer = {
             'adam'  : Adam(lr = learning_rate, beta_1 = momentum),
             'sgd'   : SGD(lr = learning_rate, momentum = momentum, nesterov=True)
-        }[optimizer_type]
-    start_epoch = 0
-    end_epoch   = epoch
+            }[optimizer_type]
     model.compile(optimizer = optimizer, loss={'yolo_loss': lambda y_true, y_pred: y_pred})
-    time_str = datetime.datetime.strftime(datetime.datetime.now(),'%Y_%m_%d_%H_%M_%S')
-    log_dir = os.path.join(save_dir, "loss_" + str(time_str))
-    logging = TensorBoard(log_dir)
-    checkpoint      = ModelCheckpoint(os.path.join(save_dir, "ep{epoch:03d}-loss{loss:.3f}-val_loss{val_loss:.3f}.h5"), 
-                                    monitor = 'val_loss', save_weights_only = True, save_best_only = False, period = 10)
-    checkpoint_last = ModelCheckpoint(os.path.join(save_dir, "last_epoch_weights.h5"), 
-                                    monitor = 'val_loss', save_weights_only = True, save_best_only = False, period = 1)
-    checkpoint_best = ModelCheckpoint(os.path.join(save_dir, "best_epoch_weights.h5"), 
-                                    monitor = 'val_loss', save_weights_only = True, save_best_only = True, period = 1)
-    early_stopping  = EarlyStopping(monitor='val_loss', min_delta = 0, patience = 10, verbose = 1)
-    lr_scheduler    = LearningRateScheduler(lr_scheduler_func, verbose = 1)
-    callbacks       = [logging, checkpoint, checkpoint_last, checkpoint_best, lr_scheduler]
+    
 
-    print('Train on {} samples, val on {} samples, with batch size {}.'.format(num_train, num_val, batch_size))
+    print('Freeze Train on {} samples, val on {} samples, with batch size {}.'.format(num_train, num_val, batch_size))
     model.fit(
         x = train_dataloader,
         steps_per_epoch = epoch_step,
         validation_data = val_dataloader,
         validation_steps = epoch_step_val,
-        epochs = end_epoch,
-        initial_epoch = start_epoch,
+        epochs = UnFreeze_Epoch,
         callbacks = callbacks
     )
     
