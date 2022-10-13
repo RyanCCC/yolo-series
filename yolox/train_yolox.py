@@ -91,7 +91,7 @@ def yolox(config):
 
     Freeze_train = True
 
-    learning_rate = 1e-2
+    learning_rate = config.learning_rate
     min_learning_rate = learning_rate*0.01
 
     optimizerType = 'sgd'
