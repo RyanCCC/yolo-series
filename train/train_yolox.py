@@ -138,10 +138,10 @@ def yolox(config):
             val_line = f.readlines()
         num_train = len(train_line)
         num_val = len(val_line)
-        epoch_step      = num_train // batch_size
-        epoch_step_val  = num_val // batch_size
-        train_dataloader    = YoloDatasets(train_line, input_shape, batch_size, num_classes, Init_Epoch, UnFreeze_Epoch, mosaic = mosaic, train = True)
-        val_dataloader      = YoloDatasets(val_line, input_shape, batch_size, num_classes, Init_Epoch, UnFreeze_Epoch, mosaic = False, train = False)
+        epoch_step = num_train // batch_size
+        epoch_step_val = num_val // batch_size
+        train_dataloader = YoloDatasets(train_line, input_shape, batch_size, num_classes, Init_Epoch, UnFreeze_Epoch, mosaic = mosaic, train = True)
+        val_dataloader = YoloDatasets(val_line, input_shape, batch_size, num_classes, Init_Epoch, UnFreeze_Epoch, mosaic = False, train = False)
 
         optimizer = {
             'adam':Adam(learning_rate=learning_rate, beta_1=momentum),
@@ -162,43 +162,43 @@ def yolox(config):
         # 训练模型
         print('Train on {} samples, val on {} samples, with batch size {}.'.format(num_train, num_val, batch_size))
         model.fit_generator(
-                    generator           = train_dataloader,
-                    steps_per_epoch     = epoch_step,
-                    validation_data     = val_dataloader,
-                    validation_steps    = epoch_step_val,
-                    epochs              = Freeze_Epoch,
-                    initial_epoch       = Init_Epoch,
-                    callbacks           = callbacks)
+                    generator = train_dataloader,
+                    steps_per_epoch = epoch_step,
+                    validation_data = val_dataloader,
+                    validation_steps = epoch_step_val,
+                    epochs = Freeze_Epoch,
+                    # initial_epoch = Init_Epoch,
+                    callbacks = callbacks)
         
-        # 解冻
+        print("Unfreeze layers.")
         for i in range(len(model.layers)): 
             model.layers[i].trainable = True
         
         batch_size = UnFreeze_batch_size
-        nbs     = 64
+        nbs = 64
         Init_lr_fit = max(batch_size / nbs * learning_rate, 3e-4)
         Min_lr_fit  = max(batch_size / nbs * min_learning_rate, 3e-6)
         lr_scheduler_func = get_lr_scheduler(lr_decay_type, Init_lr_fit, Min_lr_fit, UnFreeze_Epoch)
-        lr_scheduler    = LearningRateScheduler(lr_scheduler_func, verbose = 1)
-        callbacks       = [logging, checkpoint, lr_scheduler, early_stopping]
+        lr_scheduler = LearningRateScheduler(lr_scheduler_func, verbose = 1)
+        callbacks = [logging, checkpoint, lr_scheduler, early_stopping]
 
-        epoch_step      = num_train // batch_size
+        epoch_step = num_train // batch_size
         epoch_step_val  = num_val // batch_size
         train_dataloader.batch_size    = batch_size
         val_dataloader.batch_size      = batch_size
 
         print('Train on {} samples, val on {} samples, with batch size {}.'.format(num_train, num_val, batch_size))
         model.fit_generator(
-                    generator           = train_dataloader,
-                    steps_per_epoch     = epoch_step,
-                    validation_data     = val_dataloader,
-                    validation_steps    = epoch_step_val,
-                    epochs              = Freeze_Epoch,
-                    initial_epoch       = UnFreeze_Epoch,
-                    callbacks           = callbacks)
+                    generator = train_dataloader,
+                    steps_per_epoch = epoch_step,
+                    validation_data = val_dataloader,
+                    validation_steps = epoch_step_val,
+                    epochs = UnFreeze_Epoch,
+                    # initial_epoch = Freeze_Epoch,
+                    callbacks = callbacks)
         
         # 以Tensorflow格式保存模型
-        model.save('./model/village_yolox', save_format='tf2')
+        # model.save('./model/village_yolox', save_format='tf2')
 
 
 

@@ -141,13 +141,13 @@ def yolov4(config):
     print('Freeze the first {} layers of total {} layers.'.format(freeze_layers, len(model_body.layers)))
 
     if True:
-        Init_epoch          = config.Init_epoch
-        Freeze_epoch        = config.Freeze_epoch
-        batch_size          = config.batch_size
+        Init_epoch = config.Init_epoch
+        Freeze_epoch = config.Freeze_epoch
+        batch_size = config.batch_size
         learning_rate_freeze  = config.learning_rate_freeze
         
-        epoch_size      = num_train // batch_size
-        epoch_size_val  = num_val // batch_size
+        epoch_size = num_train // batch_size
+        epoch_size_val = num_val // batch_size
 
         if epoch_size == 0 or epoch_size_val == 0:
             raise ValueError("数据集过小，无法进行训练，请扩充数据集。")
@@ -184,12 +184,12 @@ def yolov4(config):
         
 
         if eager:
-            gen     = tf.data.Dataset.from_generator(partial(data_generator, annotation_lines = lines[:num_train], batch_size = batch_size,
+            gen = tf.data.Dataset.from_generator(partial(data_generator, annotation_lines = lines[:num_train], batch_size = batch_size,
                 input_shape = input_shape, anchors = anchors, num_classes = num_classes, mosaic=mosaic, random=True), (tf.float32, tf.float32, tf.float32, tf.float32))
             gen_val = tf.data.Dataset.from_generator(partial(data_generator, annotation_lines = lines[num_train:], batch_size = batch_size, 
                 input_shape = input_shape, anchors = anchors, num_classes = num_classes, mosaic=False, random=False), (tf.float32, tf.float32, tf.float32, tf.float32))
 
-            gen     = gen.shuffle(buffer_size=batch_size).prefetch(buffer_size=batch_size)
+            gen = gen.shuffle(buffer_size=batch_size).prefetch(buffer_size=batch_size)
             gen_val = gen_val.shuffle(buffer_size=batch_size).prefetch(buffer_size=batch_size)
 
             if Cosine_scheduler:
@@ -202,10 +202,10 @@ def yolov4(config):
             optimizer = tf.keras.optimizers.Adam(learning_rate=lr_schedule)
         else:
             if Cosine_scheduler:
-                warmup_epoch    = int((Freeze_epoch-Init_epoch)*0.2)
-                total_steps     = int((Freeze_epoch-Init_epoch) * num_train / batch_size)
-                warmup_steps    = int(warmup_epoch * num_train / batch_size)
-                reduce_lr       = WarmUpCosineDecayScheduler(learning_rate_base=learning_rate_freeze, total_steps=total_steps,
+                warmup_epoch = int((Freeze_epoch-Init_epoch)*0.2)
+                total_steps = int((Freeze_epoch-Init_epoch) * num_train / batch_size)
+                warmup_steps = int(warmup_epoch * num_train / batch_size)
+                reduce_lr = WarmUpCosineDecayScheduler(learning_rate_base=learning_rate_freeze, total_steps=total_steps,
                                                             warmup_learning_rate=1e-4, warmup_steps=warmup_steps,
                                                             hold_base_rate_steps=num_train, min_learn_rate=1e-6)
                 model.compile(optimizer=Adam(), loss={'yolo_loss': lambda y_true, y_pred: y_pred})
@@ -231,12 +231,12 @@ def yolov4(config):
 
     # Transfer Learning
     if True:
-        Freeze_epoch        = config.Freeze_epoch
-        Epoch               = config.epoch
-        batch_size          = config.batch_size
+        Freeze_epoch = config.Freeze_epoch
+        Epoch = config.epoch
+        batch_size = config.batch_size
         learning_rate_unfreeze  = config.learning_rate_unfreeze
 
-        epoch_size      = num_train // batch_size
+        epoch_size = num_train // batch_size
         epoch_size_val  = num_val // batch_size
 
         if epoch_size == 0 or epoch_size_val == 0:
@@ -261,10 +261,10 @@ def yolov4(config):
             optimizer = tf.keras.optimizers.Adam(learning_rate=lr_schedule)
         else:
             if Cosine_scheduler:
-                warmup_epoch    = int((Epoch-Freeze_epoch)*0.2)
-                total_steps     = int((Epoch-Freeze_epoch) * num_train / batch_size)
-                warmup_steps    = int(warmup_epoch * num_train / batch_size)
-                reduce_lr       = WarmUpCosineDecayScheduler(learning_rate_base=learning_rate_unfreeze, total_steps=total_steps,
+                warmup_epoch = int((Epoch-Freeze_epoch)*0.2)
+                total_steps = int((Epoch-Freeze_epoch) * num_train / batch_size)
+                warmup_steps = int(warmup_epoch * num_train / batch_size)
+                reduce_lr = WarmUpCosineDecayScheduler(learning_rate_base=learning_rate_unfreeze, total_steps=total_steps,
                                                             warmup_learning_rate=1e-4, warmup_steps=warmup_steps,
                                                             hold_base_rate_steps=num_train, min_learn_rate=1e-6)
                 model.compile(optimizer=Adam(), loss={'yolo_loss': lambda y_true, y_pred: y_pred})
