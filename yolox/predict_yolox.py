@@ -255,28 +255,28 @@ class YOLOX(object):
                 del draw
             return image
 
+def Inference_YOLOXModel(YOLOXConfig, model_path = './model/village2022_yolox_s_20221012.h5'):
+    yolox = YOLOX(
+        class_path = YOLOXConfig.classes_path,
+        input_shape = YOLOXConfig.input_shape,
+        confidence = YOLOXConfig.score,
+        nms_iou = YOLOXConfig.iou,
+        max_boxes=YOLOXConfig.max_boxes,
+        letterbox_image = True,
+        model_path = model_path,
+        phi=YOLOXConfig.phi
+    )
+    return yolox
+
 # 创建yolox
-model_path = './model/village_yolox.h5'
-yolox = YOLOX(
-    class_path = YOLOXConfig.classes_path,
-    input_shape = YOLOXConfig.input_shape,
-    confidence = YOLOXConfig.score,
-    nms_iou = YOLOXConfig.iou,
-    max_boxes=YOLOXConfig.max_boxes,
-    letterbox_image = True,
-    model_path = model_path,
-    phi=YOLOXConfig.phi
-)
-
-if __name__=='__main__':
-    # num_classes, input_shape, max_boxes = 100, confidence=0.5, nms_iou=0.3, letterbox_image=True
-    classes_path = YOLOXConfig.classes_path
-    path_pattern = './samples/*'
-    
-    letterbox_image = True
-    for path in glob(path_pattern):
-        image = Image.open(path)
-        img = yolox.detect(image)
-        img.show()
-    print('finish')
-
+# model_path = './model/village_yolox.h5'
+# yolox = YOLOX(
+#     class_path = YOLOXConfig.classes_path,
+#     input_shape = YOLOXConfig.input_shape,
+#     confidence = YOLOXConfig.score,
+#     nms_iou = YOLOXConfig.iou,
+#     max_boxes=YOLOXConfig.max_boxes,
+#     letterbox_image = True,
+#     model_path = model_path,
+#     phi=YOLOXConfig.phi
+# )

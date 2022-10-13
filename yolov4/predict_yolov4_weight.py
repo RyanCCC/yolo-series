@@ -9,10 +9,10 @@ from tensorflow.keras.layers import Input, Lambda
 from tensorflow.keras.models import Model
 
 if not YOLOV4Config.ISTINY:
-    from yolov4.nets.yolo4 import yolo_body, yolo_eval
+    from .nets.yolo4 import yolo_body, yolo_eval
 else:
-    from yolov4.nets.yolo4_tiny import yolo_body, yolo_eval
-from yolov4.lib.utils import letterbox_image
+    from .nets.yolo4_tiny import yolo_body, yolo_eval
+from .lib.utils import letterbox_image
 
 class YOLOV4(object):
     def __init__(self, **kwargs) -> None:
