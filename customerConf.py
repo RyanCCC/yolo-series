@@ -81,14 +81,13 @@ class YOLOXConfig(Config):
     train_txt= os.path.join(dataset_base_path, 'train.txt')
     val_txt= os.path.join(dataset_base_path, 'val.txt')
     test_txt = os.path.join(dataset_base_path, 'ImageSets/Main')
-    Init_epoch = 0
     Freeze_epoch = 50
     epoch = 100
-    batch_size = 16
+    batch_size = 32
     pretrain_weight = './model/yolo4tf2_weight.h5'
     save_weight = 'village_yolox.h5'
     phi= 's'
-    score=0.3
+    score=0.5
     iou=0.5
     input_shape = [640, 640]
 

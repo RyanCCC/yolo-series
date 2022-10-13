@@ -17,19 +17,19 @@ def parse_args():
 if __name__ == '__main__':
     args = parse_args()
     if args.model.upper() == 'YOLOX':
-        from train import yolox
+        from yolox import yolox
         yolox(customerConf.YOLOXConfig)
     elif  args.model.upper() == 'YOLOV4':
-        from train import yolov4
+        from yolov4 import yolov4
         yolov4(customerConf.YOLOV4Config)
     elif args.model.upper() == 'YOLOV4-TINY':
-        from train import yolov4tiny
+        from yolov4 import yolov4tiny
         yolov4tiny(customerConf.YOLOV4Config)
     elif args.model.upper() == 'YOLOV5':
-        from train import yolov5
+        from yolov5 import yolov5
         yolov5(customerConf.YOLOV5Config)
     elif args.model.upper() == 'YOLOV7':
-        from train import yolov7
+        from yolov7 import yolov7
         yolov7(customerConf.YOLOV7Config)
     else:
         pass
