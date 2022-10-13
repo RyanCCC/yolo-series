@@ -6,7 +6,7 @@ sys.path.append(os.getcwd())
 from customerConf import YOLOV4Config as sys_config
 from PIL import Image
 from tqdm import tqdm
-from predict.predict_yolov4_weight import YOLOV4 as YOLO
+from yolov4.predict_yolov4_weight import YOLOV4 as YOLO
 
 
 '''

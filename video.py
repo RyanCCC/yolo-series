@@ -3,7 +3,7 @@ import cv2
 import os
 from PIL import Image
 import numpy as np
-from predict_yolox import yolox
+from yolox.predict_yolox import yolox
 
 '''
 视频推理
