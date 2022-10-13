@@ -2,6 +2,9 @@ from customerConf import *
 from PIL import Image
 from glob import glob
 from yolox import Inference_YOLOXModel
+from yolov4 import Inference_YOLOV4Model
+
+
 
 
 if __name__=='__main__':

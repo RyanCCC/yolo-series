@@ -15,33 +15,21 @@ import numpy as np
 
 
 
-class YOLO(object):
-    _defaults = {
-        "model_path" : customerConf.model_path,
-        "classes_path" : customerConf.classes_path,
-        "anchors_path" : customerConf.anchors_path,
-        "anchors_mask" : customerConf.ANCHOR_MASK,
-        "input_shape" : [640, 640],
-        "phi" : 's',
-        "confidence" : 0.7,
-        "nms_iou" : 0.5,
-        "max_boxes": 100,
-        "letterbox_image":True,
-    }
-
-    @classmethod
-    def get_defaults(cls, n):
-        if n in cls._defaults:
-            return cls._defaults[n]
-        else:
-            return "Unrecognized attribute name '" + n + "'"
-
+class YOLOV5(object):
     def __init__(self, **kwargs):
-        self.__dict__.update(self._defaults)
-        for name, value in kwargs.items():
-            setattr(self, name, value)
-            self._defaults[name] = value 
-
+        self._params = {
+            "model_path" : kwargs['model_path'],
+            "classes_path" : kwargs['classes_path'],
+            "anchors_path" : kwargs['anchors_path'],
+            "anchors_mask" : kwargs['ANCHOR_MASK'],
+            "input_shape" : [640, 640],
+            "phi" : 's',
+            "confidence" : 0.7,
+            "nms_iou" : 0.5,
+            "max_boxes": 100,
+            "letterbox_image":True,
+            }
+        self.__dict__.update(self._params)
         self.class_names = get_classes(self.classes_path)
         self.num_classes = len(self.class_names)
         self.anchors = get_anchors(self.anchors_path)
@@ -169,9 +157,22 @@ class YOLO(object):
             del draw
 
         return image
-    
+
+def Inference_YOLOV5Model(YOLOV5Config, model_path):
+    yolov4 = YOLOV5(
+        class_path = YOLOV5Config.classes_path,
+        input_shape = YOLOV5Config.input_shape,
+        confidence = YOLOV5Config.score,
+        nms_iou = YOLOV5Config.iou,
+        max_boxes=YOLOV5Config.max_boxes,
+        letterbox_image = True,
+        model_path = model_path,
+        phi=YOLOV5Config.phi
+    )
+    return yolov4
+
 if __name__ == '__main__':
-    yolo = YOLO()
+    yolo = YOLOV5()
     crop = False
     count = False
     img = './samples/20210803173302.jpg'

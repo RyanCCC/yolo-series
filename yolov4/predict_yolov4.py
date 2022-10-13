@@ -193,9 +193,18 @@ class YOLOV4(object):
 
             return image
 
-
-
-        
-
+    
+def Inference_YOLOV4Model(YOLOV4Config, model_path):
+    yolov4 = YOLOV4(
+        class_path = YOLOV4Config.classes_path,
+        input_shape = YOLOV4Config.input_shape,
+        confidence = YOLOV4Config.score,
+        nms_iou = YOLOV4Config.iou,
+        max_boxes=YOLOV4Config.max_boxes,
+        letterbox_image = True,
+        model_path = model_path,
+        phi=YOLOV4Config.phi
+    )
+    return yolov4
     
 
