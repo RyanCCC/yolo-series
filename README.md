@@ -49,7 +49,7 @@
 
 ```
 +---checkppoints： 存放训练过程中的checkpoints
-|---data：anchor的文件、字体等。
+|---data：anchor的文件等。
 |---lib：基础模块，如数据加载模块，损失函数设置模块。
 |---net：网络算法的实现
 \---predict.py：推理实现脚本
@@ -116,7 +116,7 @@ python get_map.py
 
 ```
 
-想要查看更多资料，可参考[Object-Detection-Metrics](./doc/Object-Detection-Metrics.md)
+资料可参考[Object-Detection-Metrics](./doc/Object-Detection-Metrics.md)
 
 
 ## YOLOV4
