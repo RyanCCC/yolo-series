@@ -4,7 +4,6 @@ from PIL import Image
 from glob import glob
 import argparse
 
-#TODO: 类似train.py 一样参数化推理文档。
 def parse_args():
     parser = argparse.ArgumentParser(description='Custom Input')
     parser.add_argument(
