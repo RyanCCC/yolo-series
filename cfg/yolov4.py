@@ -24,6 +24,8 @@ class YOLOV4Config(Config):
     anchors_path = './yolov4/data/yolo_anchors.txt'
     # Inference
     predict_weight = './model/yolo4_voc_weights.h5'
+    ISTINY=False
+    ATTENTION=0
     score=0.3
     iou=0.5
     imagesize=512

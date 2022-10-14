@@ -22,10 +22,8 @@ class Config(object):
     learning_rate_freeze = 1e-3
     learning_rate_unfreeze = 1e-4
     # predict
-    ISTINY=False
     score=0.3
     iou=0.5
     max_boxes=100
     letterbox_image=False
-    ATTENTION=0
     ANCHOR_MASK = [[6, 7, 8], [3, 4, 5], [0, 1, 2]]

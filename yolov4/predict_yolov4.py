@@ -13,17 +13,17 @@ class YOLOV4(object):
     def __init__(self, **kwargs) -> None:
         self._params={
             "model_path" : kwargs['model_path'],
-            "anchors_path" : kwargs['anchors_path'],
+            "anchor_path" : kwargs['anchor_path'],
             "classes_path" : kwargs['classes_path'],
             "score" : kwargs['score'],
             "iou" : kwargs['iou'],
             "max_boxes" : kwargs['max_boxes'],
-            "model_image_size" : kwargs['model_image_size'],
+            "input_size" : kwargs['input_size'],
             "letterbox_image" : kwargs['letterbox_image'],
             "istiny" : kwargs["istiny"],
             "attention" : kwargs["attention"],
-            "result":kwargs["result"],
-            "pr_folder_name":kwargs["pr_folder_name"]
+            "result":'./result',
+            "pr_folder_name":'tmp'
         }
         self.__dict__.update(self._params)
         self._class_names = self.get_classes()
@@ -51,7 +51,7 @@ class YOLOV4(object):
         return class_names
     
     def get_anchors(self):
-        anchors_path = os.path.expanduser(self.anchors_path)
+        anchors_path = os.path.expanduser(self.anchor_path)
         with open(anchors_path) as f:
             anchors = f.readline()
         anchors = [float(x) for x in anchors.split(',')]
@@ -63,12 +63,12 @@ class YOLOV4(object):
         
         num_anchors = len(self._anchors)
         num_classes = len(self._class_names)
-        if not self.ISTINY:
+        if not self.istiny:
             from .nets.yolo4 import yolo_body, yolo_eval
-            self.yolo_model = yolo_body(Input(shape=(None,None,3)), num_anchors//3, num_classes, phi=self.ATTENTION)
+            self.yolo_model = yolo_body(Input(shape=(None,None,3)), num_anchors//3, num_classes, phi=self.attention)
         else:
             from .nets.yolo4_tiny import yolo_body, yolo_eval
-            self.yolo_model = yolo_body(Input(shape=(None,None,3)), num_anchors//2, num_classes, phi=self.ATTENTION)
+            self.yolo_model = yolo_body(Input(shape=(None,None,3)), num_anchors//2, num_classes, phi=self.attention)
         self.yolo_model.load_weights(self.model_path)
 
         print('{} model, anchors, and classes loaded.'.format(model_path))
@@ -77,7 +77,7 @@ class YOLOV4(object):
         self.input_image_shape = Input([2,],batch_size=1)
         inputs = [*self.yolo_model.output, self.input_image_shape]
         outputs = Lambda(yolo_eval, output_shape=(1,), name='yolo_eval',
-            arguments={'anchors': self._anchors, 'num_classes': len(self._class_names), 'image_shape': self.model_image_size, 
+            arguments={'anchors': self._anchors, 'num_classes': len(self._class_names), 'image_shape': self.input_size, 
             'score_threshold': self.score, 'eager': True, 'max_boxes': self.max_boxes, 'letterbox_image': self.letterbox_image})(inputs)
         self.yolo_model = Model([self.yolo_model.input, self.input_image_shape], outputs)
         return self.yolo_model
@@ -97,9 +97,9 @@ class YOLOV4(object):
         '''
         image = image.convert('RGB')
         if self.letterbox_image:
-            boxed_image = letterbox_image(image, (self.model_image_size[1],self.model_image_size[0]))
+            boxed_image = letterbox_image(image, (self.input_size[0],self.input_size[1]))
         else:
-            boxed_image = image.resize((self.model_image_size[1],self.model_image_size[0]), Image.BICUBIC)
+            boxed_image = image.resize((self.input_size[0],self.input_size[1]), Image.BICUBIC)
         image_data = np.array(boxed_image, dtype='float32')
         image_data /= 255.
         image_data = np.expand_dims(image_data, 0)  # Add batch dimension.
@@ -198,14 +198,17 @@ class YOLOV4(object):
 def Inference_YOLOV4Model(YOLOV4Config, model_path):
     yolov4 = YOLOV4(
         class_path = YOLOV4Config.classes_path,
-        input_shape = YOLOV4Config.input_shape,
+        input_size = (YOLOV4Config.imagesize, YOLOV4Config.imagesize),
         confidence = YOLOV4Config.score,
-        nms_iou = YOLOV4Config.iou,
+        iou = YOLOV4Config.iou,
         max_boxes=YOLOV4Config.max_boxes,
         letterbox_image = True,
         model_path = model_path,
         istiny=YOLOV4Config.ISTINY,
-        attention = YOLOV4Config.ATTENTION
+        attention = YOLOV4Config.ATTENTION,
+        anchor_path = YOLOV4Config.anchors_path,
+        classes_path = YOLOV4Config.classes_path,
+        score = YOLOV4Config.score,
     )
     return yolov4
     
