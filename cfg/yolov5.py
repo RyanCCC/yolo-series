@@ -22,12 +22,7 @@ class YOLOV5Config(Config):
     pretrain_weight = './model/yolov5_s_v6.1.h5'
     save_weight = 'village_yolov5_tf2.h5'
     anchors_path = './yolov5/data/yolov5_anchors.txt'
-    phi='s'
-    # Inference
-    predict_weight = './model/yolov5_s_v6.1.h5'
-    score=0.3
-    iou=0.5
-    input_shape = [640, 640]
+    phi='l'
     mosaic = True
     mosaic_prob = 0.5
     if mosaic:
@@ -36,6 +31,11 @@ class YOLOV5Config(Config):
         mixup_prob = 0.5
     else:
         mixup = False
+    # Inference
+    score=0.5
+    iou=0.5
+    input_shape = [640, 640]
+    
     special_aug_ratio = 0.7
     focal_loss = False
     focal_alpha = 0.25

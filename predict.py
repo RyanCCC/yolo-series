@@ -16,10 +16,17 @@ if __name__=='__main__':
     #     img = yolox.detect(image)
     #     img.show()
     # print('finish yolox')
-    yolov4 = Inference_YOLOV4Model(YOLOV4Config, './model/village2022_yolov4_20221013.h5')
+    # yolov4 = Inference_YOLOV4Model(YOLOV4Config, './model/village2022_yolov4_20221013.h5')
+    # letterbox_image = True
+    # for path in glob(path_pattern):
+    #     image = Image.open(path)
+    #     img = yolov4.inference(image)
+    #     img.show()
+    # print('finish')
+    yolov5 = Inference_YOLOV5Model(YOLOV5Config, './model/village2022_yolov5_l_20221013.h5')
     letterbox_image = True
     for path in glob(path_pattern):
         image = Image.open(path)
-        img = yolov4.inference(image)
+        img = yolov5.detect_image(image)
         img.show()
     print('finish')

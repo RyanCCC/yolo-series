@@ -19,17 +19,16 @@ class YOLOV5(object):
             "model_path" : kwargs['model_path'],
             "classes_path" : kwargs['classes_path'],
             "anchors_path" : kwargs['anchors_path'],
-            "anchors_mask" : kwargs['ANCHOR_MASK'],
-            "input_shape" : [640, 640],
-            "phi" : 's',
-            "confidence" : 0.7,
-            "nms_iou" : 0.5,
-            "max_boxes": 100,
-            "letterbox_image":True,
+            "anchors_mask" : kwargs['anchors_mask'],
+            "input_shape" : kwargs['input_shape'],
+            "phi" : kwargs['phi'],
+            "confidence" : kwargs['confidence'],
+            "nms_iou" : kwargs['nms_iou'],
+            "max_boxes": kwargs['max_boxes'],
+            "letterbox_image":kwargs['letterbox_image'],
             }
         self.__dict__.update(self._params)
-        self.class_names = get_classes(self.classes_path)
-        self.num_classes = len(self.class_names)
+        self.class_names, self.num_classes = get_classes(self.classes_path)
         self.anchors = get_anchors(self.anchors_path)
         self.num_anchors = len(self.anchors)
 
@@ -100,8 +99,8 @@ class YOLOV5(object):
         out_boxes, out_scores, out_classes = self.get_pred(image_data, input_image_shape) 
 
         print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
-        font        = ImageFont.truetype(font='./data/simhei.ttf', size=np.floor(3e-2 * image.size[1] + 0.5).astype('int32'))
-        thickness   = int(max((image.size[0] + image.size[1]) // np.mean(self.input_shape), 1))
+        font = ImageFont.truetype(font='./data/simhei.ttf', size=np.floor(3e-2 * image.size[1] + 0.5).astype('int32'))
+        thickness = int(max((image.size[0] + image.size[1]) // np.mean(self.input_shape), 1))
         if count:
             print("top_label:", out_classes)
             classes_nums = np.zeros([self.num_classes])
@@ -114,10 +113,10 @@ class YOLOV5(object):
         if crop:
             for i, c in list(enumerate(out_boxes)):
                 top, left, bottom, right = out_boxes[i]
-                top     = max(0, np.floor(top).astype('int32'))
-                left    = max(0, np.floor(left).astype('int32'))
-                bottom  = min(image.size[1], np.floor(bottom).astype('int32'))
-                right   = min(image.size[0], np.floor(right).astype('int32'))
+                top = max(0, np.floor(top).astype('int32'))
+                left = max(0, np.floor(left).astype('int32'))
+                bottom = min(image.size[1], np.floor(bottom).astype('int32'))
+                right = min(image.size[0], np.floor(right).astype('int32'))
                 
                 dir_save_path = "img_crop"
                 if not os.path.exists(dir_save_path):
@@ -127,15 +126,15 @@ class YOLOV5(object):
                 print("save crop_" + str(i) + ".png to " + dir_save_path)
         for i, c in list(enumerate(out_classes)):
             predicted_class = self.class_names[int(c)]
-            box             = out_boxes[i]
-            score           = out_scores[i]
+            box = out_boxes[i]
+            score = out_scores[i]
 
             top, left, bottom, right = box
 
-            top     = max(0, np.floor(top).astype('int32'))
-            left    = max(0, np.floor(left).astype('int32'))
-            bottom  = min(image.size[1], np.floor(bottom).astype('int32'))
-            right   = min(image.size[0], np.floor(right).astype('int32'))
+            top = max(0, np.floor(top).astype('int32'))
+            left = max(0, np.floor(left).astype('int32'))
+            bottom = min(image.size[1], np.floor(bottom).astype('int32'))
+            right = min(image.size[0], np.floor(right).astype('int32'))
 
             label = '{} {:.2f}'.format(predicted_class, score)
             draw = ImageDraw.Draw(image)
@@ -158,13 +157,15 @@ class YOLOV5(object):
 
 def Inference_YOLOV5Model(YOLOV5Config, model_path):
     yolov4 = YOLOV5(
-        class_path = YOLOV5Config.classes_path,
+        model_path = model_path,
+        classes_path = YOLOV5Config.classes_path,
+        anchors_path = YOLOV5Config.anchors_path,
+        anchors_mask = YOLOV5Config.ANCHOR_MASK,
         input_shape = YOLOV5Config.input_shape,
         confidence = YOLOV5Config.score,
         nms_iou = YOLOV5Config.iou,
         max_boxes=YOLOV5Config.max_boxes,
         letterbox_image = True,
-        model_path = model_path,
         phi=YOLOV5Config.phi
     )
     return yolov4
