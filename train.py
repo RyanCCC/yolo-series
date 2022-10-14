@@ -1,4 +1,4 @@
-import customerConf
+import cfg
 import argparse
 
 
@@ -18,18 +18,18 @@ if __name__ == '__main__':
     args = parse_args()
     if args.model.upper() == 'YOLOX':
         from yolox import yolox
-        yolox(customerConf.YOLOXConfig)
+        yolox(cfg.YOLOXConfig)
     elif  args.model.upper() == 'YOLOV4':
         from yolov4 import yolov4
-        yolov4(customerConf.YOLOV4Config)
+        yolov4(cfg.YOLOV4Config)
     elif args.model.upper() == 'YOLOV4-TINY':
         from yolov4 import yolov4tiny
-        yolov4tiny(customerConf.YOLOV4Config)
+        yolov4tiny(cfg.YOLOV4Config)
     elif args.model.upper() == 'YOLOV5':
         from yolov5 import yolov5
-        yolov5(customerConf.YOLOV5Config)
+        yolov5(cfg.YOLOV5Config)
     elif args.model.upper() == 'YOLOV7':
         from yolov7 import yolov7
-        yolov7(customerConf.YOLOV7Config)
+        yolov7(cfg.YOLOV7Config)
     else:
         pass

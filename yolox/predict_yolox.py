@@ -1,7 +1,7 @@
 import colorsys
 import os
 import sys 
-from customerConf import YOLOXConfig
+from cfg import YOLOXConfig
 import numpy as np
 import tensorflow as tf
 from PIL import ImageDraw, ImageFont,Image

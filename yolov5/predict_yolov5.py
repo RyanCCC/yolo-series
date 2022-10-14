@@ -8,8 +8,6 @@ from PIL import Image, ImageFont, ImageDraw
 from .nets.yolov5 import yolo_body
 from .lib.utils import get_anchors, get_classes, cvtColor
 from .lib.tools import DecodeBox
-
-import customerConf
 import os
 import numpy as np
 

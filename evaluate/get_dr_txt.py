@@ -3,7 +3,7 @@ import sys
 
 from torch import true_divide
 sys.path.append(os.getcwd())
-from customerConf import YOLOV4Config as sys_config
+from cfg import YOLOV4Config as sys_config
 from PIL import Image
 from tqdm import tqdm
 from yolov4.predict_yolov4 import YOLOV4 as YOLO

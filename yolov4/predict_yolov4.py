@@ -1,30 +1,29 @@
 import colorsys
 import os
 import time
-from customerConf import YOLOV4Config
+from .lib.utils import letterbox_image
 import numpy as np
 import tensorflow as tf
 from PIL import Image, ImageDraw, ImageFont
 from tensorflow.keras.layers import Input, Lambda
 from tensorflow.keras.models import Model
 
-if not YOLOV4Config.ISTINY:
-    from .nets.yolo4 import yolo_body, yolo_eval
-else:
-    from .nets.yolo4_tiny import yolo_body, yolo_eval
-from .lib.utils import letterbox_image
 
 class YOLOV4(object):
     def __init__(self, **kwargs) -> None:
         self._params={
-            "model_path"       : kwargs['model_path'],
-            "anchors_path"      : kwargs['anchors_path'],
-            "classes_path"      : kwargs['classes_path'],
-            "score"             : kwargs['score'],
-            "iou"               : kwargs['iou'],
-            "max_boxes"         : kwargs['max_boxes'],
-            "model_image_size"  : kwargs['model_image_size'],
-            "letterbox_image"   : kwargs['letterbox_image'],
+            "model_path" : kwargs['model_path'],
+            "anchors_path" : kwargs['anchors_path'],
+            "classes_path" : kwargs['classes_path'],
+            "score" : kwargs['score'],
+            "iou" : kwargs['iou'],
+            "max_boxes" : kwargs['max_boxes'],
+            "model_image_size" : kwargs['model_image_size'],
+            "letterbox_image" : kwargs['letterbox_image'],
+            "istiny" : kwargs["istiny"],
+            "attention" : kwargs["attention"],
+            "result":kwargs["result"],
+            "pr_folder_name":kwargs["pr_folder_name"]
         }
         self.__dict__.update(self._params)
         self._class_names = self.get_classes()
@@ -64,10 +63,12 @@ class YOLOV4(object):
         
         num_anchors = len(self._anchors)
         num_classes = len(self._class_names)
-        if not YOLOV4Config.ISTINY:
-            self.yolo_model = yolo_body(Input(shape=(None,None,3)), num_anchors//3, num_classes, phi=YOLOV4Config.ATTENTION)
+        if not self.ISTINY:
+            from .nets.yolo4 import yolo_body, yolo_eval
+            self.yolo_model = yolo_body(Input(shape=(None,None,3)), num_anchors//3, num_classes, phi=self.ATTENTION)
         else:
-            self.yolo_model = yolo_body(Input(shape=(None,None,3)), num_anchors//2, num_classes, phi=YOLOV4Config.ATTENTION)
+            from .nets.yolo4_tiny import yolo_body, yolo_eval
+            self.yolo_model = yolo_body(Input(shape=(None,None,3)), num_anchors//2, num_classes, phi=self.ATTENTION)
         self.yolo_model.load_weights(self.model_path)
 
         print('{} model, anchors, and classes loaded.'.format(model_path))
@@ -131,7 +132,7 @@ class YOLOV4(object):
         elif isdrtxt:
             if len(out_boxes) == 0:
                 print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
-                dr_txt_path = os.path.join(YOLOV4Config.result, YOLOV4Config.pr_folder_name, image_id+'.txt')
+                dr_txt_path = os.path.join(self.result, self.pr_folder_name, image_id+'.txt')
                 with open(dr_txt_path, 'w') as f:
                     f.write(" ")
 
@@ -150,7 +151,7 @@ class YOLOV4(object):
                 bottom = min(image.size[1], np.floor(bottom + 0.5).astype('int32'))
                 right = min(image.size[0], np.floor(right + 0.5).astype('int32'))
 
-                dr_txt_path = os.path.join(YOLOV4Config.result, YOLOV4Config.pr_folder_name, image_id+'.txt')
+                dr_txt_path = os.path.join(self.result, self.pr_folder_name, image_id+'.txt')
                 with open(dr_txt_path, 'w') as f:
                     f.write("%s %s %s %s %s %s\n" % (predicted_class, str(score.numpy()), str(int(left)), str(int(top)), str(int(right)),str(int(bottom))))
         else:
@@ -203,7 +204,8 @@ def Inference_YOLOV4Model(YOLOV4Config, model_path):
         max_boxes=YOLOV4Config.max_boxes,
         letterbox_image = True,
         model_path = model_path,
-        phi=YOLOV4Config.phi
+        istiny=YOLOV4Config.ISTINY,
+        attention = YOLOV4Config.ATTENTION
     )
     return yolov4
     

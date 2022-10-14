@@ -14,7 +14,7 @@ from ..lib.utils import compose
 
 from .CSPdarknet53 import darknet_body
 from Attention.attention import cbam_block, eca_block, se_block
-import customerConf
+import cfg
 
 attention_block = [se_block, cbam_block, eca_block]
 
@@ -235,7 +235,7 @@ def yolo_eval(yolo_outputs,
     else:
         num_layers = len(yolo_outputs)
 
-    anchor_mask = customerConf.ANCHOR_MASK
+    anchor_mask = cfg.YOLOV4Config.ANCHOR_MASK
     input_shape = K.shape(yolo_outputs[0])[1:3] * 32
     boxes = []
     box_scores = []

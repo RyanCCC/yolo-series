@@ -9,7 +9,7 @@ from deep_sort import preprocessing, nn_matching
 from deep_sort.detection import Detection
 from deep_sort.tracker import Tracker
 from tools import generate_detections as gdet
-from customerConf import YOLOXConfig
+from cfg import YOLOXConfig
 from yolox.predict_yolox import yolox, get_classes
 
 video_save_path = ''

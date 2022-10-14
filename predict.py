@@ -1,9 +1,9 @@
-from customerConf import *
+from cfg import *
 from PIL import Image
 from glob import glob
 from yolox import Inference_YOLOXModel
 from yolov4 import Inference_YOLOV4Model
-
+from yolov5 import Inference_YOLOV5Model
 
 
 

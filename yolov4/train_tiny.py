@@ -12,7 +12,7 @@ from tqdm import tqdm
 from yolov4 import (yolo_loss, yolo_body,ModelCheckpoint,
                          WarmUpCosineDecayScheduler, get_random_data,
                          get_random_data_with_Mosaic)
-from customerConf import YOLOV4Config
+from cfg import YOLOV4Config
 
 
 # 设置GPU自增长

@@ -17,6 +17,7 @@
 ``` python
 
 +---Attention： 实现注意力机制
+|---cfg: 存放配置文件。
 |---tools:存放工具：包括生成训练文档、类别统计等。
 |---deep_sort：目标跟踪Deepsort算法
 |---doc：存放YOLO资料文档
@@ -180,7 +181,7 @@ YOLOX的代码可以直接运行```train_yolox.py```即可。
 - `opset`：ONNX的算子类型，默认12
 - `flag`：带上这个参数表示从Tensorflow的PB模型进行导出，否则从权重中导出。
 
-注意：使用权重模型的时候要在`customerConfig.py`文件中核实类别文件和anchor文件是否配置正确。另外后续需要导出成TensorRT的Engine模型或者Openvino的模型可以自行定义。当前的参数已经足以使用，后续假设㓟更多参数需求会持续更新优化。
+注意：使用权重模型的时候要在`cfg`目录下对应的配置文件中核实类别文件和anchor文件是否配置正确。另外后续需要导出成TensorRT的Engine模型或者Openvino的模型可以自行定义。当前的参数已经足以使用，后续假设㓟更多参数需求会持续更新优化。
 
 使用例子：
 
