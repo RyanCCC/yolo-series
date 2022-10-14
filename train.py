@@ -2,7 +2,6 @@ import cfg
 import argparse
 
 
-# TODO: Add Command arg
 def parse_args():
     parser = argparse.ArgumentParser(description='Custom Input')
     parser.add_argument(

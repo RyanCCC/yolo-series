@@ -89,7 +89,7 @@ class YOLOV5(object):
             new_image = image.resize((w, h), Image.BICUBIC)
         return new_image
 
-    def detect_image(self, image, crop = False, count = False):
+    def detect(self, image, crop = False, count = False):
         image = cvtColor(image)
 
         image_data  = self.resize_image(image, (self.input_shape[1], self.input_shape[0]), self.letterbox_image)

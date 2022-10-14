@@ -87,7 +87,7 @@ class YOLOV4(object):
         out_boxes, out_scores, out_classes = self.yolo_model([image_data, input_image_shape], training=False)
         return out_boxes, out_scores, out_classes
     
-    def inference(self, image,istrack=False, isdrtxt=False, image_id=None):
+    def detect(self, image,istrack=False, isdrtxt=False, image_id=None):
         '''
         参数说明：
         image：待检测的图像
