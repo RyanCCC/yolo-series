@@ -137,15 +137,10 @@ def DecodeBox(outputs,
             num_classes,
             image_shape,
             input_shape,
-            #-----------------------------------------------------------#
-            #   13x13的特征层对应的anchor是[116,90],[156,198],[373,326]
-            #   26x26的特征层对应的anchor是[30,61],[62,45],[59,119]
-            #   52x52的特征层对应的anchor是[10,13],[16,30],[33,23]
-            #-----------------------------------------------------------#
-            anchor_mask     = [[6, 7, 8], [3, 4, 5], [0, 1, 2]],
-            max_boxes       = 100,
-            confidence      = 0.5,
-            nms_iou         = 0.3,
+            anchor_mask = [[6, 7, 8], [3, 4, 5], [0, 1, 2]],
+            max_boxes = 100,
+            confidence = 0.5,
+            nms_iou = 0.3,
             letterbox_image = True):
 
     box_xy = []
@@ -159,263 +154,32 @@ def DecodeBox(outputs,
         box_wh.append(K.reshape(sub_box_wh, [-1, 2]))
         box_confidence.append(K.reshape(sub_box_confidence, [-1, 1]))
         box_class_probs.append(K.reshape(sub_box_class_probs, [-1, num_classes]))
-    box_xy          = K.concatenate(box_xy, axis = 0)
-    box_wh          = K.concatenate(box_wh, axis = 0)
+    box_xy = K.concatenate(box_xy, axis = 0)
+    box_wh = K.concatenate(box_wh, axis = 0)
     box_confidence  = K.concatenate(box_confidence, axis = 0)
     box_class_probs = K.concatenate(box_class_probs, axis = 0)
-
-    #------------------------------------------------------------------------------------------------------------#
-    #   在图像传入网络预测前会进行letterbox_image给图像周围添加灰条，因此生成的box_xy, box_wh是相对于有灰条的图像的
-    #   我们需要对其进行修改，去除灰条的部分。 将box_xy、和box_wh调节成y_min,y_max,xmin,xmax
-    #   如果没有使用letterbox_image也需要将归一化后的box_xy, box_wh调整成相对于原图大小的
-    #------------------------------------------------------------------------------------------------------------#
-    boxes       = yolo_correct_boxes(box_xy, box_wh, input_shape, image_shape, letterbox_image)
+    boxes = yolo_correct_boxes(box_xy, box_wh, input_shape, image_shape, letterbox_image)
     box_scores  = box_confidence * box_class_probs
 
-    #-----------------------------------------------------------#
-    #   判断得分是否大于score_threshold
-    #-----------------------------------------------------------#
-    mask             = box_scores >= confidence
+    mask = box_scores >= confidence
     max_boxes_tensor = K.constant(max_boxes, dtype='int32')
     boxes_out   = []
     scores_out  = []
     classes_out = []
-    #-----------------------------------------------------------#
-    #   筛选出一定区域内属于同一种类得分最大的框
-    #-----------------------------------------------------------#
+
     for c in range(num_classes):
-        #-----------------------------------------------------------#
-        #   取出所有box_scores >= score_threshold的框，和成绩
-        #-----------------------------------------------------------#
         class_boxes      = tf.boolean_mask(boxes, mask[:, c])
         class_box_scores = tf.boolean_mask(box_scores[:, c], mask[:, c])
-
-        #-----------------------------------------------------------#
-        #   非极大抑制
-        #   保留一定区域内得分最大的框
-        #-----------------------------------------------------------#
         nms_index = tf.image.non_max_suppression(class_boxes, class_box_scores, max_boxes_tensor, iou_threshold=nms_iou)
-
-        #-----------------------------------------------------------#
-        #   获取非极大抑制后的结果
-        #   下列三个分别是：框的位置，得分与种类
-        #-----------------------------------------------------------#
-        class_boxes         = K.gather(class_boxes, nms_index)
-        class_box_scores    = K.gather(class_box_scores, nms_index)
-        classes             = K.ones_like(class_box_scores, 'int32') * c
+        class_boxes= K.gather(class_boxes, nms_index)
+        class_box_scores= K.gather(class_box_scores, nms_index)
+        classes= K.ones_like(class_box_scores, 'int32') * c
 
         boxes_out.append(class_boxes)
         scores_out.append(class_box_scores)
         classes_out.append(classes)
-    boxes_out      = K.concatenate(boxes_out, axis=0)
-    scores_out     = K.concatenate(scores_out, axis=0)
-    classes_out    = K.concatenate(classes_out, axis=0)
+    boxes_out = K.concatenate(boxes_out, axis=0)
+    scores_out = K.concatenate(scores_out, axis=0)
+    classes_out = K.concatenate(classes_out, axis=0)
 
     return boxes_out, scores_out, classes_out
-
-
-
-#-------------------------------------------------------------------------------------------------------------------------------#
-#   From https://github.com/ckyrkou/Keras_FLOP_Estimator 
-#   Fix lots of bugs
-#-------------------------------------------------------------------------------------------------------------------------------#
-def net_flops(model, table=False, print_result=True):
-    if (table == True):
-        print("\n")
-        print('%25s | %16s | %16s | %16s | %16s | %6s | %6s' % (
-            'Layer Name', 'Input Shape', 'Output Shape', 'Kernel Size', 'Filters', 'Strides', 'FLOPS'))
-        print('=' * 120)
-        
-    #---------------------------------------------------#
-    #   总的FLOPs
-    #---------------------------------------------------#
-    t_flops = 0
-    factor  = 1e9
-
-    for l in model.layers:
-        try:
-            #--------------------------------------#
-            #   所需参数的初始化定义
-            #--------------------------------------#
-            o_shape, i_shape, strides, ks, filters = ('', '', ''), ('', '', ''), (1, 1), (0, 0), 0
-            flops   = 0
-            #--------------------------------------#
-            #   获得层的名字
-            #--------------------------------------#
-            name    = l.name
-            
-            if ('InputLayer' in str(l)):
-                i_shape = l.get_input_shape_at(0)[1:4]
-                o_shape = l.get_output_shape_at(0)[1:4]
-                
-            #--------------------------------------#
-            #   Reshape层
-            #--------------------------------------#
-            elif ('Reshape' in str(l)):
-                i_shape = l.get_input_shape_at(0)[1:4]
-                o_shape = l.get_output_shape_at(0)[1:4]
-
-            #--------------------------------------#
-            #   填充层
-            #--------------------------------------#
-            elif ('Padding' in str(l)):
-                i_shape = l.get_input_shape_at(0)[1:4]
-                o_shape = l.get_output_shape_at(0)[1:4]
-
-            #--------------------------------------#
-            #   平铺层
-            #--------------------------------------#
-            elif ('Flatten' in str(l)):
-                i_shape = l.get_input_shape_at(0)[1:4]
-                o_shape = l.get_output_shape_at(0)[1:4]
-                
-            #--------------------------------------#
-            #   激活函数层
-            #--------------------------------------#
-            elif 'Activation' in str(l):
-                i_shape = l.get_input_shape_at(0)[1:4]
-                o_shape = l.get_output_shape_at(0)[1:4]
-                
-            #--------------------------------------#
-            #   LeakyReLU
-            #--------------------------------------#
-            elif 'LeakyReLU' in str(l):
-                for i in range(len(l._inbound_nodes)):
-                    i_shape = l.get_input_shape_at(i)[1:4]
-                    o_shape = l.get_output_shape_at(i)[1:4]
-                    
-                    flops   += i_shape[0] * i_shape[1] * i_shape[2]
-                    
-            #--------------------------------------#
-            #   池化层
-            #--------------------------------------#
-            elif 'MaxPooling' in str(l):
-                i_shape = l.get_input_shape_at(0)[1:4]
-                o_shape = l.get_output_shape_at(0)[1:4]
-                    
-            #--------------------------------------#
-            #   池化层
-            #--------------------------------------#
-            elif ('AveragePooling' in str(l) and 'Global' not in str(l)):
-                strides = l.strides
-                ks      = l.pool_size
-                
-                for i in range(len(l._inbound_nodes)):
-                    i_shape = l.get_input_shape_at(i)[1:4]
-                    o_shape = l.get_output_shape_at(i)[1:4]
-                    
-                    flops   += o_shape[0] * o_shape[1] * o_shape[2]
-
-            #--------------------------------------#
-            #   全局池化层
-            #--------------------------------------#
-            elif ('AveragePooling' in str(l) and 'Global' in str(l)):
-                for i in range(len(l._inbound_nodes)):
-                    i_shape = l.get_input_shape_at(i)[1:4]
-                    o_shape = l.get_output_shape_at(i)[1:4]
-                    
-                    flops += (i_shape[0] * i_shape[1] + 1) * i_shape[2]
-                
-            #--------------------------------------#
-            #   标准化层
-            #--------------------------------------#
-            elif ('BatchNormalization' in str(l)):
-                for i in range(len(l._inbound_nodes)):
-                    i_shape = l.get_input_shape_at(i)[1:4]
-                    o_shape = l.get_output_shape_at(i)[1:4]
-
-                    temp_flops = 1
-                    for i in range(len(i_shape)):
-                        temp_flops *= i_shape[i]
-                    temp_flops *= 2
-                    
-                    flops += temp_flops
-                
-            #--------------------------------------#
-            #   全连接层
-            #--------------------------------------#
-            elif ('Dense' in str(l)):
-                for i in range(len(l._inbound_nodes)):
-                    i_shape = l.get_input_shape_at(i)[1:4]
-                    o_shape = l.get_output_shape_at(i)[1:4]
-                
-                    temp_flops = 1
-                    for i in range(len(o_shape)):
-                        temp_flops *= o_shape[i]
-                        
-                    if (i_shape[-1] == None):
-                        temp_flops = temp_flops * o_shape[-1]
-                    else:
-                        temp_flops = temp_flops * i_shape[-1]
-                    flops += temp_flops
-
-            #--------------------------------------#
-            #   普通卷积层
-            #--------------------------------------#
-            elif ('Conv2D' in str(l) and 'DepthwiseConv2D' not in str(l) and 'SeparableConv2D' not in str(l)):
-                strides = l.strides
-                ks      = l.kernel_size
-                filters = l.filters
-                bias    = 1 if l.use_bias else 0
-                
-                for i in range(len(l._inbound_nodes)):
-                    i_shape = l.get_input_shape_at(i)[1:4]
-                    o_shape = l.get_output_shape_at(i)[1:4]
-                    
-                    if (filters == None):
-                        filters = i_shape[2]
-                    flops += filters * o_shape[0] * o_shape[1] * (ks[0] * ks[1] * i_shape[2] + bias)
-
-            #--------------------------------------#
-            #   逐层卷积层
-            #--------------------------------------#
-            elif ('Conv2D' in str(l) and 'DepthwiseConv2D' in str(l) and 'SeparableConv2D' not in str(l)):
-                strides = l.strides
-                ks      = l.kernel_size
-                filters = l.filters
-                bias    = 1 if l.use_bias else 0
-            
-                for i in range(len(l._inbound_nodes)):
-                    i_shape = l.get_input_shape_at(i)[1:4]
-                    o_shape = l.get_output_shape_at(i)[1:4]
-                    
-                    if (filters == None):
-                        filters = i_shape[2]
-                    flops += filters * o_shape[0] * o_shape[1] * (ks[0] * ks[1] + bias)
-                
-            #--------------------------------------#
-            #   深度可分离卷积层
-            #--------------------------------------#
-            elif ('Conv2D' in str(l) and 'DepthwiseConv2D' not in str(l) and 'SeparableConv2D' in str(l)):
-                strides = l.strides
-                ks      = l.kernel_size
-                filters = l.filters
-                
-                for i in range(len(l._inbound_nodes)):
-                    i_shape = l.get_input_shape_at(i)[1:4]
-                    o_shape = l.get_output_shape_at(i)[1:4]
-                    
-                    if (filters == None):
-                        filters = i_shape[2]
-                    flops += i_shape[2] * o_shape[0] * o_shape[1] * (ks[0] * ks[1] + bias) + \
-                             filters * o_shape[0] * o_shape[1] * (1 * 1 * i_shape[2] + bias)
-            #--------------------------------------#
-            #   模型中有模型时
-            #--------------------------------------#
-            elif 'Model' in str(l):
-                flops = net_flops(l, print_result=False)
-                
-            t_flops += flops
-
-            if (table == True):
-                print('%25s | %16s | %16s | %16s | %16s | %6s | %5.4f' % (
-                    name[:25], str(i_shape), str(o_shape), str(ks), str(filters), str(strides), flops))
-                
-        except:
-            pass
-    
-    t_flops = t_flops * 2
-    if print_result:
-        show_flops = t_flops / factor
-        print('Total GFLOPs: %.3fG' % (show_flops))
-    return t_flops

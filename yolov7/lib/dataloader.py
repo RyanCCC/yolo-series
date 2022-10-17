@@ -12,21 +12,21 @@ from .tools import cvtColor, preprocess_input
 class YoloDatasets(keras.utils.Sequence):
     def __init__(self, annotation_lines, input_shape, anchors, batch_size, num_classes, anchors_mask, epoch_now, epoch_length, \
                         mosaic, mixup, mosaic_prob, mixup_prob, train, special_aug_ratio = 0.7):
-        self.annotation_lines   = annotation_lines
-        self.length             = len(self.annotation_lines)
+        self.annotation_lines = annotation_lines
+        self.length = len(self.annotation_lines)
         
-        self.input_shape        = input_shape
-        self.anchors            = anchors
-        self.batch_size         = batch_size
-        self.num_classes        = num_classes
-        self.anchors_mask       = anchors_mask
-        self.epoch_now          = epoch_now - 1
-        self.epoch_length       = epoch_length
-        self.mosaic             = mosaic
-        self.mosaic_prob        = mosaic_prob
-        self.mixup              = mixup
-        self.mixup_prob         = mixup_prob
-        self.train              = train
+        self.input_shape = input_shape
+        self.anchors = anchors
+        self.batch_size = batch_size
+        self.num_classes = num_classes
+        self.anchors_mask = anchors_mask
+        self.epoch_now = epoch_now - 1
+        self.epoch_length = epoch_length
+        self.mosaic = mosaic
+        self.mosaic_prob = mosaic_prob
+        self.mixup = mixup
+        self.mixup_prob = mixup_prob
+        self.train = train
         self.special_aug_ratio  = special_aug_ratio
 
         self.threshold          = 4
@@ -38,7 +38,7 @@ class YoloDatasets(keras.utils.Sequence):
         image_data  = []
         box_data    = []
         for i in range(index * self.batch_size, (index + 1) * self.batch_size):  
-            i           = i % self.length
+            i = i % self.length
             if self.mosaic and self.rand() < self.mosaic_prob and self.epoch_now < self.epoch_length * self.special_aug_ratio:
                 lines = sample(self.annotation_lines, 3)
                 lines.append(self.annotation_lines[i])
@@ -46,22 +46,22 @@ class YoloDatasets(keras.utils.Sequence):
                 image, box = self.get_random_data_with_Mosaic(lines, self.input_shape)
                     
                 if self.mixup and self.rand() < self.mixup_prob:
-                    lines           = sample(self.annotation_lines, 1)
+                    lines = sample(self.annotation_lines, 1)
                     image_2, box_2  = self.get_random_data(lines[0], self.input_shape, random = self.train)
-                    image, box      = self.get_random_data_with_MixUp(image, box, image_2, box_2)
+                    image, box = self.get_random_data_with_MixUp(image, box, image_2, box_2)
             else:
                 image, box  = self.get_random_data(self.annotation_lines[i], self.input_shape, random = self.train)
                 
             image_data.append(preprocess_input(np.array(image, np.float32)))
             box_data.append(box)
 
-        labels              = copy.deepcopy(np.array(box_data))
-        labels[..., 2:4]    = labels[..., 2:4] - labels[..., 0:2]
-        labels[..., 0:2]    = labels[..., 0:2] + labels[..., 2:4] / 2 
+        labels = copy.deepcopy(np.array(box_data))
+        labels[..., 2:4] = labels[..., 2:4] - labels[..., 0:2]
+        labels[..., 0:2] = labels[..., 0:2] + labels[..., 2:4] / 2 
         
         image_data  = np.array(image_data)
-        box_data    = np.array(box_data)
-        y_true      = self.preprocess_true_boxes(box_data, self.input_shape, self.anchors, self.num_classes)
+        box_data = np.array(box_data)
+        y_true = self.preprocess_true_boxes(box_data, self.input_shape, self.anchors, self.num_classes)
         
         return [image_data, *y_true, labels], np.zeros(self.batch_size)
 
@@ -73,12 +73,12 @@ class YoloDatasets(keras.utils.Sequence):
         return np.random.rand()*(b-a) + a
 
     def get_random_data(self, annotation_line, input_shape, max_boxes=500, jitter=.3, hue=.1, sat=0.7, val=0.4, random=True):
-        line    = annotation_line.split()
-        image   = Image.open(line[0])
-        image   = cvtColor(image)
-        iw, ih  = image.size
-        h, w    = input_shape
-        box     = np.array([np.array(list(map(int,box.split(',')))) for box in line[1:]])
+        line = annotation_line.split()
+        image = Image.open(line[0])
+        image = cvtColor(image)
+        iw, ih = image.size
+        h, w = input_shape
+        box = np.array([np.array(list(map(int,box.split(',')))) for box in line[1:]])
 
         if not random:
             scale = min(w/iw, h/ih)
@@ -87,8 +87,8 @@ class YoloDatasets(keras.utils.Sequence):
             dx = (w-nw)//2
             dy = (h-nh)//2
 
-            image       = image.resize((nw,nh), Image.BICUBIC)
-            new_image   = Image.new('RGB', (w,h), (128,128,128))
+            image = image.resize((nw,nh), Image.BICUBIC)
+            new_image = Image.new('RGB', (w,h), (128,128,128))
             new_image.paste(image, (dx, dy))
             image_data  = np.array(new_image, np.float32)
 
@@ -127,13 +127,13 @@ class YoloDatasets(keras.utils.Sequence):
         flip = self.rand()<.5
         if flip: image = image.transpose(Image.FLIP_LEFT_RIGHT)
 
-        image_data      = np.array(image, np.uint8)
-        r               = np.random.uniform(-1, 1, 3) * [hue, sat, val] + 1
+        image_data = np.array(image, np.uint8)
+        r = np.random.uniform(-1, 1, 3) * [hue, sat, val] + 1
         
-        hue, sat, val   = cv2.split(cv2.cvtColor(image_data, cv2.COLOR_RGB2HSV))
-        dtype           = image_data.dtype
+        hue, sat, val = cv2.split(cv2.cvtColor(image_data, cv2.COLOR_RGB2HSV))
+        dtype = image_data.dtype
         
-        x       = np.arange(0, 256, dtype=r.dtype)
+        x = np.arange(0, 256, dtype=r.dtype)
         lut_hue = ((x * r[0]) % 180).astype(dtype)
         lut_sat = np.clip(x * r[1], 0, 255).astype(dtype)
         lut_val = np.clip(x * r[2], 0, 255).astype(dtype)
@@ -211,8 +211,8 @@ class YoloDatasets(keras.utils.Sequence):
         min_offset_y = self.rand(0.3, 0.7)
 
         image_datas = [] 
-        box_datas   = []
-        index       = 0
+        box_datas = []
+        index = 0
         for line in annotation_line:
             line_content = line.split()
             image = Image.open(line_content[0])
@@ -280,11 +280,11 @@ class YoloDatasets(keras.utils.Sequence):
         new_image[cuty:, cutx:, :] = image_datas[2][cuty:, cutx:, :]
         new_image[:cuty, cutx:, :] = image_datas[3][:cuty, cutx:, :]
 
-        new_image       = np.array(new_image, np.uint8)
+        new_image = np.array(new_image, np.uint8)
         r  = np.random.uniform(-1, 1, 3) * [hue, sat, val] + 1
-        hue, sat, val   = cv2.split(cv2.cvtColor(new_image, cv2.COLOR_RGB2HSV))
-        dtype           = new_image.dtype
-        x       = np.arange(0, 256, dtype=r.dtype)
+        hue, sat, val = cv2.split(cv2.cvtColor(new_image, cv2.COLOR_RGB2HSV))
+        dtype = new_image.dtype
+        x = np.arange(0, 256, dtype=r.dtype)
         lut_hue = ((x * r[0]) % 180).astype(dtype)
         lut_sat = np.clip(x * r[1], 0, 255).astype(dtype)
         lut_val = np.clip(x * r[2], 0, 255).astype(dtype)
@@ -302,10 +302,10 @@ class YoloDatasets(keras.utils.Sequence):
     def get_random_data_with_MixUp(self, image_1, box_1, image_2, box_2, max_boxes=500):
         new_image = np.array(image_1, np.float32) * 0.5 + np.array(image_2, np.float32) * 0.5
         
-        box_1_wh    = box_1[:, 2:4] - box_1[:, 0:2]
+        box_1_wh = box_1[:, 2:4] - box_1[:, 0:2]
         box_1_valid = box_1_wh[:, 0] > 0
         
-        box_2_wh    = box_2[:, 2:4] - box_2[:, 0:2]
+        box_2_wh = box_2[:, 2:4] - box_2[:, 0:2]
         box_2_valid = box_2_wh[:, 0] > 0
         
         new_boxes = np.concatenate([box_1[box_1_valid, :], box_2[box_2_valid, :]], axis=0)
@@ -332,20 +332,8 @@ class YoloDatasets(keras.utils.Sequence):
         true_boxes  = np.array(true_boxes, dtype='float32')
         input_shape = np.array(input_shape, dtype='int32')
         num_layers  = len(self.anchors_mask)
-        #-----------------------------------------------------------#
-        #   m为图片数量，grid_shapes为网格的shape
-        #   20, 20  640/32 = 20
-        #   40, 40
-        #   80, 80
-        #-----------------------------------------------------------#
         m           = true_boxes.shape[0]
         grid_shapes = [input_shape // {0:32, 1:16, 2:8}[l] for l in range(num_layers)]
-        #-----------------------------------------------------------#
-        #   y_true的格式为
-        #   m,20,20,3,5+num_classses
-        #   m,40,40,3,5+num_classses
-        #   m,80,80,3,5+num_classses
-        #-----------------------------------------------------------#
         y_true = [np.zeros((m, grid_shapes[l][0], grid_shapes[l][1], len(self.anchors_mask[l]), 2),
                     dtype='float32') for l in range(num_layers)]
         box_best_ratios = [np.zeros((m, grid_shapes[l][0], grid_shapes[l][1], len(self.anchors_mask[l])),
@@ -355,11 +343,7 @@ class YoloDatasets(keras.utils.Sequence):
         boxes_wh =  true_boxes[..., 2:4] - true_boxes[..., 0:2]
         true_boxes[..., 0:2] = boxes_xy / input_shape[::-1]
         true_boxes[..., 2:4] = boxes_wh / input_shape[::-1]
-
-        #-----------------------------------------------------------#
-        #   [9,2] -> [9,2]
-        #-----------------------------------------------------------#
-        anchors         = np.array(anchors, np.float32)
+        anchors = np.array(anchors, np.float32)
 
         valid_mask = boxes_wh[..., 0]>0
 
@@ -368,25 +352,10 @@ class YoloDatasets(keras.utils.Sequence):
 
             if len(wh) == 0: 
                 continue
-            #-------------------------------------------------------#
-            #   wh                          : num_true_box, 2
-            #   np.expand_dims(wh, 1)       : num_true_box, 1, 2
-            #   anchors                     : 9, 2
-            #   np.expand_dims(anchors, 0)  : 1, 9, 2
-            #   
-            #   ratios_of_gt_anchors代表每一个真实框和每一个先验框的宽高的比值
-            #   ratios_of_gt_anchors    : num_true_box, 9, 2
-            #   ratios_of_anchors_gt代表每一个先验框和每一个真实框的宽高的比值
-            #   ratios_of_anchors_gt    : num_true_box, 9, 2
-            #
-            #   ratios                  : num_true_box, 9, 4
-            #   max_ratios代表每一个真实框和每一个先验框的宽高的比值的最大值
-            #   max_ratios              : num_true_box, 9
-            #-------------------------------------------------------#
             ratios_of_gt_anchors = np.expand_dims(wh, 1) / np.expand_dims(anchors, 0)
             ratios_of_anchors_gt = np.expand_dims(anchors, 0) / np.expand_dims(wh, 1)
-            ratios               = np.concatenate([ratios_of_gt_anchors, ratios_of_anchors_gt], axis = -1)
-            max_ratios           = np.max(ratios, axis = -1)
+            ratios = np.concatenate([ratios_of_gt_anchors, ratios_of_anchors_gt], axis = -1)
+            max_ratios = np.max(ratios, axis = -1)
             
             for t, ratio in enumerate(max_ratios):
                 over_threshold = ratio < self.threshold

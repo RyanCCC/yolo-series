@@ -1,10 +1,10 @@
 from functools import wraps
 
-from keras import backend as K
-from keras.initializers import random_normal
-from keras.layers import (BatchNormalization, Concatenate, Conv2D, Layer,
+from tensorflow.keras import backend as K
+from tensorflow.keras.initializers import random_normal
+from tensorflow.keras.layers import (BatchNormalization, Concatenate, Conv2D, Layer,
                           MaxPooling2D, ZeroPadding2D)
-from yolov7.lib.utils import compose
+from yolov7.lib.tools import compose
 
 
 class SiLU(Layer):

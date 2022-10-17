@@ -34,9 +34,6 @@ def dir_inference(imag_dir, model, args):
             img.save(save_path)
     print('finish')
 
-
-
-
 if __name__=='__main__':
     args = parse_args()
     if args.model.upper() == 'YOLOX':
