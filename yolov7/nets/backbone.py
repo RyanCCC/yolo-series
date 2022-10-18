@@ -104,7 +104,7 @@ class Backbone(nn.Module):
             Multi_Concat_Block(transition_channels * 32, block_channels * 8, transition_channels * 32, n=n, ids=ids),
         )
         
-        # TODO：解决本地加载问题
+        # 加载backbone的权重
         if pretrained:
             pretrain_weights = {
                 "l" : './yolov7/checkpoints/yolov7_backbone_weights.pth',

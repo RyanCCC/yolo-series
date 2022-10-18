@@ -30,10 +30,10 @@ class RepConv(nn.Module):
     # https://arxiv.org/abs/2101.03697
     def __init__(self, c1, c2, k=3, s=1, p=None, g=1, act=SiLU(), deploy=False):
         super(RepConv, self).__init__()
-        self.deploy         = deploy
-        self.groups         = g
-        self.in_channels    = c1
-        self.out_channels   = c2
+        self.deploy = deploy
+        self.groups = g
+        self.in_channels = c1
+        self.out_channels = c2
         
         assert k == 3
         assert autopad(k, p) == 1
@@ -65,8 +65,8 @@ class RepConv(nn.Module):
     
     def get_equivalent_kernel_bias(self):
         kernel3x3, bias3x3  = self._fuse_bn_tensor(self.rbr_dense)
-        kernel1x1, bias1x1  = self._fuse_bn_tensor(self.rbr_1x1)
-        kernelid, biasid    = self._fuse_bn_tensor(self.rbr_identity)
+        kernel1x1, bias1x1 = self._fuse_bn_tensor(self.rbr_1x1)
+        kernelid, biasid = self._fuse_bn_tensor(self.rbr_identity)
         return (
             kernel3x3 + self._pad_1x1_to_3x3_tensor(kernel1x1) + kernelid,
             bias3x3 + bias1x1 + biasid,
@@ -82,12 +82,12 @@ class RepConv(nn.Module):
         if branch is None:
             return 0, 0
         if isinstance(branch, nn.Sequential):
-            kernel      = branch[0].weight
+            kernel = branch[0].weight
             running_mean = branch[1].running_mean
             running_var = branch[1].running_var
-            gamma       = branch[1].weight
-            beta        = branch[1].bias
-            eps         = branch[1].eps
+            gamma = branch[1].weight
+            beta = branch[1].bias
+            eps = branch[1].eps
         else:
             assert isinstance(branch, nn.BatchNorm2d)
             if not hasattr(self, "id_tensor"):
@@ -98,12 +98,12 @@ class RepConv(nn.Module):
                 for i in range(self.in_channels):
                     kernel_value[i, i % input_dim, 1, 1] = 1
                 self.id_tensor = torch.from_numpy(kernel_value).to(branch.weight.device)
-            kernel      = self.id_tensor
+            kernel = self.id_tensor
             running_mean = branch.running_mean
             running_var = branch.running_var
-            gamma       = branch.weight
-            beta        = branch.bias
-            eps         = branch.eps
+            gamma = branch.weight
+            beta = branch.bias
+            eps = branch.eps
         std = (running_var + eps).sqrt()
         t   = (gamma / std).reshape(-1, 1, 1, 1)
         return kernel * t, beta - running_mean * gamma / std
@@ -116,14 +116,14 @@ class RepConv(nn.Module):
         )
 
     def fuse_conv_bn(self, conv, bn):
-        std     = (bn.running_var + bn.eps).sqrt()
-        bias    = bn.bias - bn.running_mean * bn.weight / std
+        std = (bn.running_var + bn.eps).sqrt()
+        bias = bn.bias - bn.running_mean * bn.weight / std
 
-        t       = (bn.weight / std).reshape(-1, 1, 1, 1)
+        t = (bn.weight / std).reshape(-1, 1, 1, 1)
         weights = conv.weight * t
 
-        bn      = nn.Identity()
-        conv    = nn.Conv2d(in_channels = conv.in_channels,
+        bn = nn.Identity()
+        conv = nn.Conv2d(in_channels = conv.in_channels,
                               out_channels = conv.out_channels,
                               kernel_size = conv.kernel_size,
                               stride=conv.stride,
@@ -143,8 +143,8 @@ class RepConv(nn.Module):
         print(f"RepConv.fuse_repvgg_block")
         self.rbr_dense  = self.fuse_conv_bn(self.rbr_dense[0], self.rbr_dense[1])
         
-        self.rbr_1x1    = self.fuse_conv_bn(self.rbr_1x1[0], self.rbr_1x1[1])
-        rbr_1x1_bias    = self.rbr_1x1.bias
+        self.rbr_1x1 = self.fuse_conv_bn(self.rbr_1x1[0], self.rbr_1x1[1])
+        rbr_1x1_bias = self.rbr_1x1.bias
         weight_1x1_expanded = torch.nn.functional.pad(self.rbr_1x1.weight, [1, 1, 1, 1])
         
         # Fuse self.rbr_identity
@@ -209,21 +209,19 @@ def fuse_conv_and_bn(conv, bn):
 class YoloBody(nn.Module):
     def __init__(self, anchors_mask, num_classes, phi, pretrained=False):
         super(YoloBody, self).__init__()
-        transition_channels = {'l' : 32, 'x' : 40}[phi]
-        block_channels      = 32
-        panet_channels      = {'l' : 32, 'x' : 64}[phi]
+        transition_channels = {'l' : 32, 'x':40}[phi]
+        block_channels = 32
+        panet_channels = {'l' : 32, 'x' : 64}[phi]
         e = {'l' : 2, 'x' : 1}[phi]
         n = {'l' : 4, 'x' : 6}[phi]
         ids = {'l' : [-1, -2, -3, -4, -5, -6], 'x' : [-1, -3, -5, -7, -8]}[phi]
         conv = {'l' : RepConv, 'x' : Conv}[phi]
-        self.backbone   = Backbone(transition_channels, block_channels, n, phi, pretrained=pretrained)
-
-        self.upsample   = nn.Upsample(scale_factor=2, mode="nearest")
-
+        self.backbone = Backbone(transition_channels, block_channels, n, phi, pretrained=pretrained)
+        self.upsample = nn.Upsample(scale_factor=2, mode="nearest")
         self.sppcspc = SPPCSPC(transition_channels * 32, transition_channels * 16)
         self.conv_for_P5 = Conv(transition_channels * 16, transition_channels * 8)
         self.conv_for_feat2 = Conv(transition_channels * 32, transition_channels * 8)
-        self.conv3_for_upsample1    = Multi_Concat_Block(transition_channels * 16, panet_channels * 4, transition_channels * 8, e=e, n=n, ids=ids)
+        self.conv3_for_upsample1 = Multi_Concat_Block(transition_channels * 16, panet_channels * 4, transition_channels * 8, e=e, n=n, ids=ids)
 
         self.conv_for_P4 = Conv(transition_channels * 8, transition_channels * 4)
         self.conv_for_feat1 = Conv(transition_channels * 16, transition_channels * 4)
@@ -272,16 +270,13 @@ class YoloBody(nn.Module):
         P3_downsample = self.down_sample1(P3)
         P4 = torch.cat([P3_downsample, P4], 1)
         P4 = self.conv3_for_downsample1(P4)
-
         P4_downsample = self.down_sample2(P4)
         P5 = torch.cat([P4_downsample, P5], 1)
         P5 = self.conv3_for_downsample2(P5)
-        
         P3 = self.rep_conv_1(P3)
         P4 = self.rep_conv_2(P4)
         P5 = self.rep_conv_3(P5)
         out2 = self.yolo_head_P3(P3)
         out1 = self.yolo_head_P4(P4)
         out0 = self.yolo_head_P5(P5)
-
         return [out0, out1, out2]
