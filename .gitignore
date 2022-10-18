@@ -13,3 +13,4 @@ samples
 *.onnx
 BddDataset
 weights
+*.pth
