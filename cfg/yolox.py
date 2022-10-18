@@ -13,7 +13,6 @@ class YOLOXConfig(Config):
     Freeze_epoch = 50
     epoch = 100
     batch_size = 32
-    pretrain_weight = './model/yolo4tf2_weight.h5'
     save_weight = 'village_yolox.h5'
     phi= 's'
     score=0.5

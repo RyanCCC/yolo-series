@@ -255,7 +255,7 @@ class YOLOX(object):
                 del draw
             return image
 
-def Inference_YOLOXModel(YOLOXConfig, model_path = './model/village2022_yolox_s_20221012.h5'):
+def Inference_YOLOXModel(YOLOXConfig, model_path = './model/village2022_yolox_s_20221017.h5'):
     yolox = YOLOX(
         class_path = YOLOXConfig.classes_path,
         input_shape = YOLOXConfig.input_shape,

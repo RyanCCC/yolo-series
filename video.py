@@ -3,7 +3,10 @@ import cv2
 import os
 from PIL import Image
 import numpy as np
-from yolox.predict_yolox import yolox
+from yolox import Inference_YOLOXModel
+from cfg import YOLOXConfig
+
+yolox = Inference_YOLOXModel(YOLOXConfig)
 
 '''
 视频推理
