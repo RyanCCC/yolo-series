@@ -10,7 +10,7 @@ from torchvision.ops import nms
 from PIL import Image
 from tqdm import tqdm
 from .tools import cvtColor, preprocess_input, resize_image
-from .tools import DecodeBox
+from .decodebox import DecodeBox
 
 
 class LossHistory():

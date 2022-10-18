@@ -48,21 +48,21 @@ def yolov7(config):
     optimizer_type = "sgd"
     momentum = 0.937
     weight_decay = 5e-4
-    #   lr_decay_type   option:['step'、'cos']
+    #lr_decay_type   option:['step'、'cos']
     lr_decay_type = 'cos'
     save_dir = config.logdir
     train_annotation_path = config.train_txt
     val_annotation_path = config.val_txt
     os.environ["CUDA_VISIBLE_DEVICES"]  = train_gpu
     pretrained = False
-    class_names, num_classes = get_classes(classes_path)
-    anchors, num_anchors = get_anchors(anchors_path)
+    _, num_classes = get_classes(classes_path)
+    anchors, _ = get_anchors(anchors_path)
 
     # 设置显卡信息
-    ngpus_per_node  = torch.cuda.device_count()
+    ngpus_per_node = torch.cuda.device_count()
     if distributed:
         dist.init_process_group(backend="nccl")
-        local_rank  = int(os.environ["LOCAL_RANK"])
+        local_rank = int(os.environ["LOCAL_RANK"])
         rank = int(os.environ["RANK"])
         device = torch.device("cuda", local_rank)
         if local_rank == 0:
@@ -92,9 +92,6 @@ def yolov7(config):
                 no_load_key.append(k)
         model_dict.update(temp_dict)
         model.load_state_dict(model_dict)
-        if local_rank == 0:
-            print("\nSuccessful Load Key:", str(load_key)[:500], "……\nSuccessful Load Key Num:", len(load_key))
-            print("\nFail To Load Key:", str(no_load_key)[:500], "……\nFail To Load Key num:", len(no_load_key))
     
     # 设置损失函数
     yolo_loss = YOLOLoss(anchors, num_classes, input_shape, anchors_mask, label_smoothing)
