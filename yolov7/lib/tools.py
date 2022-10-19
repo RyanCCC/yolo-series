@@ -64,7 +64,8 @@ def show_config(**kwargs):
     print('-' * 70)
 
     
-def fit_one_epoch(model_train, model, ema, yolo_loss, loss_history, optimizer, epoch, epoch_step, epoch_step_val, gen, gen_val, Epoch, cuda, fp16, scaler, save_period, save_dir, local_rank=0):
+def fit_one_epoch(model_train, model, ema, yolo_loss, loss_history, optimizer,\
+     epoch, epoch_step, epoch_step_val, gen, gen_val, Epoch, cuda, fp16, scaler, save_period, save_dir, local_rank=0):
     loss        = 0
     val_loss    = 0
 
@@ -83,17 +84,15 @@ def fit_one_epoch(model_train, model, ema, yolo_loss, loss_history, optimizer, e
                 targets = targets.cuda(local_rank)
         optimizer.zero_grad()
         if not fp16:
-            outputs         = model_train(images)
-            loss_value      = yolo_loss(outputs, targets, images)
-
+            outputs = model_train(images)
+            loss_value = yolo_loss(outputs, targets, images)
             loss_value.backward()
             optimizer.step()
         else:
             from torch.cuda.amp import autocast
             with autocast():
-                outputs         = model_train(images)
-                loss_value      = yolo_loss(outputs, targets, images)
-
+                outputs = model_train(images)
+                loss_value = yolo_loss(outputs, targets, images)
             scaler.scale(loss_value).backward()
             scaler.step(optimizer)
             scaler.update()
@@ -142,9 +141,7 @@ def fit_one_epoch(model_train, model, ema, yolo_loss, loss_history, optimizer, e
         print('Epoch:'+ str(epoch + 1) + '/' + str(Epoch))
         print('Total Loss: %.3f || Val Loss: %.3f ' % (loss / epoch_step, val_loss / epoch_step_val))
         
-        #-----------------------------------------------#
-        #   保存权值
-        #-----------------------------------------------#
+        # save checkpints
         if ema:
             save_state_dict = ema.ema.state_dict()
         else:
@@ -159,135 +156,38 @@ def fit_one_epoch(model_train, model, ema, yolo_loss, loss_history, optimizer, e
             
         torch.save(save_state_dict, os.path.join(save_dir, "last_epoch_weights.pth"))
 
-def colorstr(*input):
-    # Colors a string https://en.wikipedia.org/wiki/ANSI_escape_code, i.e.  colorstr('blue', 'hello world')
-    *args, string = input if len(input) > 1 else ('blue', 'bold', input[0])  # color arguments, string
-    colors = {'black': '\033[30m',  # basic colors
-              'red': '\033[31m',
-              'green': '\033[32m',
-              'yellow': '\033[33m',
-              'blue': '\033[34m',
-              'magenta': '\033[35m',
-              'cyan': '\033[36m',
-              'white': '\033[37m',
-              'bright_black': '\033[90m',  # bright colors
-              'bright_red': '\033[91m',
-              'bright_green': '\033[92m',
-              'bright_yellow': '\033[93m',
-              'bright_blue': '\033[94m',
-              'bright_magenta': '\033[95m',
-              'bright_cyan': '\033[96m',
-              'bright_white': '\033[97m',
-              'end': '\033[0m',  # misc
-              'bold': '\033[1m',
-              'underline': '\033[4m'}
-    return ''.join(colors[x] for x in args) + f'{string}' + colors['end']
-
-    
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
     import numpy as np
 
-    #---------------------------------------------------#
-    #   将预测值的每个特征层调成真实值
-    #---------------------------------------------------#
     def get_anchors_and_decode(input, input_shape, anchors, anchors_mask, num_classes):
-        #-----------------------------------------------#
-        #   input   batch_size, 3 * (4 + 1 + num_classes), 20, 20
-        #-----------------------------------------------#
         batch_size      = input.size(0)
         input_height    = input.size(2)
         input_width     = input.size(3)
-
-        #-----------------------------------------------#
-        #   输入为640x640时 input_shape = [640, 640]  input_height = 20, input_width = 20
-        #   640 / 20 = 32
-        #   stride_h = stride_w = 32
-        #-----------------------------------------------#
         stride_h = input_shape[0] / input_height
         stride_w = input_shape[1] / input_width
-        #-------------------------------------------------#
-        #   此时获得的scaled_anchors大小是相对于特征层的
-        #   anchor_width, anchor_height / stride_h, stride_w
-        #-------------------------------------------------#
         scaled_anchors = [(anchor_width / stride_w, anchor_height / stride_h) for anchor_width, anchor_height in anchors[anchors_mask[2]]]
-
-        #-----------------------------------------------#
-        #   batch_size, 3 * (4 + 1 + num_classes), 20, 20 => 
-        #   batch_size, 3, 5 + num_classes, 20, 20  => 
-        #   batch_size, 3, 20, 20, 4 + 1 + num_classes
-        #-----------------------------------------------#
         prediction = input.view(batch_size, len(anchors_mask[2]),
                                 num_classes + 5, input_height, input_width).permute(0, 1, 3, 4, 2).contiguous()
-
-        #-----------------------------------------------#
-        #   先验框的中心位置的调整参数
-        #-----------------------------------------------#
         x = torch.sigmoid(prediction[..., 0])  
         y = torch.sigmoid(prediction[..., 1])
-        #-----------------------------------------------#
-        #   先验框的宽高调整参数
-        #-----------------------------------------------#
         w = torch.sigmoid(prediction[..., 2]) 
         h = torch.sigmoid(prediction[..., 3]) 
-        #-----------------------------------------------#
-        #   获得置信度，是否有物体 0 - 1
-        #-----------------------------------------------#
-        conf        = torch.sigmoid(prediction[..., 4])
-        #-----------------------------------------------#
-        #   种类置信度 0 - 1
-        #-----------------------------------------------#
-        pred_cls    = torch.sigmoid(prediction[..., 5:])
-
+        conf = torch.sigmoid(prediction[..., 4])
+        pred_cls = torch.sigmoid(prediction[..., 5:])
         FloatTensor = torch.cuda.FloatTensor if x.is_cuda else torch.FloatTensor
         LongTensor  = torch.cuda.LongTensor if x.is_cuda else torch.LongTensor
-
-        #----------------------------------------------------------#
-        #   生成网格，先验框中心，网格左上角 
-        #   batch_size,3,20,20
-        #   range(20)
-        #   [
-        #       [0, 1, 2, 3 ……, 19], 
-        #       [0, 1, 2, 3 ……, 19], 
-        #       …… （20次）
-        #       [0, 1, 2, 3 ……, 19]
-        #   ] * (batch_size * 3)
-        #   [batch_size, 3, 20, 20]
-        #   
-        #   [
-        #       [0, 1, 2, 3 ……, 19], 
-        #       [0, 1, 2, 3 ……, 19], 
-        #       …… （20次）
-        #       [0, 1, 2, 3 ……, 19]
-        #   ].T * (batch_size * 3)
-        #   [batch_size, 3, 20, 20]
-        #----------------------------------------------------------#
         grid_x = torch.linspace(0, input_width - 1, input_width).repeat(input_height, 1).repeat(
             batch_size * len(anchors_mask[2]), 1, 1).view(x.shape).type(FloatTensor)
         grid_y = torch.linspace(0, input_height - 1, input_height).repeat(input_width, 1).t().repeat(
             batch_size * len(anchors_mask[2]), 1, 1).view(y.shape).type(FloatTensor)
-
-        #----------------------------------------------------------#
-        #   按照网格格式生成先验框的宽高
-        #   batch_size, 3, 20 * 20 => batch_size, 3, 20, 20
-        #   batch_size, 3, 20 * 20 => batch_size, 3, 20, 20
-        #----------------------------------------------------------#
         anchor_w = FloatTensor(scaled_anchors).index_select(1, LongTensor([0]))
         anchor_h = FloatTensor(scaled_anchors).index_select(1, LongTensor([1]))
         anchor_w = anchor_w.repeat(batch_size, 1).repeat(1, 1, input_height * input_width).view(w.shape)
         anchor_h = anchor_h.repeat(batch_size, 1).repeat(1, 1, input_height * input_width).view(h.shape)
 
-        #----------------------------------------------------------#
-        #   利用预测结果对先验框进行调整
-        #   首先调整先验框的中心，从先验框中心向右下角偏移
-        #   再调整先验框的宽高。
-        #   x  0 ~ 1 => 0 ~ 2 => -0.5 ~ 1.5 + grid_x
-        #   y  0 ~ 1 => 0 ~ 2 => -0.5 ~ 1.5 + grid_y
-        #   w  0 ~ 1 => 0 ~ 2 => 0 ~ 4 * anchor_w
-        #   h  0 ~ 1 => 0 ~ 2 => 0 ~ 4 * anchor_h 
-        #----------------------------------------------------------#
-        pred_boxes          = FloatTensor(prediction[..., :4].shape)
+        pred_boxes = FloatTensor(prediction[..., :4].shape)
         pred_boxes[..., 0]  = x.data * 2. - 0.5 + grid_x
         pred_boxes[..., 1]  = y.data * 2. - 0.5 + grid_y
         pred_boxes[..., 2]  = (w.data * 2) ** 2 * anchor_w

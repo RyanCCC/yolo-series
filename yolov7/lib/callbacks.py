@@ -15,14 +15,14 @@ from .decodebox import DecodeBox
 
 class LossHistory():
     def __init__(self, log_dir, model, input_shape):
-        self.log_dir    = log_dir
-        self.losses     = []
-        self.val_loss   = []
+        self.log_dir = log_dir
+        self.losses = []
+        self.val_loss = []
         
         os.makedirs(self.log_dir)
-        self.writer     = SummaryWriter(self.log_dir)
+        self.writer = SummaryWriter(self.log_dir)
         try:
-            dummy_input     = torch.randn(2, 3, input_shape[0], input_shape[1])
+            dummy_input = torch.randn(2, 3, input_shape[0], input_shape[1])
             self.writer.add_graph(model, dummy_input)
         except:
             pass
