@@ -18,11 +18,11 @@ def resize_image(image, size, letterbox_image):
     iw, ih  = image.size
     w, h    = size
     if letterbox_image:
-        scale   = min(w/iw, h/ih)
-        nw      = int(iw*scale)
-        nh      = int(ih*scale)
+        scale = min(w/iw, h/ih)
+        nw = int(iw*scale)
+        nh = int(ih*scale)
 
-        image   = image.resize((nw,nh), Image.BICUBIC)
+        image = image.resize((nw,nh), Image.BICUBIC)
         new_image = Image.new('RGB', size, (128,128,128))
         new_image.paste(image, ((w-nw)//2, (h-nh)//2))
     else:
@@ -66,8 +66,8 @@ def show_config(**kwargs):
     
 def fit_one_epoch(model_train, model, ema, yolo_loss, loss_history, optimizer,\
      epoch, epoch_step, epoch_step_val, gen, gen_val, Epoch, cuda, fp16, scaler, save_period, save_dir, local_rank=0):
-    loss        = 0
-    val_loss    = 0
+    loss = 0
+    val_loss = 0
 
     if local_rank == 0:
         print('Start Train')
@@ -162,9 +162,9 @@ if __name__ == "__main__":
     import numpy as np
 
     def get_anchors_and_decode(input, input_shape, anchors, anchors_mask, num_classes):
-        batch_size      = input.size(0)
-        input_height    = input.size(2)
-        input_width     = input.size(3)
+        batch_size = input.size(0)
+        input_height = input.size(2)
+        input_width = input.size(3)
         stride_h = input_shape[0] / input_height
         stride_w = input_shape[1] / input_width
         scaled_anchors = [(anchor_width / stride_w, anchor_height / stride_h) for anchor_width, anchor_height in anchors[anchors_mask[2]]]
@@ -188,10 +188,10 @@ if __name__ == "__main__":
         anchor_h = anchor_h.repeat(batch_size, 1).repeat(1, 1, input_height * input_width).view(h.shape)
 
         pred_boxes = FloatTensor(prediction[..., :4].shape)
-        pred_boxes[..., 0]  = x.data * 2. - 0.5 + grid_x
-        pred_boxes[..., 1]  = y.data * 2. - 0.5 + grid_y
-        pred_boxes[..., 2]  = (w.data * 2) ** 2 * anchor_w
-        pred_boxes[..., 3]  = (h.data * 2) ** 2 * anchor_h
+        pred_boxes[..., 0] = x.data * 2. - 0.5 + grid_x
+        pred_boxes[..., 1] = y.data * 2. - 0.5 + grid_y
+        pred_boxes[..., 2] = (w.data * 2) ** 2 * anchor_w
+        pred_boxes[..., 3] = (h.data * 2) ** 2 * anchor_h
 
         point_h = 5
         point_w = 5
@@ -215,7 +215,7 @@ if __name__ == "__main__":
         plt.gca().invert_yaxis()
 
         anchor_left = grid_x - anchor_w / 2
-        anchor_top  = grid_y - anchor_h / 2
+        anchor_top = grid_y - anchor_h / 2
         
         rect1 = plt.Rectangle([anchor_left[0, 0, point_h, point_w],anchor_top[0, 0, point_h, point_w]], \
             anchor_w[0, 0, point_h, point_w],anchor_h[0, 0, point_h, point_w],color="r",fill=False)
@@ -237,8 +237,8 @@ if __name__ == "__main__":
         plt.scatter(box_xy[0, :, point_h, point_w, 0], box_xy[0, :, point_h, point_w, 1], c='r')
         plt.gca().invert_yaxis()
 
-        pre_left    = box_xy[...,0] - box_wh[...,0] / 2
-        pre_top     = box_xy[...,1] - box_wh[...,1] / 2
+        pre_left = box_xy[...,0] - box_wh[...,0] / 2
+        pre_top = box_xy[...,1] - box_wh[...,1] / 2
 
         rect1 = plt.Rectangle([pre_left[0, 0, point_h, point_w], pre_top[0, 0, point_h, point_w]],\
             box_wh[0, 0, point_h, point_w,0], box_wh[0, 0, point_h, point_w,1],color="r",fill=False)

@@ -51,8 +51,8 @@ class YoloDataset(Dataset):
         image = np.transpose(preprocess_input(np.array(image, dtype=np.float32)), (2, 0, 1))
         box = np.array(box, dtype=np.float32)
         
-        nL          = len(box)
-        labels_out  = np.zeros((nL, 6))
+        nL = len(box)
+        labels_out = np.zeros((nL, 6))
         if nL:
             box[:, [0, 2]] = box[:, [0, 2]] / self.input_shape[1]
             box[:, [1, 3]] = box[:, [1, 3]] / self.input_shape[0]
@@ -195,8 +195,8 @@ class YoloDataset(Dataset):
         min_offset_y = self.rand(0.3, 0.7)
 
         image_datas = [] 
-        box_datas   = []
-        index       = 0
+        box_datas = []
+        index = 0
         for line in annotation_line:
             line_content = line.split()
             image = Image.open(line_content[0])
@@ -287,13 +287,13 @@ class YoloDataset(Dataset):
     
 # DataLoader中collate_fn使用
 def yolo_dataset_collate(batch):
-    images  = []
-    bboxes  = []
+    images = []
+    bboxes = []
     for i, (img, box) in enumerate(batch):
         images.append(img)
         box[:, 0] = i
         bboxes.append(box)
             
-    images  = torch.from_numpy(np.array(images)).type(torch.FloatTensor)
-    bboxes  = torch.from_numpy(np.concatenate(bboxes, 0)).type(torch.FloatTensor)
+    images = torch.from_numpy(np.array(images)).type(torch.FloatTensor)
+    bboxes = torch.from_numpy(np.concatenate(bboxes, 0)).type(torch.FloatTensor)
     return images, bboxes

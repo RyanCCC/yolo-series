@@ -2,15 +2,7 @@ import datetime
 import os
 
 import torch
-import scipy.signal
 from torch.utils.tensorboard import SummaryWriter
-import numpy as np
-from torchvision.ops import nms
-
-from PIL import Image
-from tqdm import tqdm
-from .tools import cvtColor, preprocess_input, resize_image
-from .decodebox import DecodeBox
 
 
 class LossHistory():

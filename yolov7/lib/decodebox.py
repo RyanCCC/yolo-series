@@ -29,7 +29,7 @@ class DecodeBox():
             w = torch.sigmoid(prediction[..., 2]) 
             h = torch.sigmoid(prediction[..., 3]) 
             conf = torch.sigmoid(prediction[..., 4])
-            pred_cls    = torch.sigmoid(prediction[..., 5:])
+            pred_cls = torch.sigmoid(prediction[..., 5:])
 
             FloatTensor = torch.cuda.FloatTensor if x.is_cuda else torch.FloatTensor
             LongTensor = torch.cuda.LongTensor if x.is_cuda else torch.LongTensor
