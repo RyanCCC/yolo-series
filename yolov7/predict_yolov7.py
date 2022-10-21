@@ -168,13 +168,3 @@ def Inference_YOLOV7Model(config, model_path = './model/yolov7_l_20221020.pth'):
         phi=config.phi
     )
     return yolo
-
-if __name__ == '__main__':
-    path_pattern = './samples/*'
-    
-    letterbox_image = True
-    for path in glob(path_pattern):
-        image = Image.open(path)
-        img = yolo.detect(image)
-        img.show()
-    print('finish')
