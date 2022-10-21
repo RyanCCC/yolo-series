@@ -1,5 +1,6 @@
 from .base import Config
 import os
+import datetime
 
 class YOLOV7Config(Config):
     task = "village_Detection"
@@ -37,7 +38,9 @@ class YOLOV7Config(Config):
     # 标签平滑。一般0.01以下。如0.01、0.005
     label_smoothing = 0
     pretrain_weight = './yolov7/checkpoints/yolov7_x_weights.pth'
-    save_weight = 'village_yolov7_x_20221019.pth'
+    time = str(datetime.datetime.strftime(datetime.datetime.now(),'%Y_%m_%d'))
+    save_weight = f'{task}_yolov7_{phi}_{time}.pth'
+    best_weight = f'{task}_yolov7_{phi}_{time}_best.pth'
     # 0:DEBUG；1：INFO；2：warning；3：error
     log_level = '1'
     Freeze_Train = True

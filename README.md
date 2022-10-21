@@ -5,7 +5,7 @@
 - [x] YOLOV4
 - [x] YOLOV5
 - [x] YOLOX
-- [ ] YOLOV7
+- [x] YOLOV7
 - [ ] YOLOP
 
 本仓库主要是算法的训练和算法的验证，后续的工程化应用部署可以参考我的另一个仓库：[Deployment](https://github.com/RyanCCC/Deployment)。部署仓库包括`python`或者`C++`的部署代码以及`OpenCV`的推理、`TensorRT`的推理，喜欢的话可以给个star或者一起参与建设仓库。毕竟人多力量大。

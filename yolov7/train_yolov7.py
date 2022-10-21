@@ -96,8 +96,7 @@ def yolov7(config):
     # 设置损失函数
     yolo_loss = YOLOLoss(anchors, num_classes, input_shape, anchors_mask, label_smoothing)
     if local_rank == 0:
-        time_str = datetime.datetime.strftime(datetime.datetime.now(),'%Y_%m_%d_%H_%M_%S')
-        log_dir = os.path.join(save_dir, "loss_" + str(time_str))
+        log_dir = os.path.join(save_dir)
         loss_history = LossHistory(log_dir, model, input_shape=input_shape)
     else:
         loss_history = None
@@ -146,7 +145,7 @@ def yolov7(config):
         total_step  = num_train // Unfreeze_batch_size * UnFreeze_Epoch
         if total_step <= wanted_step:
             if num_train // Unfreeze_batch_size == 0:
-                raise ValueError('数据集过小，无法进行训练，请扩充数据集。')
+                raise ValueError('dataset is too small. ')
             wanted_epoch = wanted_step // (num_train // Unfreeze_batch_size) + 1
             print("\n\033[1;33;44m[Warning] 使用%s优化器时，建议将训练总步长设置到%d以上。\033[0m"%(optimizer_type, wanted_step))
             print("\033[1;33;44m[Warning] 本次运行的总训练数据量为%d，Unfreeze_batch_size为%d，共训练%d个Epoch，计算出总训练步长为%d。\033[0m"%(num_train, Unfreeze_batch_size, UnFreeze_Epoch, total_step))
@@ -248,8 +247,10 @@ def yolov7(config):
 
         set_optimizer_lr(optimizer, lr_scheduler_func, epoch)
 
-        fit_one_epoch(model_train, model, ema, yolo_loss, loss_history, optimizer, epoch, epoch_step, epoch_step_val, gen, gen_val, UnFreeze_Epoch, Cuda, fp16, scaler, save_period, save_dir, local_rank)
-            
+        # fit_one_epoch(model_train, model, ema, yolo_loss, loss_history, optimizer, epoch, epoch_step, epoch_step_val, gen, gen_val, UnFreeze_Epoch, Cuda, fp16, scaler, save_period, save_dir, local_rank)
+        fit_one_epoch(model_train = model_train, model= model, ema= ema, yolo_loss=yolo_loss, loss_history=loss_history, optimizer=optimizer, \
+            epoch=epoch, epoch_step=epoch_step, epoch_step_val=epoch_step_val, gen = gen, gen_val = gen_val, \
+                UnFreeze_Epoch=UnFreeze_Epoch, cuda=Cuda, fp16=fp16, scaler=scaler, save_period=save_period, save_dir=save_dir, local_rank=local_rank, pretrain_weight=config.pretrain_weight)
         if distributed:
             dist.barrier()
 
