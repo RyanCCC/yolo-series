@@ -4,6 +4,7 @@ from PIL import Image
 from glob import glob
 import argparse
 
+
 def parse_args():
     parser = argparse.ArgumentParser(description='Custom Input')
     parser.add_argument(
@@ -90,7 +91,18 @@ if __name__=='__main__':
                 img.save(save_path)
 
     elif args.model.upper() == 'YOLOV7':
-        pass
+        from yolov7 import Inference_YOLOV7Model
+        yolo = Inference_YOLOV7Model(YOLOV7Config, args.weights)
+        if args.mode == 'dir':
+            dir_inference(args.img_dir, yolo, args)
+        else:
+            image = Image.open(args.image)
+            img = yolo.detect(image)
+            if args.show:
+                img.show()
+            if args.save:
+                save_path = os.path.join(args.save_dir, 'tmp.jpg')
+                img.save(save_path)
     else:
         pass
     # path_pattern = './samples/*'

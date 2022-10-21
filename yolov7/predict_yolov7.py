@@ -4,14 +4,13 @@ import torch
 import torch.nn as nn
 import numpy as np
 from PIL import ImageDraw, ImageFont
-from cfg import YOLOV7Config
 from yolov7 import YoloBody, cvtColor, get_anchors, get_classes, preprocess_input, resize_image, DecodeBox
 from PIL import Image 
 from glob import glob
 
 class YOLO(object):
     def __init__(self, **kwargs):
-        self._arguments = {
+        self._params = {
             "model_path" : kwargs['model_path'], 
             "classes_path" : kwargs['class_path'], 
             "anchors_path" : kwargs['anchors_path'], 
@@ -23,11 +22,8 @@ class YOLO(object):
             "max_boxes" : kwargs['max_boxes'], 
             "letterbox_image" : kwargs['letterbox_image']
         }
-        self.__dict__.update(self._defaults)
-        for name, value in kwargs.items():
-            setattr(self, name, value)
-            self._defaults[name] = value 
-
+        self.__dict__.update(self._params)
+        self.cuda = False
         self.class_names, self.num_classes = get_classes(self.classes_path)
         self.anchors, self.num_anchors = get_anchors(self.anchors_path)
         self.bbox_util = DecodeBox(self.anchors, self.num_classes, (self.input_shape[0], self.input_shape[1]), self.anchors_mask)
@@ -158,17 +154,20 @@ class YOLO(object):
     def close_session(self):
         self.sess.close()
 
-# 初始化模型
-yolo = YOLO(
-    model_path = './model/village_Detection_yolov7_x_2022_09_30.h5',
-    class_path = YOLOV7Config.classes_path,
-    input_shape = YOLOV7Config.input_shape,
-    confidence = YOLOV7Config.score,
-    nms_iou = YOLOV7Config.iou,
-    max_boxes=YOLOV7Config.max_boxes,
-    letterbox_image = True,
-    phi=YOLOV7Config.phi
-)
+def Inference_YOLOV7Model(config, model_path = './model/yolov7_l_20221020.pth'):
+    yolo = YOLO(
+        model_path = model_path,
+        class_path = config.classes_path,
+        anchors_path = config.anchor_path,
+        anchors_mask = config.ANCHOR_MASK,
+        input_shape = config.input_shape,
+        confidence = config.score,
+        nms_iou = config.iou,
+        max_boxes=config.max_boxes,
+        letterbox_image = True,
+        phi=config.phi
+    )
+    return yolo
 
 if __name__ == '__main__':
     path_pattern = './samples/*'
