@@ -235,7 +235,7 @@ def yolov7(config):
                     
             gen = DataLoader(train_dataset, shuffle = shuffle, batch_size = batch_size, pin_memory=True,
                                             drop_last=True, collate_fn=yolo_dataset_collate, sampler=train_sampler)
-            gen_val = DataLoader(val_dataset  , shuffle = shuffle, batch_size = batch_size, pin_memory=True, 
+            gen_val = DataLoader(val_dataset, shuffle = shuffle, batch_size = batch_size, pin_memory=True, 
                                             drop_last=True, collate_fn=yolo_dataset_collate, sampler=val_sampler)
             UnFreeze_flag = True
 
@@ -250,7 +250,7 @@ def yolov7(config):
         # fit_one_epoch(model_train, model, ema, yolo_loss, loss_history, optimizer, epoch, epoch_step, epoch_step_val, gen, gen_val, UnFreeze_Epoch, Cuda, fp16, scaler, save_period, save_dir, local_rank)
         fit_one_epoch(model_train = model_train, model= model, ema= ema, yolo_loss=yolo_loss, loss_history=loss_history, optimizer=optimizer, \
             epoch=epoch, epoch_step=epoch_step, epoch_step_val=epoch_step_val, gen = gen, gen_val = gen_val, \
-                UnFreeze_Epoch=UnFreeze_Epoch, cuda=Cuda, fp16=fp16, scaler=scaler, save_period=save_period, save_dir=save_dir, local_rank=local_rank, pretrain_weight=config.pretrain_weight)
+                UnFreeze_Epoch=UnFreeze_Epoch, cuda=Cuda, fp16=fp16, scaler=scaler, save_period=save_period, save_dir=save_dir, local_rank=local_rank, saved_weight=config.save_weight)
         if distributed:
             dist.barrier()
 
