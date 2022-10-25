@@ -84,6 +84,7 @@ def fit_one_epoch(**kwargs):
     save_dir= kwargs['save_dir']
     local_rank= kwargs['local_rank']
     saved_weight = kwargs['saved_weight']
+    early_stopping = kwargs['early_stopping']
 
     loss = 0
     val_loss = 0
@@ -160,6 +161,10 @@ def fit_one_epoch(**kwargs):
         print('Epoch:'+ str(epoch + 1) + '/' + str(Epoch))
         print('Total Loss: %.3f || Val Loss: %.3f ' % (loss / epoch_step, val_loss / epoch_step_val))
         
+        # earlyStoppping
+        early_stopping(val_loss, model)
+
+
         # save checkpints
         if ema:
             save_state_dict = ema.ema.state_dict()
@@ -172,6 +177,8 @@ def fit_one_epoch(**kwargs):
         if len(loss_history.val_loss) <= 1 or (val_loss / epoch_step_val) <= min(loss_history.val_loss):
             print('Save best model to best_epoch_weights.pth')
             torch.save(save_state_dict, os.path.join(save_dir, "best_epoch_weights.pth"))
+    
+    return early_stopping.early_stop
 
 
 if __name__ == "__main__":

@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader
 
 from .nets.yolov7 import YoloBody
 from .nets.loss import ModelEMA, YOLOLoss, get_lr_scheduler, set_optimizer_lr, weights_init
-from .lib.callbacks import LossHistory
+from .lib.callbacks import LossHistory, EarlyStopping
 from .lib.dataloader import YoloDataset, yolo_dataset_collate
 from .lib.tools import get_anchors, get_classes, show_config
 from .lib.tools import fit_one_epoch
@@ -93,13 +93,18 @@ def yolov7(config):
         model_dict.update(temp_dict)
         model.load_state_dict(model_dict)
     
-    # 设置损失函数
+    # loss function
     yolo_loss = YOLOLoss(anchors, num_classes, input_shape, anchors_mask, label_smoothing)
+    # loss history
     if local_rank == 0:
         log_dir = os.path.join(save_dir)
         loss_history = LossHistory(log_dir, model, input_shape=input_shape)
     else:
         loss_history = None
+    
+    # Early Stopping
+    early_stopping = EarlyStopping(patience=5, verbose=True, delta=1e-5, path=os.path.join(log_dir, config.save_weight))
+
     
     # fp16
     if fp16:
@@ -248,11 +253,16 @@ def yolov7(config):
         set_optimizer_lr(optimizer, lr_scheduler_func, epoch)
 
         # fit_one_epoch(model_train, model, ema, yolo_loss, loss_history, optimizer, epoch, epoch_step, epoch_step_val, gen, gen_val, UnFreeze_Epoch, Cuda, fp16, scaler, save_period, save_dir, local_rank)
-        fit_one_epoch(model_train = model_train, model= model, ema= ema, yolo_loss=yolo_loss, loss_history=loss_history, optimizer=optimizer, \
+        early_stop = fit_one_epoch(model_train = model_train, model= model, ema= ema, yolo_loss=yolo_loss, loss_history=loss_history, optimizer=optimizer, \
             epoch=epoch, epoch_step=epoch_step, epoch_step_val=epoch_step_val, gen = gen, gen_val = gen_val, \
-                UnFreeze_Epoch=UnFreeze_Epoch, cuda=Cuda, fp16=fp16, scaler=scaler, save_period=save_period, save_dir=save_dir, local_rank=local_rank, saved_weight=config.save_weight)
+                UnFreeze_Epoch=UnFreeze_Epoch, cuda=Cuda, fp16=fp16, scaler=scaler, save_period=save_period, \
+                    save_dir=save_dir, local_rank=local_rank, saved_weight=config.save_weight, early_stopping=early_stopping)
         if distributed:
             dist.barrier()
+        if early_stop:
+            print('Early Stopping')
+            break
+            
 
     if local_rank == 0:
         loss_history.writer.close()
