@@ -20,7 +20,7 @@ class YOLOV7Config(Config):
     score=0.3
     iou=0.5
     input_shape = [640, 640]
-    cuda = False
+    cuda = True
     gpus = '1'
     '''
     单机多卡分布式训练
