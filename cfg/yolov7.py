@@ -20,7 +20,7 @@ class YOLOV7Config(Config):
     score=0.3
     iou=0.5
     input_shape = [640, 640]
-    cuda = True
+    cuda = False
     gpus = '1'
     '''
     单机多卡分布式训练
@@ -37,7 +37,8 @@ class YOLOV7Config(Config):
     fp16 = False
     # 标签平滑。一般0.01以下。如0.01、0.005
     label_smoothing = 0
-    pretrain_weight = './yolov7/checkpoints/yolov7_x_weights.pth'
+    # tiny: './yolov7/checkpoints/yolov7_tiny_weights.pth'
+    pretrain_weight = './yolov7/checkpoints/yolov7_tiny_weights.pth'
     time = str(datetime.datetime.strftime(datetime.datetime.now(),'%Y_%m_%d'))
     save_weight = f'{task}_yolov7_{phi}_{time}.pth'
     best_weight = f'{task}_yolov7_{phi}_{time}_best.pth'
@@ -45,5 +46,6 @@ class YOLOV7Config(Config):
     log_level = '1'
     Freeze_Train = True
     learning_rate = 1e-2
+    tiny =True
 
 

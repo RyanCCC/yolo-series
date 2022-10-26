@@ -10,6 +10,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 
 from .nets.yolov7 import YoloBody
+from .nets.yolov7_tiny import YoloBody as YoloBody_tiny
 from .nets.loss import ModelEMA, YOLOLoss, get_lr_scheduler, set_optimizer_lr, weights_init
 from .lib.callbacks import LossHistory, EarlyStopping
 from .lib.dataloader import YoloDataset, yolo_dataset_collate
@@ -19,6 +20,7 @@ from .lib.tools import fit_one_epoch
 
 def yolov7(config):
     # 设置日志级别
+    tiny = config.tiny
     train_gpu = config.gpus
     Cuda = config.cuda
     distributed = config.distributed
@@ -74,7 +76,10 @@ def yolov7(config):
         rank = 0
 
     # init model
-    model = YoloBody(anchors_mask, num_classes, phi, pretrained=pretrained)
+    if tiny:
+        model = YoloBody_tiny(anchors_mask, num_classes, pretrained=pretrained)
+    else:
+        model = YoloBody(anchors_mask, num_classes, phi, pretrained=pretrained)
     # load pretrain weights
     if not pretrained:
         weights_init(model)
