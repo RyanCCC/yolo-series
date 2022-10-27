@@ -1,5 +1,6 @@
 import colorsys
 import os
+from turtle import width
 import torch
 import torch.nn as nn
 import numpy as np
@@ -45,7 +46,7 @@ class YOLO(object):
                 self.net = self.net.cuda()
 
 
-    def detect(self, image, crop = False, count = False):
+    def detect(self, image, crop = False, count = False, istrack = False, isdrtxt = False, image_id = None):
         image_shape = np.array(np.shape(image)[0:2])
         image= cvtColor(image)
         image_data = resize_image(image, (self.input_shape[1], self.input_shape[0]), self.letterbox_image)
@@ -68,42 +69,85 @@ class YOLO(object):
             top_boxes = results[0][:, :4]
         font = ImageFont.truetype(font='./font/simhei.ttf', size=np.floor(3e-2 * image.size[1] + 0.5).astype('int32'))
         thickness = int(max((image.size[0] + image.size[1]) // np.mean(self.input_shape), 1))
-        if count:
-            print("top_label:", top_label)
-            classes_nums    = np.zeros([self.num_classes])
-            for i in range(self.num_classes):
-                num = np.sum(top_label == i)
-                if num > 0:
-                    print(self.class_names[i], " : ", num)
-                classes_nums[i] = num
-            print("classes_nums:", classes_nums)
-        if crop:
-            for i, c in list(enumerate(top_boxes)):
-                top, left, bottom, right = top_boxes[i]
+        if istrack:
+            boxes = []
+            if count:
+                print("top_label:", top_label)
+                classes_nums = np.zeros([self.num_classes])
+                for i in range(self.num_classes):
+                    num = np.sum(top_label == i)
+                    if num > 0:
+                        print(self.class_names[i], " : ", num)
+                    classes_nums[i] = num
+                print("classes_nums:", classes_nums)
+            if crop:
+                for i, c in list(enumerate(top_boxes)):
+                    top, left, bottom, right = top_boxes[i]
+                    top = max(0, np.floor(top).astype('int32'))
+                    left = max(0, np.floor(left).astype('int32'))
+                    bottom  = min(image.size[1], np.floor(bottom).astype('int32'))
+                    right = min(image.size[0], np.floor(right).astype('int32'))
+                    dir_save_path = "img_crop"
+                    if not os.path.exists(dir_save_path):
+                        os.makedirs(dir_save_path)
+                    crop_image = image.crop([left, top, right, bottom])
+                    crop_image.save(os.path.join(dir_save_path, "crop_" + str(i) + ".png"), quality=95, subsampling=0)
+                    print("save crop_" + str(i) + ".png to " + dir_save_path)
+            for i, c in list(enumerate(top_label)):
+                box_tmp = []
+                predicted_class = self.class_names[int(c)]
+                box = top_boxes[i]
+                score = top_conf[i]
+                top, left, bottom, right = box
                 top = max(0, np.floor(top).astype('int32'))
                 left = max(0, np.floor(left).astype('int32'))
-                bottom  = min(image.size[1], np.floor(bottom).astype('int32'))
+                bottom = min(image.size[1], np.floor(bottom).astype('int32'))
                 right = min(image.size[0], np.floor(right).astype('int32'))
-                dir_save_path = "img_crop"
-                if not os.path.exists(dir_save_path):
-                    os.makedirs(dir_save_path)
-                crop_image = image.crop([left, top, right, bottom])
-                crop_image.save(os.path.join(dir_save_path, "crop_" + str(i) + ".png"), quality=95, subsampling=0)
-                print("save crop_" + str(i) + ".png to " + dir_save_path)
-        for i, c in list(enumerate(top_label)):
-            predicted_class = self.class_names[int(c)]
-            box = top_boxes[i]
-            score = top_conf[i]
-            top, left, bottom, right = box
-            top = max(0, np.floor(top).astype('int32'))
-            left = max(0, np.floor(left).astype('int32'))
-            bottom = min(image.size[1], np.floor(bottom).astype('int32'))
-            right = min(image.size[0], np.floor(right).astype('int32'))
-            label = '{} {:.2f}'.format(predicted_class, score)
-            draw = ImageDraw.Draw(image)
-            label_size = draw.textsize(label, font)
-            label = label.encode('utf-8')
-            print(label, top, left, bottom, right)
+                width = right-left
+                height = bottom-top
+                box_tmp.append(left)
+                box_tmp.append(top)
+                box_tmp.append(width)
+                box_tmp.append(height)
+                boxes.append(box_tmp)
+            return boxes, score, predicted_class
+        else:
+            if count:
+                print("top_label:", top_label)
+                classes_nums = np.zeros([self.num_classes])
+                for i in range(self.num_classes):
+                    num = np.sum(top_label == i)
+                    if num > 0:
+                        print(self.class_names[i], " : ", num)
+                    classes_nums[i] = num
+                print("classes_nums:", classes_nums)
+            if crop:
+                for i, c in list(enumerate(top_boxes)):
+                    top, left, bottom, right = top_boxes[i]
+                    top = max(0, np.floor(top).astype('int32'))
+                    left = max(0, np.floor(left).astype('int32'))
+                    bottom  = min(image.size[1], np.floor(bottom).astype('int32'))
+                    right = min(image.size[0], np.floor(right).astype('int32'))
+                    dir_save_path = "img_crop"
+                    if not os.path.exists(dir_save_path):
+                        os.makedirs(dir_save_path)
+                    crop_image = image.crop([left, top, right, bottom])
+                    crop_image.save(os.path.join(dir_save_path, "crop_" + str(i) + ".png"), quality=95, subsampling=0)
+                    print("save crop_" + str(i) + ".png to " + dir_save_path)
+            for i, c in list(enumerate(top_label)):
+                predicted_class = self.class_names[int(c)]
+                box = top_boxes[i]
+                score = top_conf[i]
+                top, left, bottom, right = box
+                top = max(0, np.floor(top).astype('int32'))
+                left = max(0, np.floor(left).astype('int32'))
+                bottom = min(image.size[1], np.floor(bottom).astype('int32'))
+                right = min(image.size[0], np.floor(right).astype('int32'))
+                label = '{} {:.2f}'.format(predicted_class, score)
+                draw = ImageDraw.Draw(image)
+                label_size = draw.textsize(label, font)
+                label = label.encode('utf-8')
+                print(label, top, left, bottom, right)
             
             if top - label_size[1] >= 0:
                 text_origin = np.array([left, top - label_size[1]])

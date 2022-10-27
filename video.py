@@ -4,9 +4,12 @@ import os
 from PIL import Image
 import numpy as np
 from yolox import Inference_YOLOXModel
-from cfg import YOLOXConfig
+from cfg import *
+# 使用yolov7
+from yolov7 import Inference_YOLOV7Model
 
 yolox = Inference_YOLOXModel(YOLOXConfig)
+yolov7 = Inference_YOLOV7Model(YOLOV7Config)
 
 '''
 视频推理
@@ -31,9 +34,9 @@ while True:
             if frame is not None and ref:
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 frame = Image.fromarray(np.uint8(frame))
-                frame = np.array(yolox.detect(frame))
+                frame = np.array(yolov7.detect(frame))
                 frame = cv2.cvtColor(frame,cv2.COLOR_RGB2BGR)
-            
+
                 fps  = ( fps + (1./(time.time()-t1)) ) / 2
                 print("fps= %.2f"%(fps))
                 frame = cv2.putText(frame, "fps= %.2f"%(fps), (0, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
