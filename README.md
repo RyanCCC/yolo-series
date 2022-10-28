@@ -103,6 +103,10 @@ D:\villages\JPEGImages/pavilion_20210812155531.jpg 111,2,458,337,10
 python .\predict.py --model YOLOV5 --mode dir --img_dir ./samples --weights ./model/village2022_yolov5_l_20221013.h5 --save
 ```
 
+```sh
+python .\predict.py --model YOLOV7-TINY --img_dir .\samples\ --weights .\model\village_Detection_yolov7_tiny_2022_10_27.pth --mode dir --save
+```
+
 ## 模型验证
 
 1. 统计测试集的groundtrue

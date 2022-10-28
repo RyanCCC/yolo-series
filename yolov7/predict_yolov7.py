@@ -6,6 +6,7 @@ import torch.nn as nn
 import numpy as np
 from PIL import ImageDraw, ImageFont
 from yolov7 import YoloBody, cvtColor, get_anchors, get_classes, preprocess_input, resize_image, DecodeBox
+from yolov7 import yoloBodyTiny
 from PIL import Image 
 from glob import glob
 
@@ -21,7 +22,8 @@ class YOLO(object):
             "confidence" : kwargs['confidence'], 
             "nms_iou" : kwargs['nms_iou'],
             "max_boxes" : kwargs['max_boxes'], 
-            "letterbox_image" : kwargs['letterbox_image']
+            "letterbox_image" : kwargs['letterbox_image'],
+            "tiny":kwargs['tiny']
         }
         self.__dict__.update(self._params)
         self.cuda = False
@@ -35,7 +37,10 @@ class YOLO(object):
 
 
     def init_model(self, onnx=False):
-        self.net = YoloBody(self.anchors_mask, self.num_classes, self.phi)
+        if self.tiny:
+            self.net = yoloBodyTiny(self.anchors_mask, self.num_classes)
+        else:
+            self.net = YoloBody(self.anchors_mask, self.num_classes, self.phi)
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.net.load_state_dict(torch.load(self.model_path, map_location=device))
         self.net    = self.net.fuse().eval()
@@ -198,7 +203,7 @@ class YOLO(object):
     def close_session(self):
         self.sess.close()
 
-def Inference_YOLOV7Model(config, model_path = './model/yolov7_l_20221020.pth'):
+def Inference_YOLOV7Model(config, tiny=False, model_path = './model/village_Detection_yolov7_tiny_2022_10_27.pth'):
     yolo = YOLO(
         model_path = model_path,
         class_path = config.classes_path,
@@ -209,6 +214,7 @@ def Inference_YOLOV7Model(config, model_path = './model/yolov7_l_20221020.pth'):
         nms_iou = config.iou,
         max_boxes=config.max_boxes,
         letterbox_image = True,
-        phi=config.phi
+        phi=config.phi,
+        tiny = tiny
     )
     return yolo
