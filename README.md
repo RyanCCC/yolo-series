@@ -137,8 +137,15 @@ python ./evaluate/get_dr_txt.py --testset ./villages/ImageSets/Main/test.txt --p
 3. 计算map的性能指标
 
 ```python
-python get_map.py
+python ./evaluate/get_map.py --GT_PATH ./result/evaluate --DR_PATH ./result/pr_folder/ --IMG_PATH ./villages/JPEGImages/ --MINOVERLAP 0.5
 ```
+
+参数说明：
+
+- GT_PATH：脚本`get_gt_txt.py`生成文件的保存路径
+- DR_PATH：脚本`get_dr_txt.py`生成文件的保存路径
+- IMG_PATH：测试集图像的路径
+- MINOVERLAP：map@**的值
 
 
 资料可参考[Object-Detection-Metrics](./doc/Object-Detection-Metrics.md)

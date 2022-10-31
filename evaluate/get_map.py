@@ -14,17 +14,18 @@ sys.path.append(os.getcwd())
 https://github.com/Cartucho/mAP
 如果想要设定mAP0.x，比如计算mAP0.75，可以设定MINOVERLAP = 0.75。
 '''
-MINOVERLAP = 0.75
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-na', '--no-animation', help="no animation is shown.", action="store_true")
 parser.add_argument('-np', '--no-plot', help="no plot is shown.", action="store_true")
 parser.add_argument('-q', '--quiet', help="minimalistic console output.", action="store_true")
 parser.add_argument('-i', '--ignore', nargs='+', type=str, help="ignore a list of classes.")
+parser.add_argument('--set-class-iou', nargs='+', type=str, help="set IoU for a specific class.")
 parser.add_argument('--GT_PATH', type=str, help="ground true path", required=True)
 parser.add_argument('--DR_PATH', type=str, help="predict path", required=True)
 parser.add_argument('--IMG_PATH', type=str, help="image path", required=True)
-
+parser.add_argument('--MINOVERLAP', type=float, help='map@**, eg: minoverlap=0.5, caluate map@0.5', default=0.5)
 args = parser.parse_args()
 
 '''
@@ -51,6 +52,7 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 GT_PATH = args.GT_PATH
 DR_PATH = args.DR_PATH
 IMG_PATH = args.IMG_PATH
+MINOVERLAP = args.MINOVERLAP
 if os.path.exists(IMG_PATH): 
     for dirpath, dirnames, files in os.walk(IMG_PATH):
         if not files:
