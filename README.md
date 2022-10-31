@@ -112,20 +112,34 @@ python .\predict.py --model YOLOV7-TINY --img_dir .\samples\ --weights .\model\v
 1. 统计测试集的groundtrue
 
 ```python
-python get_gt_txt.py
+python ./evaluate/get_gt_txt.py --testset ./VOC2017/ImageSets/Main/test.txt --annotation ./villages/Annotations/ --gt_folder ./result/gt_folder
 ```
+
+参数说明：
+- testset：划分测试数据集保存的`txt`文档
+- annotation：标注文件保存的文件夹
+- gt_folder：保存文件夹路径
+
 
 2. 计算模型推理测试集的结果
 
 ```python
-python get_dr_txt.py
+python ./evaluate/get_dr_txt.py --testset ./villages/ImageSets/Main/test.txt --pr_folder ./result/pr_folder --minoverlap 0.5 --model_path ./model/village_yolox.h5 --image_path ./villages/JPEGImages/ --model YOLOX
 ```
+
+参数说明：
+- testset：划分测试数据集保存的`txt`文档
+- pr_folder：推理结果保存的文件夹，保存文件格式：`txt`。
+- model_path：推理模型的权重
+- image_path：图像路径
+- model：使用的算法模型
 
 3. 计算map的性能指标
 
 ```python
 python get_map.py
 ```
+
 
 资料可参考[Object-Detection-Metrics](./doc/Object-Detection-Metrics.md)
 

@@ -21,15 +21,15 @@ def yolo_correct_boxes(box_xy, box_wh, input_shape, image_shape, letterbox_image
 
     if letterbox_image:
         new_shape = K.round(image_shape * K.min(input_shape/image_shape))
-        offset  = (input_shape - new_shape)/2./input_shape
-        scale   = input_shape/new_shape
+        offset = (input_shape - new_shape)/2./input_shape
+        scale = input_shape/new_shape
 
         box_yx  = (box_yx - offset) * scale
         box_hw *= scale
 
-    box_mins    = box_yx - (box_hw / 2.)
-    box_maxes   = box_yx + (box_hw / 2.)
-    boxes  = K.concatenate([box_mins[..., 0:1], box_mins[..., 1:2], box_maxes[..., 0:1], box_maxes[..., 1:2]])
+    box_mins = box_yx - (box_hw / 2.)
+    box_maxes = box_yx + (box_hw / 2.)
+    boxes = K.concatenate([box_mins[..., 0:1], box_mins[..., 1:2], box_maxes[..., 0:1], box_maxes[..., 1:2]])
     boxes *= K.concatenate([image_shape, image_shape])
     return boxes
 
@@ -43,8 +43,8 @@ def DecodeBox(outputs, num_classes, input_shape, max_boxes = 100, confidence=0.5
     outputs = tf.concat([tf.reshape(x, [batch_size, -1, 5 + num_classes]) for x in outputs], axis = 1)
     for i in range(len(hw)):
         grid_x, grid_y  = tf.meshgrid(tf.range(hw[i][1]), tf.range(hw[i][0]))
-        grid            = tf.reshape(tf.stack((grid_x, grid_y), 2), (1, -1, 2))
-        shape           = tf.shape(grid)[:2]
+        grid = tf.reshape(tf.stack((grid_x, grid_y), 2), (1, -1, 2))
+        shape = tf.shape(grid)[:2]
         grids.append(tf.cast(grid, K.dtype(outputs)))
         strides.append(tf.ones((shape[0], shape[1], 1)) * input_shape[0] / tf.cast(hw[i][0], K.dtype(outputs)))
     grids = tf.concat(grids, axis=1)
@@ -62,20 +62,20 @@ def DecodeBox(outputs, num_classes, input_shape, max_boxes = 100, confidence=0.5
     scores_out  = []
     classes_out = []
     for c in range(num_classes):
-        class_boxes      = tf.boolean_mask(boxes, mask[..., c])
+        class_boxes = tf.boolean_mask(boxes, mask[..., c])
         class_box_scores = tf.boolean_mask(box_scores[..., c], mask[..., c])
         nms_index = tf.image.non_max_suppression(class_boxes, class_box_scores, max_boxes_tensor, iou_threshold=nms_iou)
 
-        class_boxes         = K.gather(class_boxes, nms_index)
-        class_box_scores    = K.gather(class_box_scores, nms_index)
-        classes             = K.ones_like(class_box_scores, 'int32') * c
+        class_boxes = K.gather(class_boxes, nms_index)
+        class_box_scores = K.gather(class_box_scores, nms_index)
+        classes = K.ones_like(class_box_scores, 'int32') * c
 
         boxes_out.append(class_boxes)
         scores_out.append(class_box_scores)
         classes_out.append(classes)
-    boxes_out      = K.concatenate(boxes_out, axis=0)
-    scores_out     = K.concatenate(scores_out, axis=0)
-    classes_out    = K.concatenate(classes_out, axis=0)
+    boxes_out = K.concatenate(boxes_out, axis=0)
+    scores_out = K.concatenate(scores_out, axis=0)
+    classes_out = K.concatenate(classes_out, axis=0)
 
     return boxes_out, scores_out, classes_out
 
@@ -185,31 +185,6 @@ class YOLOX(object):
                 box_tmp.append(height)
                 boxes.append(box_tmp)
             return boxes, out_scores, out_classes
-        elif isdrtxt:
-            if len(out_boxes) == 0:
-                print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
-                dr_txt_path = os.path.join(YOLOXConfig.result, YOLOXConfig.pr_folder_name, image_id+'.txt')
-                with open(dr_txt_path, 'w') as f:
-                    f.write(" ")
-
-            for i, c in list(enumerate(out_classes)):
-                predicted_class = self._class_names[c]
-                box = out_boxes[i]
-                score = out_scores[i]
-
-                top, left, bottom, right = box
-                top = top - 5
-                left = left - 5
-                bottom = bottom + 5
-                right = right + 5
-                top = max(0, np.floor(top + 0.5).astype('int32'))
-                left = max(0, np.floor(left + 0.5).astype('int32'))
-                bottom = min(image.size[1], np.floor(bottom + 0.5).astype('int32'))
-                right = min(image.size[0], np.floor(right + 0.5).astype('int32'))
-
-                dr_txt_path = os.path.join(YOLOXConfig.result, YOLOXConfig.pr_folder_name, image_id+'.txt')
-                with open(dr_txt_path, 'w') as f:
-                    f.write("%s %s %s %s %s %s\n" % (predicted_class, str(score.numpy()), str(int(left)), str(int(top)), str(int(right)),str(int(bottom))))
 
         else:
             font = ImageFont.truetype(font='data/simhei.ttf', size=np.floor(3e-2 * image.size[1] + 0.5).astype('int32'))
@@ -254,6 +229,37 @@ class YOLOX(object):
                 draw.text(text_origin, str(label,'UTF-8'), fill=(0, 0, 0), font=font)
                 del draw
             return image
+    def getdrtxt(self,image, pr_folder_name, image_id):
+        image = cvtColor(image)
+        image_data = self.resize_image(image)
+        image_data = np.expand_dims(preprocess_input(np.array(image_data, dtype='float32')), 0)
+        input_image_shape = np.expand_dims(np.array([image.size[1], image.size[0]], dtype='float32'), 0)
+        out_boxes, out_scores, out_classes = self.prediction(self.model, image_data, input_image_shape)
+        print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
+        if len(out_boxes) == 0:
+            print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
+            dr_txt_path = os.path.join(pr_folder_name, image_id+'.txt')
+            with open(dr_txt_path, 'w') as f:
+                f.write(" ")
+
+        for i, c in list(enumerate(out_classes)):
+            predicted_class = self._class_names[c]
+            box = out_boxes[i]
+            score = out_scores[i]
+
+            top, left, bottom, right = box
+            top = top - 5
+            left = left - 5
+            bottom = bottom + 5
+            right = right + 5
+            top = max(0, np.floor(top + 0.5).astype('int32'))
+            left = max(0, np.floor(left + 0.5).astype('int32'))
+            bottom = min(image.size[1], np.floor(bottom + 0.5).astype('int32'))
+            right = min(image.size[0], np.floor(right + 0.5).astype('int32'))
+
+            dr_txt_path = os.path.join(pr_folder_name, image_id+'.txt')
+            with open(dr_txt_path, 'w') as f:
+                f.write("%s %s %s %s %s %s\n" % (predicted_class, str(score.numpy()), str(int(left)), str(int(top)), str(int(right)),str(int(bottom))))
 
 def Inference_YOLOXModel(YOLOXConfig, model_path = './model/village2022_yolox_s_20221017.h5'):
     yolox = YOLOX(

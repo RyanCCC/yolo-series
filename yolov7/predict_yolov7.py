@@ -51,7 +51,7 @@ class YOLO(object):
                 self.net = self.net.cuda()
 
 
-    def detect(self, image, crop = False, count = False, istrack = False, isdrtxt = False, image_id = None):
+    def detect(self, image, crop = False, count = False, istrack = False):
         image_shape = np.array(np.shape(image)[0:2])
         image= cvtColor(image)
         image_data = resize_image(image, (self.input_shape[1], self.input_shape[0]), self.letterbox_image)
@@ -167,6 +167,47 @@ class YOLO(object):
 
         return image
 
+    def getdrtxt(self,image, pr_folder_name, image_id):
+        # 检测图像
+        image_shape = np.array(np.shape(image)[0:2])
+        image= cvtColor(image)
+        image_data = resize_image(image, (self.input_shape[1], self.input_shape[0]), self.letterbox_image)
+        image_data = np.expand_dims(np.transpose(preprocess_input(np.array(image_data, dtype='float32')), (2, 0, 1)), 0)
+
+        with torch.no_grad():
+            images = torch.from_numpy(image_data)
+            if self.cuda:
+                images = images.cuda()
+            outputs = self.net(images)
+            outputs = self.bbox_util.decode_box(outputs)
+            results = self.bbox_util.non_max_suppression(torch.cat(outputs, 1), self.num_classes, self.input_shape, 
+                        image_shape, self.letterbox_image, conf_thres = self.confidence, nms_thres = self.nms_iou)
+                                                    
+            if results[0] is None: 
+                return image
+
+            top_label = np.array(results[0][:, 6], dtype = 'int32')
+            top_conf = results[0][:, 4] * results[0][:, 5]
+            top_boxes = results[0][:, :4]
+        # 文件写入
+        if len(top_label) == 0:
+            dr_txt_path = os.path.join(pr_folder_name, image_id+'.txt')
+            with open(dr_txt_path, 'w') as f:
+                f.write(" ")
+
+        for i, c in list(enumerate(top_label)):
+            predicted_class = self.class_names[int(c)]
+            box = top_boxes[i]
+            score = top_conf[i]
+            top, left, bottom, right = box
+            top = max(0, np.floor(top).astype('int32'))
+            left = max(0, np.floor(left).astype('int32'))
+            bottom = min(image.size[1], np.floor(bottom).astype('int32'))
+            right = min(image.size[0], np.floor(right).astype('int32'))
+
+            dr_txt_path = os.path.join(pr_folder_name, image_id+'.txt')
+            with open(dr_txt_path, 'w') as f:
+                f.write("%s %s %s %s %s %s\n" % (predicted_class, str(score.numpy()), str(int(left)), str(int(top)), str(int(right)),str(int(bottom))))
 
     def detect_heatmap(self, image, heatmap_save_path):
         import cv2

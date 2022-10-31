@@ -5,7 +5,7 @@ class YOLOXConfig(Config):
     gpus = '0'
     logdir = './yolox/logs/'
     learning_rate = 1e-2
-    dataset_base_path = r'.\villages'
+    dataset_base_path = r'./villages'
     classes_path = os.path.join(dataset_base_path, 'village.names') 
     train_txt= os.path.join(dataset_base_path, 'train.txt')
     val_txt= os.path.join(dataset_base_path, 'val.txt')

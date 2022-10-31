@@ -6,7 +6,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Custom Input')
     parser.add_argument(
         '--model', 
-        help='YOLOV4, YOLOV4-TINY, YOLOV5 or YOLOX', 
+        help='YOLOV4, YOLOV4-TINY, YOLOV5, YOLOX, YOLOV7...', 
         choices=['YOLOV4', 'YOLOV4-TINY', 'YOLOV5', 'YOLOX', 'YOLOV7'],
         default='YOLOV7', 
         type=str)

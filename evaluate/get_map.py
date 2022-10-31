@@ -9,7 +9,6 @@ import math
 
 import numpy as np
 sys.path.append(os.getcwd())
-from cfg import YOLOV4Config
 
 '''
 https://github.com/Cartucho/mAP
@@ -22,7 +21,10 @@ parser.add_argument('-na', '--no-animation', help="no animation is shown.", acti
 parser.add_argument('-np', '--no-plot', help="no plot is shown.", action="store_true")
 parser.add_argument('-q', '--quiet', help="minimalistic console output.", action="store_true")
 parser.add_argument('-i', '--ignore', nargs='+', type=str, help="ignore a list of classes.")
-parser.add_argument('--set-class-iou', nargs='+', type=str, help="set IoU for a specific class.")
+parser.add_argument('--GT_PATH', type=str, help="ground true path", required=True)
+parser.add_argument('--DR_PATH', type=str, help="predict path", required=True)
+parser.add_argument('--IMG_PATH', type=str, help="image path", required=True)
+
 args = parser.parse_args()
 
 '''
@@ -46,9 +48,9 @@ if args.set_class_iou is not None:
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-GT_PATH = os.path.join(YOLOV4Config.result, YOLOV4Config.gt_folder_name)
-DR_PATH = os.path.join(YOLOV4Config.result, YOLOV4Config.pr_folder_name)
-IMG_PATH = os.path.join(YOLOV4Config.result, YOLOV4Config.image_optional)
+GT_PATH = args.GT_PATH
+DR_PATH = args.DR_PATH
+IMG_PATH = args.IMG_PATH
 if os.path.exists(IMG_PATH): 
     for dirpath, dirnames, files in os.walk(IMG_PATH):
         if not files:

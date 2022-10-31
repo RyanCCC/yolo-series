@@ -91,7 +91,6 @@ class YOLOV5(object):
 
     def detect(self, image, crop = False, count = False):
         image = cvtColor(image)
-
         image_data  = self.resize_image(image, (self.input_shape[1], self.input_shape[0]), self.letterbox_image)
         image_data  = np.expand_dims(self.preprocess_input(np.array(image_data, dtype='float32')), 0)
 
@@ -154,6 +153,38 @@ class YOLOV5(object):
             del draw
 
         return image
+    def getdrtxt(self,image, pr_folder_name, image_id):
+        image = cvtColor(image)
+        image_data  = self.resize_image(image, (self.input_shape[1], self.input_shape[0]), self.letterbox_image)
+        image_data  = np.expand_dims(self.preprocess_input(np.array(image_data, dtype='float32')), 0)
+
+        input_image_shape = np.expand_dims(np.array([image.size[1], image.size[0]], dtype='float32'), 0)
+        out_boxes, out_scores, out_classes = self.get_pred(image_data, input_image_shape) 
+        print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
+        if len(out_boxes) == 0:
+            print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
+            dr_txt_path = os.path.join(pr_folder_name, image_id+'.txt')
+            with open(dr_txt_path, 'w') as f:
+                f.write(" ")
+
+        for i, c in list(enumerate(out_classes)):
+            predicted_class = self._class_names[c]
+            box = out_boxes[i]
+            score = out_scores[i]
+
+            top, left, bottom, right = box
+            top = top - 5
+            left = left - 5
+            bottom = bottom + 5
+            right = right + 5
+            top = max(0, np.floor(top + 0.5).astype('int32'))
+            left = max(0, np.floor(left + 0.5).astype('int32'))
+            bottom = min(image.size[1], np.floor(bottom + 0.5).astype('int32'))
+            right = min(image.size[0], np.floor(right + 0.5).astype('int32'))
+
+            dr_txt_path = os.path.join(pr_folder_name, image_id+'.txt')
+            with open(dr_txt_path, 'w') as f:
+                f.write("%s %s %s %s %s %s\n" % (predicted_class, str(score.numpy()), str(int(left)), str(int(top)), str(int(right)),str(int(bottom))))
 
 def Inference_YOLOV5Model(YOLOV5Config, model_path):
     yolov4 = YOLOV5(

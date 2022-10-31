@@ -39,7 +39,7 @@ if __name__=='__main__':
     args = parse_args()
     if args.model.upper() == 'YOLOX':
         from yolox import Inference_YOLOXModel
-        yolo = Inference_YOLOXModel(YOLOV5Config, args.weights)
+        yolo = Inference_YOLOXModel(YOLOXConfig, args.weights)
         if args.mode == 'dir':
             dir_inference(args.img_dir, yolo, args)
         else:

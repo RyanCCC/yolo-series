@@ -87,13 +87,12 @@ class YOLOV4(object):
         out_boxes, out_scores, out_classes = self.yolo_model([image_data, input_image_shape], training=False)
         return out_boxes, out_scores, out_classes
     
-    def detect(self, image,istrack=False, isdrtxt=False, image_id=None):
+    def detect(self, image,istrack=False):
         '''
         参数说明：
         image：待检测的图像
         imageid：在计算map的时候需要用到
         istrack：是否目标跟踪返回数据的标志
-        isdrtxt：是否计算map的txt标志
         '''
         image = image.convert('RGB')
         if self.letterbox_image:
@@ -129,31 +128,6 @@ class YOLOV4(object):
                 box_tmp.append(height)
                 boxes.append(box_tmp)
             return boxes, out_scores, out_classes
-        elif isdrtxt:
-            if len(out_boxes) == 0:
-                print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
-                dr_txt_path = os.path.join(self.result, self.pr_folder_name, image_id+'.txt')
-                with open(dr_txt_path, 'w') as f:
-                    f.write(" ")
-
-            for i, c in list(enumerate(out_classes)):
-                predicted_class = self._class_names[c]
-                box = out_boxes[i]
-                score = out_scores[i]
-
-                top, left, bottom, right = box
-                top = top - 5
-                left = left - 5
-                bottom = bottom + 5
-                right = right + 5
-                top = max(0, np.floor(top + 0.5).astype('int32'))
-                left = max(0, np.floor(left + 0.5).astype('int32'))
-                bottom = min(image.size[1], np.floor(bottom + 0.5).astype('int32'))
-                right = min(image.size[0], np.floor(right + 0.5).astype('int32'))
-
-                dr_txt_path = os.path.join(self.result, self.pr_folder_name, image_id+'.txt')
-                with open(dr_txt_path, 'w') as f:
-                    f.write("%s %s %s %s %s %s\n" % (predicted_class, str(score.numpy()), str(int(left)), str(int(top)), str(int(right)),str(int(bottom))))
         else:
             font = ImageFont.truetype(font='model_data/simhei.ttf', size=np.floor(3e-2 * image.size[1]*2 + 0.5).astype('int32'))
             thickness = max((image.size[0] + image.size[1]) // 300, 1)
@@ -193,6 +167,44 @@ class YOLOV4(object):
                 del draw
 
             return image
+        
+    def getdrtxt(self, image,pr_folder_name, image_id):
+        image = image.convert('RGB')
+        if self.letterbox_image:
+            boxed_image = letterbox_image(image, (self.input_size[0],self.input_size[1]))
+        else:
+            boxed_image = image.resize((self.input_size[0],self.input_size[1]), Image.BICUBIC)
+        image_data = np.array(boxed_image, dtype='float32')
+        image_data /= 255.
+        image_data = np.expand_dims(image_data, 0)  # Add batch dimension.
+        input_image_shape = np.expand_dims(np.array([image.size[1], image.size[0]], dtype='float32'), 0)
+        out_boxes, out_scores, out_classes = self.get_pred(image_data, input_image_shape) 
+        print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
+        if len(out_boxes) == 0:
+            print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
+            dr_txt_path = os.path.join(pr_folder_name, image_id+'.txt')
+            with open(dr_txt_path, 'w') as f:
+                f.write(" ")
+
+        for i, c in list(enumerate(out_classes)):
+            predicted_class = self._class_names[c]
+            box = out_boxes[i]
+            score = out_scores[i]
+
+            top, left, bottom, right = box
+            top = top - 5
+            left = left - 5
+            bottom = bottom + 5
+            right = right + 5
+            top = max(0, np.floor(top + 0.5).astype('int32'))
+            left = max(0, np.floor(left + 0.5).astype('int32'))
+            bottom = min(image.size[1], np.floor(bottom + 0.5).astype('int32'))
+            right = min(image.size[0], np.floor(right + 0.5).astype('int32'))
+
+            dr_txt_path = os.path.join(pr_folder_name, image_id+'.txt')
+            with open(dr_txt_path, 'w') as f:
+                f.write("%s %s %s %s %s %s\n" % (predicted_class, str(score.numpy()), str(int(left)), str(int(top)), str(int(right)),str(int(bottom))))
+
 
     
 def Inference_YOLOV4Model(YOLOV4Config, model_path):
