@@ -148,7 +148,7 @@ python ./evaluate/get_map.py --GT_PATH ./result/evaluate --DR_PATH ./result/pr_f
 - MINOVERLAP：map@**的值
 
 
-资料可参考[Object-Detection-Metrics](./doc/Object-Detection-Metrics.md)
+详情可参考[Object-Detection-Metrics](./doc/Object-Detection-Metrics.md)
 
 ## 模型部署
 
