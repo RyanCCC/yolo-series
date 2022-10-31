@@ -16,7 +16,7 @@ class YOLOV7Config(Config):
     batch_size = 16
     anchor_path = './yolov7/data/yolo_anchors.txt'
     # x or l
-    phi= 'x'
+    phi= 'l'
     score=0.3
     iou=0.5
     input_shape = [640, 640]
@@ -46,6 +46,6 @@ class YOLOV7Config(Config):
     log_level = '1'
     Freeze_Train = True
     learning_rate = 1e-2
-    tiny =True
+    tiny =False
 
 

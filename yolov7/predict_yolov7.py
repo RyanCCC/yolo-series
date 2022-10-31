@@ -203,7 +203,7 @@ class YOLO(object):
     def close_session(self):
         self.sess.close()
 
-def Inference_YOLOV7Model(config, tiny=False, model_path = './model/village_Detection_yolov7_tiny_2022_10_27.pth'):
+def Inference_YOLOV7Model(config, model_path = './model/village_Detection_yolov7_l_2022_10_28.pth'):
     yolo = YOLO(
         model_path = model_path,
         class_path = config.classes_path,
@@ -215,6 +215,6 @@ def Inference_YOLOV7Model(config, tiny=False, model_path = './model/village_Dete
         max_boxes=config.max_boxes,
         letterbox_image = True,
         phi=config.phi,
-        tiny = tiny
+        tiny = config.tiny
     )
     return yolo

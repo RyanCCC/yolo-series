@@ -105,7 +105,7 @@ if __name__=='__main__':
                 img.save(save_path)
     elif args.model.upper() == 'YOLOV7-TINY':
         from yolov7 import Inference_YOLOV7Model
-        yolo = Inference_YOLOV7Model(YOLOV7Config,True, args.weights)
+        yolo = Inference_YOLOV7Model(YOLOV7Config, args.weights)
         if args.mode == 'dir':
             dir_inference(args.img_dir, yolo, args)
         else:
