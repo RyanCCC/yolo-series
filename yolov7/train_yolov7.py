@@ -59,6 +59,7 @@ def yolov7(config):
     pretrained = False
     _, num_classes = get_classes(classes_path)
     anchors, _ = get_anchors(anchors_path)
+    early_stopping_flag = False
 
     # 设置显卡信息
     ngpus_per_node = torch.cuda.device_count()
@@ -264,7 +265,7 @@ def yolov7(config):
                     save_dir=save_dir, local_rank=local_rank, saved_weight=config.save_weight, early_stopping=early_stopping)
         if distributed:
             dist.barrier()
-        if early_stop:
+        if early_stop and early_stopping_flag:
             print('Early Stopping')
             break
             

@@ -12,7 +12,7 @@ def get_train_step_fn():
     def train_step(imgs, targets, net, yolo_loss, optimizer):
         with tf.GradientTape() as tape:
             P5_output, P4_output, P3_output = net(imgs, training=True)
-            args        = [P5_output, P4_output, P3_output] + [targets]
+            args = [P5_output, P4_output, P3_output] + [targets]
             
             loss_value  = yolo_loss(args)
             loss_value  = tf.reduce_sum(net.losses) + loss_value
@@ -39,12 +39,12 @@ def fit_one_epoch(net, yolo_loss, loss_history, optimizer, epoch, epoch_step, ep
             if iteration >= epoch_step:
                 break
             images, targets = batch[0], batch[1]
-            targets     = tf.convert_to_tensor(targets)
-            loss_value  = train_step(images, targets, net, yolo_loss, optimizer)
-            loss        = loss + loss_value
+            targets = tf.convert_to_tensor(targets)
+            loss_value = train_step(images, targets, net, yolo_loss, optimizer)
+            loss = loss + loss_value
 
             pbar.set_postfix(**{'total_loss': float(loss) / (iteration + 1), 
-                                'lr'        : optimizer.lr.numpy()})
+                                'lr' : optimizer.lr.numpy()})
             pbar.update(1)
     print('Finish Train')
             
@@ -54,8 +54,8 @@ def fit_one_epoch(net, yolo_loss, loss_history, optimizer, epoch, epoch_step, ep
             if iteration >= epoch_step_val:
                 break
             images, targets = batch[0], batch[1]
-            targets     = tf.convert_to_tensor(targets)
-            loss_value  = val_step(images, targets, net, yolo_loss, optimizer)
+            targets = tf.convert_to_tensor(targets)
+            loss_value = val_step(images, targets, net, yolo_loss, optimizer)
             val_loss = val_loss + loss_value
 
             pbar.set_postfix(**{'total_loss': float(val_loss) / (iteration + 1)})
@@ -126,7 +126,7 @@ def yolox(config):
         print('Freeze the first {} layers of total {} layers.'.format(freeze_layers, len(model.layers)))
         batch_size = Freeze_batch_size if Freeze_train else UnFreeze_batch_size
         # 设置学习率的参数
-        nbs     = 64
+        nbs = 64
         Init_lr_fit = max(batch_size / nbs * learning_rate, 3e-4)
         Min_lr_fit  = max(batch_size / nbs * min_learning_rate, 3e-6)
         lr_scheduler_func = get_lr_scheduler(lr_decay_type, Init_lr_fit, Min_lr_fit, UnFreeze_Epoch)
