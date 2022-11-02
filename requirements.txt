@@ -11,3 +11,4 @@ scikit-image==0.16.2
 tensorflow-model-optimization==0.7.0
 tf2onnx==1.9.2
 pytorch=1.10.0
+thop
