@@ -46,6 +46,6 @@ class YOLOV7Config(Config):
     log_level = '1'
     Freeze_Train = True
     learning_rate = 1e-2
-    tiny =False
+    tiny =True
 
 

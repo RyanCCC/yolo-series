@@ -3,6 +3,7 @@ from cfg import *
 from PIL import Image
 from glob import glob
 import argparse
+import time
 
 
 def parse_args():
@@ -25,15 +26,21 @@ def parse_args():
 
 def dir_inference(imag_dir, model, args):
     path_pattern = f'{imag_dir}/*'
+    img_number = len(path_pattern)
+    result = 0
     for path in glob(path_pattern):
         image = Image.open(path)
+        start_time = time.time()
         img = model.detect(image)
+        end_time = time.time()
+        result += (end_time-start_time)
         if args.show:
             img.show()
         if args.save:
             save_path = os.path.join(args.save_dir, os.path.basename(path))
             img.save(save_path)
-    print('finish')
+    fps = 1/(result/img_number)
+    print(f'finish，fps is {fps}')
 
 if __name__=='__main__':
     args = parse_args()

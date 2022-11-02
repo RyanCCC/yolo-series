@@ -104,10 +104,12 @@ python ./predict.py --model YOLOV5 --mode dir --img_dir ./samples --weights ./mo
 ```
 
 ```sh
-python ./predict.py --model YOLOV7-TINY --img_dir ./samples/ --weights ./model/village_Detection_yolov7_tiny_2022_10_27.pth --mode dir --save
+python ./predict.py --model YOLOV7-TINY --img_dir ./samples/ --weights ./model/village_Detection_yolov7_tiny_2022_10_28.pth --mode dir --save
 ```
 
 ## 模型验证
+
+### MAP计算
 
 1. 统计测试集的groundtrue
 
@@ -147,6 +149,11 @@ python ./evaluate/get_map.py --GT_PATH ./result/evaluate --DR_PATH ./result/pr_f
 - IMG_PATH：测试集图像的路径
 - MINOVERLAP：map@**的值
 
+### FPS计算
+
+### FLOPs计算
+
+### PARAMS计算
 
 详情可参考[Object-Detection-Metrics](./doc/Object-Detection-Metrics.md)
 
