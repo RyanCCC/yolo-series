@@ -59,7 +59,7 @@ def yolov7(config):
     pretrained = False
     _, num_classes = get_classes(classes_path)
     anchors, _ = get_anchors(anchors_path)
-    early_stopping_flag = False
+    early_stopping_flag = config.early_stopping
 
     # 设置显卡信息
     ngpus_per_node = torch.cuda.device_count()

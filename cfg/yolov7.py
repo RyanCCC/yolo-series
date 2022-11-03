@@ -40,12 +40,17 @@ class YOLOV7Config(Config):
     # tiny: './yolov7/checkpoints/yolov7_tiny_weights.pth'
     pretrain_weight = './yolov7/checkpoints/yolov7_tiny_weights.pth'
     time = str(datetime.datetime.strftime(datetime.datetime.now(),'%Y_%m_%d'))
-    save_weight = f'{task}_yolov7_{phi}_{time}.pth'
-    best_weight = f'{task}_yolov7_{phi}_{time}_best.pth'
+    tiny =True
+    if tiny:
+        save_weight = f'{task}_yolov7_tiny_{time}.pth'
+        best_weight = f'{task}_yolov7_tiny_{time}_best.pth'
+    else:
+        save_weight = f'{task}_yolov7_{phi}_{time}.pth'
+        best_weight = f'{task}_yolov7_{phi}_{time}_best.pth'
     # 0:DEBUG；1：INFO；2：warning；3：error
     log_level = '1'
     Freeze_Train = True
     learning_rate = 1e-2
-    tiny =True
+    early_stopping = False
 
 
