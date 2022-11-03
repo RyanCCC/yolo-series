@@ -61,6 +61,10 @@ def yolov7(config):
     anchors, _ = get_anchors(anchors_path)
     early_stopping_flag = config.early_stopping
 
+    # 新建log文件夹
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+
     # 设置显卡信息
     ngpus_per_node = torch.cuda.device_count()
     if distributed:
@@ -149,7 +153,7 @@ def yolov7(config):
             classes_path = classes_path, anchors_path = anchors_path, anchors_mask = anchors_mask, model_path = model_path, input_shape = input_shape, \
             Init_Epoch = Init_Epoch, Freeze_Epoch = Freeze_Epoch, UnFreeze_Epoch = UnFreeze_Epoch, Freeze_batch_size = Freeze_batch_size, Unfreeze_batch_size = Unfreeze_batch_size, Freeze_Train = Freeze_Train, \
             Init_lr = Init_lr, Min_lr = Min_lr, optimizer_type = optimizer_type, momentum = momentum, lr_decay_type = lr_decay_type, \
-            save_period = save_period, save_dir = save_dir, num_train = num_train, num_val = num_val
+            save_period = save_period, save_dir = save_dir, num_train = num_train, num_val = num_val, log_dir=log_dir
         )
 
         wanted_step = 5e4 if optimizer_type == "sgd" else 1.5e4
