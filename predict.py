@@ -37,6 +37,8 @@ def dir_inference(imag_dir, model, args):
         if args.show:
             img.show()
         if args.save:
+            if not os.path.exists(args.save_dir):
+                os.makedirs(args.save_dir)
             save_path = os.path.join(args.save_dir, os.path.basename(path))
             img.save(save_path)
     fps = 1/(result/img_number)

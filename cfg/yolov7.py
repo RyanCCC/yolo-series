@@ -39,7 +39,7 @@ class YOLOV7Config(Config):
     # tiny: './yolov7/checkpoints/yolov7_tiny_weights.pth'
     pretrain_weight = './yolov7/checkpoints/yolov7_tiny_weights.pth'
     time = str(datetime.datetime.strftime(datetime.datetime.now(),'%Y_%m_%d'))
-    tiny =True
+    tiny =False
     if tiny:
         save_weight = f'{task}_yolov7_tiny_{time}.pth'
         best_weight = f'{task}_yolov7_tiny_{time}_best.pth'
