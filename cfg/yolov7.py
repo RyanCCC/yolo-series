@@ -37,7 +37,7 @@ class YOLOV7Config(Config):
     # 标签平滑。一般0.01以下。如0.01、0.005
     label_smoothing = 0
     # tiny: './yolov7/checkpoints/yolov7_tiny_weights.pth'
-    pretrain_weight = './yolov7/checkpoints/yolov7_tiny_weights.pth'
+    pretrain_weight = './yolov7/checkpoints/yolov7_weights.h5'
     time = str(datetime.datetime.strftime(datetime.datetime.now(),'%Y_%m_%d'))
     tiny =True
     if tiny:
