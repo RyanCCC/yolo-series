@@ -1,11 +1,14 @@
+from functools import reduce
+
 import numpy as np
 from PIL import Image
-import numpy as np
-import torch
-from torchvision.ops import nms
-import os
-from tqdm import tqdm
 
+
+def compose(*funcs):
+    if funcs:
+        return reduce(lambda f, g: lambda *a, **kw: g(f(*a, **kw)), funcs)
+    else:
+        raise ValueError('Composition of empty sequence not supported.')
 
 def cvtColor(image):
     if len(np.shape(image)) == 3 and np.shape(image)[2] == 3:
@@ -22,20 +25,18 @@ def resize_image(image, size, letterbox_image):
         nw = int(iw*scale)
         nh = int(ih*scale)
 
-        image = image.resize((nw,nh), Image.BICUBIC)
+        image   = image.resize((nw,nh), Image.BICUBIC)
         new_image = Image.new('RGB', size, (128,128,128))
         new_image.paste(image, ((w-nw)//2, (h-nh)//2))
     else:
         new_image = image.resize((w, h), Image.BICUBIC)
     return new_image
 
-
 def get_classes(classes_path):
     with open(classes_path, encoding='utf-8') as f:
         class_names = f.readlines()
     class_names = [c.strip() for c in class_names]
     return class_names, len(class_names)
-
 
 def get_anchors(anchors_path):
     '''loads the anchors from a file'''
@@ -44,11 +45,6 @@ def get_anchors(anchors_path):
     anchors = [float(x) for x in anchors.split(',')]
     anchors = np.array(anchors).reshape(-1, 2)
     return anchors, len(anchors)
-
-
-def get_lr(optimizer):
-    for param_group in optimizer.param_groups:
-        return param_group['lr']
 
 def preprocess_input(image):
     image /= 255.0
@@ -63,221 +59,154 @@ def show_config(**kwargs):
         print('|%25s | %40s|' % (str(key), str(value)))
     print('-' * 70)
 
-    
-def fit_one_epoch(**kwargs):
-    save_period = kwargs['save_period']
-    model_train = kwargs['model_train']
-    model= kwargs['model']
-    ema= kwargs['ema']
-    yolo_loss= kwargs['yolo_loss']
-    loss_history= kwargs['loss_history']
-    optimizer= kwargs['optimizer']
-    epoch= kwargs['epoch']
-    epoch_step= kwargs['epoch_step']
-    epoch_step_val= kwargs['epoch_step_val']
-    gen= kwargs['gen']
-    gen_val= kwargs['gen_val']
-    Epoch= kwargs['UnFreeze_Epoch']
-    cuda= kwargs['cuda']
-    fp16= kwargs['fp16']
-    scaler= kwargs['scaler']
-    save_dir= kwargs['save_dir']
-    local_rank= kwargs['local_rank']
-    saved_weight = kwargs['saved_weight']
-    early_stopping = kwargs['early_stopping']
+#-------------------------------------------------------------------------------------------------------------------------------#
+#   From https://github.com/ckyrkou/Keras_FLOP_Estimator 
+#   Fix lots of bugs
+#-------------------------------------------------------------------------------------------------------------------------------#
+def net_flops(model, table=False, print_result=True):
+    if (table == True):
+        print("\n")
+        print('%25s | %16s | %16s | %16s | %16s | %6s | %6s' % (
+            'Layer Name', 'Input Shape', 'Output Shape', 'Kernel Size', 'Filters', 'Strides', 'FLOPS'))
+        print('=' * 120)
+    t_flops = 0
+    factor  = 1e9
 
-    loss = 0
-    val_loss = 0
-
-    if local_rank == 0:
-        print('Start Train')
-        pbar = tqdm(total=epoch_step,desc=f'Epoch {epoch + 1}/{Epoch}',postfix=dict,mininterval=0.3)
-    model_train.train()
-    for iteration, batch in enumerate(gen):
-        if iteration >= epoch_step:
-            break
-
-        images, targets = batch[0], batch[1]
-        with torch.no_grad():
-            if cuda:
-                images  = images.cuda(local_rank)
-                targets = targets.cuda(local_rank)
-        optimizer.zero_grad()
-        if not fp16:
-            outputs = model_train(images)
-            loss_value = yolo_loss(outputs, targets, images)
-            loss_value.backward()
-            optimizer.step()
-        else:
-            from torch.cuda.amp import autocast
-            with autocast():
-                outputs = model_train(images)
-                loss_value = yolo_loss(outputs, targets, images)
-            scaler.scale(loss_value).backward()
-            scaler.step(optimizer)
-            scaler.update()
-        if ema:
-            ema.update(model_train)
-
-        loss += loss_value.item()
-        
-        if local_rank == 0:
-            pbar.set_postfix(**{'loss'  : loss / (iteration + 1), 
-                                'lr'    : get_lr(optimizer)})
-            pbar.update(1)
-
-    if local_rank == 0:
-        pbar.close()
-        print('Finish Train')
-        print('Start Validation')
-        pbar = tqdm(total=epoch_step_val, desc=f'Epoch {epoch + 1}/{Epoch}',postfix=dict,mininterval=0.3)
-
-    if ema:
-        model_train_eval = ema.ema
-    else:
-        model_train_eval = model_train.eval()
-        
-    for iteration, batch in enumerate(gen_val):
-        if iteration >= epoch_step_val:
-            break
-        images, targets = batch[0], batch[1]
-        with torch.no_grad():
-            if cuda:
-                images  = images.cuda(local_rank)
-                targets = targets.cuda(local_rank)
-            optimizer.zero_grad()
-            outputs = model_train_eval(images)
-            loss_value = yolo_loss(outputs, targets, images)
-
-        val_loss += loss_value.item()
-        if local_rank == 0:
-            pbar.set_postfix(**{'val_loss': val_loss / (iteration + 1)})
-            pbar.update(1)
+    for l in model.layers:
+        try:
+            o_shape, i_shape, strides, ks, filters = ('', '', ''), ('', '', ''), (1, 1), (0, 0), 0
+            flops   = 0
+            name    = l.name
             
-    if local_rank == 0:
-        pbar.close()
-        print('Finish Validation')
-        loss_history.append_loss(epoch + 1, loss / epoch_step, val_loss / epoch_step_val)
-        print('Epoch:'+ str(epoch + 1) + '/' + str(Epoch))
-        print('Total Loss: %.3f || Val Loss: %.3f ' % (loss / epoch_step, val_loss / epoch_step_val))
-        
-        # earlyStoppping
-        early_stopping(val_loss, model)
-
-
-        # save checkpints
-        if ema:
-            save_state_dict = ema.ema.state_dict()
-        else:
-            save_state_dict = model.state_dict()
-
-        if (epoch + 1) % save_period == 0 or epoch + 1 == Epoch:
-            torch.save(save_state_dict, os.path.join(save_dir, saved_weight))
+            if ('InputLayer' in str(l)):
+                i_shape = l.get_input_shape_at(0)[1:4]
+                o_shape = l.get_output_shape_at(0)[1:4]
             
-        if len(loss_history.val_loss) <= 1 or (val_loss / epoch_step_val) <= min(loss_history.val_loss):
-            print('Save best model to best_epoch_weights.pth')
-            torch.save(save_state_dict, os.path.join(save_dir, "best_epoch_weights.pth"))
+            elif ('Reshape' in str(l)):
+                i_shape = l.get_input_shape_at(0)[1:4]
+                o_shape = l.get_output_shape_at(0)[1:4]
+            elif ('Padding' in str(l)):
+                i_shape = l.get_input_shape_at(0)[1:4]
+                o_shape = l.get_output_shape_at(0)[1:4]
+            elif ('Flatten' in str(l)):
+                i_shape = l.get_input_shape_at(0)[1:4]
+                o_shape = l.get_output_shape_at(0)[1:4]
+
+            elif 'Activation' in str(l):
+                i_shape = l.get_input_shape_at(0)[1:4]
+                o_shape = l.get_output_shape_at(0)[1:4]
+                
+            elif 'LeakyReLU' in str(l):
+                for i in range(len(l._inbound_nodes)):
+                    i_shape = l.get_input_shape_at(i)[1:4]
+                    o_shape = l.get_output_shape_at(i)[1:4]
+                    
+                    flops   += i_shape[0] * i_shape[1] * i_shape[2]
+
+            elif 'MaxPooling' in str(l):
+                i_shape = l.get_input_shape_at(0)[1:4]
+                o_shape = l.get_output_shape_at(0)[1:4]
+
+            elif ('AveragePooling' in str(l) and 'Global' not in str(l)):
+                strides = l.strides
+                ks      = l.pool_size
+                
+                for i in range(len(l._inbound_nodes)):
+                    i_shape = l.get_input_shape_at(i)[1:4]
+                    o_shape = l.get_output_shape_at(i)[1:4]
+                    
+                    flops   += o_shape[0] * o_shape[1] * o_shape[2]
+
+            elif ('AveragePooling' in str(l) and 'Global' in str(l)):
+                for i in range(len(l._inbound_nodes)):
+                    i_shape = l.get_input_shape_at(i)[1:4]
+                    o_shape = l.get_output_shape_at(i)[1:4]
+                    
+                    flops += (i_shape[0] * i_shape[1] + 1) * i_shape[2]
+
+            elif ('BatchNormalization' in str(l)):
+                for i in range(len(l._inbound_nodes)):
+                    i_shape = l.get_input_shape_at(i)[1:4]
+                    o_shape = l.get_output_shape_at(i)[1:4]
+
+                    temp_flops = 1
+                    for i in range(len(i_shape)):
+                        temp_flops *= i_shape[i]
+                    temp_flops *= 2
+                    
+                    flops += temp_flops
+
+            elif ('Dense' in str(l)):
+                for i in range(len(l._inbound_nodes)):
+                    i_shape = l.get_input_shape_at(i)[1:4]
+                    o_shape = l.get_output_shape_at(i)[1:4]
+                
+                    temp_flops = 1
+                    for i in range(len(o_shape)):
+                        temp_flops *= o_shape[i]
+                        
+                    if (i_shape[-1] == None):
+                        temp_flops = temp_flops * o_shape[-1]
+                    else:
+                        temp_flops = temp_flops * i_shape[-1]
+                    flops += temp_flops
+
+            elif ('Conv2D' in str(l) and 'DepthwiseConv2D' not in str(l) and 'SeparableConv2D' not in str(l)):
+                strides = l.strides
+                ks      = l.kernel_size
+                filters = l.filters
+                bias    = 1 if l.use_bias else 0
+                
+                for i in range(len(l._inbound_nodes)):
+                    i_shape = l.get_input_shape_at(i)[1:4]
+                    o_shape = l.get_output_shape_at(i)[1:4]
+                    
+                    if (filters == None):
+                        filters = i_shape[2]
+                    flops += filters * o_shape[0] * o_shape[1] * (ks[0] * ks[1] * i_shape[2] + bias)
+
+            elif ('Conv2D' in str(l) and 'DepthwiseConv2D' in str(l) and 'SeparableConv2D' not in str(l)):
+                strides = l.strides
+                ks      = l.kernel_size
+                filters = l.filters
+                bias    = 1 if l.use_bias else 0
+            
+                for i in range(len(l._inbound_nodes)):
+                    i_shape = l.get_input_shape_at(i)[1:4]
+                    o_shape = l.get_output_shape_at(i)[1:4]
+                    
+                    if (filters == None):
+                        filters = i_shape[2]
+                    flops += filters * o_shape[0] * o_shape[1] * (ks[0] * ks[1] + bias)
+
+            elif ('Conv2D' in str(l) and 'DepthwiseConv2D' not in str(l) and 'SeparableConv2D' in str(l)):
+                strides = l.strides
+                ks      = l.kernel_size
+                filters = l.filters
+                
+                for i in range(len(l._inbound_nodes)):
+                    i_shape = l.get_input_shape_at(i)[1:4]
+                    o_shape = l.get_output_shape_at(i)[1:4]
+                    
+                    if (filters == None):
+                        filters = i_shape[2]
+                    flops += i_shape[2] * o_shape[0] * o_shape[1] * (ks[0] * ks[1] + bias) + \
+                             filters * o_shape[0] * o_shape[1] * (1 * 1 * i_shape[2] + bias)
+
+            elif 'Model' in str(l):
+                flops = net_flops(l, print_result=False)
+                
+            t_flops += flops
+
+            if (table == True):
+                print('%25s | %16s | %16s | %16s | %16s | %6s | %5.4f' % (
+                    name[:25], str(i_shape), str(o_shape), str(ks), str(filters), str(strides), flops))
+                
+        except:
+            pass
     
-    return early_stopping.early_stop
-
-
-if __name__ == "__main__":
-    import matplotlib.pyplot as plt
-    import numpy as np
-
-    def get_anchors_and_decode(input, input_shape, anchors, anchors_mask, num_classes):
-        batch_size = input.size(0)
-        input_height = input.size(2)
-        input_width = input.size(3)
-        stride_h = input_shape[0] / input_height
-        stride_w = input_shape[1] / input_width
-        scaled_anchors = [(anchor_width / stride_w, anchor_height / stride_h) for anchor_width, anchor_height in anchors[anchors_mask[2]]]
-        prediction = input.view(batch_size, len(anchors_mask[2]),
-                                num_classes + 5, input_height, input_width).permute(0, 1, 3, 4, 2).contiguous()
-        x = torch.sigmoid(prediction[..., 0])  
-        y = torch.sigmoid(prediction[..., 1])
-        w = torch.sigmoid(prediction[..., 2]) 
-        h = torch.sigmoid(prediction[..., 3]) 
-        conf = torch.sigmoid(prediction[..., 4])
-        pred_cls = torch.sigmoid(prediction[..., 5:])
-        FloatTensor = torch.cuda.FloatTensor if x.is_cuda else torch.FloatTensor
-        LongTensor  = torch.cuda.LongTensor if x.is_cuda else torch.LongTensor
-        grid_x = torch.linspace(0, input_width - 1, input_width).repeat(input_height, 1).repeat(
-            batch_size * len(anchors_mask[2]), 1, 1).view(x.shape).type(FloatTensor)
-        grid_y = torch.linspace(0, input_height - 1, input_height).repeat(input_width, 1).t().repeat(
-            batch_size * len(anchors_mask[2]), 1, 1).view(y.shape).type(FloatTensor)
-        anchor_w = FloatTensor(scaled_anchors).index_select(1, LongTensor([0]))
-        anchor_h = FloatTensor(scaled_anchors).index_select(1, LongTensor([1]))
-        anchor_w = anchor_w.repeat(batch_size, 1).repeat(1, 1, input_height * input_width).view(w.shape)
-        anchor_h = anchor_h.repeat(batch_size, 1).repeat(1, 1, input_height * input_width).view(h.shape)
-
-        pred_boxes = FloatTensor(prediction[..., :4].shape)
-        pred_boxes[..., 0] = x.data * 2. - 0.5 + grid_x
-        pred_boxes[..., 1] = y.data * 2. - 0.5 + grid_y
-        pred_boxes[..., 2] = (w.data * 2) ** 2 * anchor_w
-        pred_boxes[..., 3] = (h.data * 2) ** 2 * anchor_h
-
-        point_h = 5
-        point_w = 5
-        
-        box_xy = pred_boxes[..., 0:2].cpu().numpy() * 32
-        box_wh = pred_boxes[..., 2:4].cpu().numpy() * 32
-        grid_x = grid_x.cpu().numpy() * 32
-        grid_y = grid_y.cpu().numpy() * 32
-        anchor_w = anchor_w.cpu().numpy() * 32
-        anchor_h = anchor_h.cpu().numpy() * 32
-        
-        fig = plt.figure()
-        ax  = fig.add_subplot(121)
-        from PIL import Image
-        img = Image.open("img/street.jpg").resize([640, 640])
-        plt.imshow(img, alpha=0.5)
-        plt.ylim(-30, 650)
-        plt.xlim(-30, 650)
-        plt.scatter(grid_x, grid_y)
-        plt.scatter(point_h * 32, point_w * 32, c='black')
-        plt.gca().invert_yaxis()
-
-        anchor_left = grid_x - anchor_w / 2
-        anchor_top = grid_y - anchor_h / 2
-        
-        rect1 = plt.Rectangle([anchor_left[0, 0, point_h, point_w],anchor_top[0, 0, point_h, point_w]], \
-            anchor_w[0, 0, point_h, point_w],anchor_h[0, 0, point_h, point_w],color="r",fill=False)
-        rect2 = plt.Rectangle([anchor_left[0, 1, point_h, point_w],anchor_top[0, 1, point_h, point_w]], \
-            anchor_w[0, 1, point_h, point_w],anchor_h[0, 1, point_h, point_w],color="r",fill=False)
-        rect3 = plt.Rectangle([anchor_left[0, 2, point_h, point_w],anchor_top[0, 2, point_h, point_w]], \
-            anchor_w[0, 2, point_h, point_w],anchor_h[0, 2, point_h, point_w],color="r",fill=False)
-
-        ax.add_patch(rect1)
-        ax.add_patch(rect2)
-        ax.add_patch(rect3)
-
-        ax  = fig.add_subplot(122)
-        plt.imshow(img, alpha=0.5)
-        plt.ylim(-30, 650)
-        plt.xlim(-30, 650)
-        plt.scatter(grid_x, grid_y)
-        plt.scatter(point_h * 32, point_w * 32, c='black')
-        plt.scatter(box_xy[0, :, point_h, point_w, 0], box_xy[0, :, point_h, point_w, 1], c='r')
-        plt.gca().invert_yaxis()
-
-        pre_left = box_xy[...,0] - box_wh[...,0] / 2
-        pre_top = box_xy[...,1] - box_wh[...,1] / 2
-
-        rect1 = plt.Rectangle([pre_left[0, 0, point_h, point_w], pre_top[0, 0, point_h, point_w]],\
-            box_wh[0, 0, point_h, point_w,0], box_wh[0, 0, point_h, point_w,1],color="r",fill=False)
-        rect2 = plt.Rectangle([pre_left[0, 1, point_h, point_w], pre_top[0, 1, point_h, point_w]],\
-            box_wh[0, 1, point_h, point_w,0], box_wh[0, 1, point_h, point_w,1],color="r",fill=False)
-        rect3 = plt.Rectangle([pre_left[0, 2, point_h, point_w], pre_top[0, 2, point_h, point_w]],\
-            box_wh[0, 2, point_h, point_w,0], box_wh[0, 2, point_h, point_w,1],color="r",fill=False)
-
-        ax.add_patch(rect1)
-        ax.add_patch(rect2)
-        ax.add_patch(rect3)
-
-        plt.show()
-        #
-    feat = torch.from_numpy(np.random.normal(0.2, 0.5, [4, 255, 20, 20])).float()
-    anchors = np.array([[116, 90], [156, 198], [373, 326], [30,61], [62,45], [59,119], [10,13], [16,30], [33,23]])
-    anchors_mask = [[6, 7, 8], [3, 4, 5], [0, 1, 2]]
-    get_anchors_and_decode(feat, [640, 640], anchors, anchors_mask, 80)
+    t_flops = t_flops * 2
+    if print_result:
+        show_flops = t_flops / factor
+        print('Total GFLOPs: %.3fG' % (show_flops))
+    return t_flops
