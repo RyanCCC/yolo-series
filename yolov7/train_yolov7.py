@@ -184,7 +184,7 @@ def yolov7(config):
         classes_path = classes_path, anchors_path = anchors_path, anchors_mask = anchors_mask, model_path = model_path, input_shape = input_shape, \
         Init_Epoch = Init_Epoch, Freeze_Epoch = Freeze_Epoch, UnFreeze_Epoch = UnFreeze_Epoch, Freeze_batch_size = Freeze_batch_size, Unfreeze_batch_size = Unfreeze_batch_size, Freeze_Train = Freeze_Train, \
         Init_lr = Init_lr, Min_lr = Min_lr, optimizer_type = optimizer_type, momentum = momentum, lr_decay_type = lr_decay_type, \
-        save_dir = save_dir,  num_train = num_train, num_val = num_val
+        save_dir = save_dir,  num_train = num_train, num_val = num_val, checkpoint= config.save_weight
     )
     
     wanted_step = 5e4 if optimizer_type == "sgd" else 1.5e4
@@ -237,7 +237,7 @@ def yolov7(config):
     time_str = datetime.datetime.strftime(datetime.datetime.now(),'%Y_%m_%d')
     log_dir = os.path.join(save_dir, "loss_" + str(time_str))
     logging = TensorBoard(log_dir)
-    checkpoint      = ModelCheckpoint(os.path.join(save_dir, config.save_weight), 
+    checkpoint = ModelCheckpoint(os.path.join(save_dir, config.save_weight), 
                                     monitor = 'val_loss', save_weights_only = True, save_best_only = False)
     early_stopping  = EarlyStopping(monitor='val_loss', min_delta = 0, patience = 10, verbose = 1)
     lr_scheduler = LearningRateScheduler(lr_scheduler_func, verbose = 1)

@@ -41,12 +41,12 @@ class YOLOV7Config(Config):
     time = str(datetime.datetime.strftime(datetime.datetime.now(),'%Y_%m_%d'))
     tiny =False
     if tiny:
-        save_weight = f'{task}_yolov7_tiny_{time}.pth'
-        best_weight = f'{task}_yolov7_tiny_{time}_best.pth'
+        save_weight = f'{task}_yolov7_tiny_{time}.h5'
+        best_weight = f'{task}_yolov7_tiny_{time}_best.h5'
         logdir = f'./yolov7/logs/yolov7tiny_{time}'
     else:
-        save_weight = f'{task}_yolov7_{phi}_{time}.pth'
-        best_weight = f'{task}_yolov7_{phi}_{time}_best.pth'
+        save_weight = f'{task}_yolov7_{phi}_{time}.h5'
+        best_weight = f'{task}_yolov7_{phi}_{time}_best.h5'
         logdir = f'./yolov7/logs/yolov7{phi}_{time}'
     # 0:DEBUG；1：INFO；2：warning；3：error
     log_level = '1'
