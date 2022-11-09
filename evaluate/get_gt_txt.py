@@ -57,7 +57,7 @@ if __name__=='__main__':
                         difficult_flag = True
                 obj_name = obj.find('name').text
 
-                area = (int(right) - int(left))*(int(bottom)-int(top))
+                area = (int(float(right)+0.5) - int(float(left)+0.5))*(int(float(bottom))+0.5-int(float(top))+0.5)
                 height = root.find('size').find('height').text
                 width = root.find('size').find('width').text
                 img_area = int(height)*int(width)*0.1

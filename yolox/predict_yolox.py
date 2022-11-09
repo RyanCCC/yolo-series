@@ -235,15 +235,13 @@ class YOLOX(object):
         image_data = np.expand_dims(preprocess_input(np.array(image_data, dtype='float32')), 0)
         input_image_shape = np.expand_dims(np.array([image.size[1], image.size[0]], dtype='float32'), 0)
         out_boxes, out_scores, out_classes = self.prediction(self.model, image_data, input_image_shape)
-        print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
         if len(out_boxes) == 0:
-            print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
             dr_txt_path = os.path.join(pr_folder_name, image_id+'.txt')
             with open(dr_txt_path, 'w') as f:
                 f.write(" ")
 
         for i, c in list(enumerate(out_classes)):
-            predicted_class = self._class_names[c]
+            predicted_class = self.class_names[c]
             box = out_boxes[i]
             score = out_scores[i]
 

@@ -351,8 +351,9 @@ if show_animation:
 """
 # get a list with the ground-truth files
 ground_truth_files_list = glob.glob(GT_PATH + '/*.txt')
+
 if len(ground_truth_files_list) == 0:
-    error("Error: No ground-truth files found!")
+    error(f"Error: No ground-truth files found!：{GT_PATH + '/*.txt'}, total:{len(ground_truth_files_list)}")
 ground_truth_files_list.sort()
 # dictionary with counter per class
 gt_counter_per_class = {}
@@ -478,6 +479,8 @@ for class_index, class_name in enumerate(gt_classes):
                 error(error_msg)
         lines = file_lines_to_list(txt_file)
         for line in lines:
+            if line == '':
+                continue
             try:
                 tmp_class_name, confidence, left, top, right, bottom = line.split()
             except:
@@ -769,6 +772,8 @@ for txt_file in dr_files_list:
     # get lines to list
     lines_list = file_lines_to_list(txt_file)
     for line in lines_list:
+        if line == '':
+            continue
         class_name = line.split()[0]
         # check if class is in the ignore list, if yes skip
         if class_name in args.ignore:
