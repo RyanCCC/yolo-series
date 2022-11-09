@@ -148,7 +148,7 @@ class YOLOX(object):
         out_boxes, out_scores, out_classes = model([image_data, input_image_shape], training=False)
         return out_boxes, out_scores, out_classes
 
-    def detect(self, image, crop=False, istrack=False, isdrtxt = False, image_id = None):
+    def detect(self, image, crop=False, istrack=False):
         num_classes = len(self.class_names)
         # 设置颜色
         hsv_tuples = [(x / num_classes, 1., 1.) for x in range(num_classes)]

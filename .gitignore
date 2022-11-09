@@ -14,4 +14,4 @@ samples
 BddDataset
 weights
 *.pth
-tmp
+tmp*

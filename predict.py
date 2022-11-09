@@ -29,6 +29,9 @@ def dir_inference(imag_dir, model, args):
     img_number = len(path_pattern)
     result = 0
     for path in glob(path_pattern):
+        # 判断是否为文件夹
+        if os.path.isdir(path):
+            continue
         image = Image.open(path)
         start_time = time.time()
         img = model.detect(image)
