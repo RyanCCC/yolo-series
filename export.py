@@ -94,8 +94,7 @@ def main(args):
             yolo_model = yolo_body(Input(shape=(None,None,3)), num_anchors//2, num_classes, phi=YOLOV4Config.ATTENTION)
             yolo_model.load_weights(weight_path)
             yolo_model.compile()
-            save_pb = args.saved_pb
-            if save_pb:
+            if args.saved_pb:
                 save_name = args.saved_pb_dir
                 assert len(save_name) > 0, 'save_name cannot be none or empty.'
                 yolo_model.save(save_name, save_format='tf')
@@ -115,7 +114,7 @@ def main(args):
             assert weight_path.endswith('.h5'), 'Tensorflow model or weights must be a .h5 file.'
             yolo_model.load_weights(weight_path)
             print('model weight success load.')
-            if save_pb:
+            if args.saved_pb:
                 save_name = args.saved_pb_dir
                 assert len(save_name) > 0, 'save_name cannot be none or empty.'
                 yolo_model.save(save_name, save_format='tf')
