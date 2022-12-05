@@ -165,11 +165,20 @@ FLOPs：注意s小写，是floating point operations的缩写（s表复数），
 
 ### 模型优化
 
-模型的优化包括模型的量化和剪枝。模型的量化与剪枝都是通过tensorflow简单的API进行操作，还没有进行深入的研究。
+模型的优化包括模型的量化和剪枝。模型的量化与剪枝都是通过tensorflow简单的API进行操作。
+
+#### 模型量化
+
+模型的量化主要分为两个方面，一个是训练后量化，另一个是训练时量化。
+
+1. 训练后量化
+
+
+
 
 ### 模型转换
 
-模型转换主要应用在生产环境中，关于模型转换用了YOLOX作为例子，详情可以参考：[TF2ONNX](https://github.com/RyanCCC/Deployment/tree/main/ONNXDemo/Tensorflow)，当中有YOLOX转换成ONNX的例子。转换成ONNX之后需后续就可以为所欲为了，比如需要部署到TensorRT或者Openvino中等都可以通过ONNX转换成对应的格式的模型。模型转换之后至于模型的性能，如精确度、速度等有没有损失，在此我没有做相应的测试，感兴趣的可以自行测评一下模型性能差异。
+模型转换主要应用在生产环境中，关于模型转换用了YOLOX作为例子，详情可以参考：[TF2ONNX](https://github.com/RyanCCC/Deployment/tree/main/ONNXDemo/Tensorflow)，当中有YOLOX转换成ONNX的例子。将模型转换成ONNX格式模型后就可以往后继续转换成其他的模型，比如需要部署到TensorRT或者Openvino中等都可以通过ONNX转换成对应的格式的模型。模型转换之后至于模型的性能，如精确度、速度等是否存在差异，在此没有做相应的测试，感兴趣的可以自行测评一下模型性能差异。
 
 模型导出脚本：`export.py`，相关参数说明如下：
 
