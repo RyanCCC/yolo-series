@@ -99,13 +99,11 @@ def yolov5(config):
     log_dir = os.path.join(save_dir, "loss_" + str(time_str))
     logging = TensorBoard(log_dir)
     checkpoint = ModelCheckpoint(os.path.join(save_dir, saved_weight_name), 
-                                    monitor = 'val_loss', save_weights_only = True, save_best_only = False, period = 5)
-    checkpoint_best = ModelCheckpoint(os.path.join(save_dir, "best_epoch_weights.h5"), 
-                                    monitor = 'val_loss', save_weights_only = True, save_best_only = True, period = 1)
+                                    monitor = 'val_loss', save_weights_only = True, save_best_only = False, period = 1)
     early_stopping = EarlyStopping(monitor='val_loss', min_delta = 0, patience = 10, verbose = 1)
     lr_scheduler_func = get_lr_scheduler(learning_rate_decay_type, Init_lr_fit, Min_lr_fit, epoch)
     lr_scheduler = LearningRateScheduler(lr_scheduler_func, verbose = 1)
-    callbacks = [logging, early_stopping, checkpoint,checkpoint_best, lr_scheduler]
+    callbacks = [logging, early_stopping, checkpoint, lr_scheduler]
 
     epoch_step = num_train // batch_size
     epoch_step_val  = num_val // batch_size
