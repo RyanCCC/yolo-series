@@ -15,7 +15,7 @@ yolox = Inference_YOLOXModel(YOLOXConfig, model_path='./model/village_yolox_2022
 视频推理
 '''
 
-url = 'rtsp://admin:abcd1234@172.18.18.132:554/Streaming/Channels/101'
+url = './video/1.MP4'
 
 capture = cv2.VideoCapture(url)
 fps = 0.0
