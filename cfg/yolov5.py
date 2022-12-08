@@ -1,8 +1,11 @@
 import os
 from .base import Config
+import datetime
 
 class YOLOV5Config(Config):
     # Train
+    time_str = str(datetime.datetime.strftime(datetime.datetime.now(),'%Y_%m_%d'))
+    task = 'village_detection'
     logdir = './yolov5/logs/'
     dataset_base_path = r'./villages'
     classes_path = os.path.join(dataset_base_path, 'village.names') 
@@ -19,10 +22,10 @@ class YOLOV5Config(Config):
     batch_size = 16
     learning_rate_freeze = 1e-3
     learning_rate_unfreeze = 1e-4
-    pretrain_weight = './model/yolov5_s_v6.1.h5'
-    save_weight = 'village_yolov5_tf2.h5'
+    pretrain_weight = './model/yolov5_l_v6.1.h5'
     anchors_path = './yolov5/data/yolov5_anchors.txt'
     phi='l'
+    save_weight = f'{task}_yolov5{phi}_{time_str}.h5'
     mosaic = True
     mosaic_prob = 0.5
     if mosaic:
