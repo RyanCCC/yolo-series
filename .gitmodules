@@ -1,0 +1,3 @@
+[submodule "yolov5-origin"]
+	path = yolov5-origin
+	url = https://github.com/RyanCCC/yolov5.git
