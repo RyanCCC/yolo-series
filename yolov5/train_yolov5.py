@@ -5,7 +5,7 @@ from tensorflow.keras.callbacks import EarlyStopping, LearningRateScheduler, Ten
 from tensorflow.keras.optimizers import SGD, Adam
 import tensorflow as tf
 from functools import partial
-from yolov5 import get_train_model, yolo_body, get_lr_scheduler, ModelCheckpoint, YoloDatasets, get_anchors, get_classes
+from . import get_train_model, yolo_body, get_lr_scheduler, ModelCheckpoint, YoloDatasets, get_anchors, get_classes
 
 
 
