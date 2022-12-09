@@ -7,8 +7,8 @@ def parse_args():
     parser.add_argument(
         '--model', 
         help='YOLOV4, YOLOV4-TINY, YOLOV5, YOLOX, YOLOV7...', 
-        choices=['YOLOV4', 'YOLOV4-TINY', 'YOLOV5', 'YOLOX', 'YOLOV7'],
-        default='YOLOV7', 
+        choices=['YOLOV4', 'YOLOV4-TINY', 'YOLOV5','YOLOV5-V61', 'YOLOX', 'YOLOV7'],
+        default='YOLOV5', 
         type=str)
     args = parser.parse_args()
     return args
@@ -26,6 +26,9 @@ if __name__ == '__main__':
         yolov4tiny(cfg.YOLOV4Config)
     elif args.model.upper() == 'YOLOV5':
         from yolov5 import yolov5
+        yolov5(cfg.YOLOV5Config)
+    elif args.model.upper() == 'YOLOV5-V61':
+        from yolov5v61 import yolov5
         yolov5(cfg.YOLOV5Config)
     elif args.model.upper() == 'YOLOV7':
         from yolov7 import yolov7
