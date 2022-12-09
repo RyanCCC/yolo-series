@@ -11,7 +11,7 @@ def parse_args():
     parser.add_argument(
         '--model', 
         help='YOLOV4, YOLOV4-TINY, YOLOV5 or YOLOX', 
-        choices=['YOLOV4', 'YOLOV4-TINY', 'YOLOV5', 'YOLOX', 'YOLOV7', 'YOLOV7-TINY'],
+        choices=['YOLOV4', 'YOLOV4-TINY', 'YOLOV5','YOLOV5-V61', 'YOLOX', 'YOLOV7', 'YOLOV7-TINY'],
         default='YOLOV5', 
         type=str)
     parser.add_argument('--show', action='store_true', help='show preidict result. Not recommended')
@@ -90,6 +90,20 @@ if __name__=='__main__':
                 img.save(save_path)
     elif args.model.upper() == 'YOLOV5':
         from yolov5 import Inference_YOLOV5Model
+        yolo = Inference_YOLOV5Model(YOLOV5Config, args.weights)
+        if args.mode == 'dir':
+            dir_inference(args.img_dir, yolo, args)
+        else:
+            image = Image.open(args.image)
+            img = yolo.detect(image)
+            if args.show:
+                img.show()
+            if args.save:
+                save_path = os.path.join(args.save_dir, 'tmp.jpg')
+                img.save(save_path)
+    
+    elif args.model.upper() == 'YOLOV5-V61':
+        from yolov5v61 import Inference_YOLOV5Model
         yolo = Inference_YOLOV5Model(YOLOV5Config, args.weights)
         if args.mode == 'dir':
             dir_inference(args.img_dir, yolo, args)

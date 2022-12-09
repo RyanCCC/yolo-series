@@ -8,7 +8,7 @@ class YOLOV5Config(Config):
     task = 'village_detection'
     logdir = './yolov5/logs/'
     dataset_base_path = r'./villages'
-    classes_path = os.path.join(dataset_base_path, 'village.names') 
+    classes_path = os.path.join(dataset_base_path, 'coco.names') 
     train_txt= os.path.join(dataset_base_path, 'train.txt')
     val_txt= os.path.join(dataset_base_path, 'val.txt')
     test_txt = os.path.join(dataset_base_path, 'ImageSets/Main')
@@ -35,7 +35,7 @@ class YOLOV5Config(Config):
     else:
         mixup = False
     # Inference
-    score=0.2
+    score=0.8
     iou=0.5
     input_shape = [640, 640]
     
