@@ -16,3 +16,4 @@ BddDataset
 weights
 *.pth
 tmp*
+VOC2007
