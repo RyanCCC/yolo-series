@@ -61,11 +61,11 @@ def download_weights(phi, model_dir):
     
     backbone = "cspdarknet_" + phi
     download_urls = {
-        "cspdarknet_n" : 'https://github.com/ryanccc/YOLOSeries/releases/download/v1.0/cspdarknet_n_v6.1_backbone.pth',
-        "cspdarknet_s" : 'https://github.com/ryanccc/YOLOSeries/releases/download/v1.0/cspdarknet_s_v6.1_backbone.pth',
-        'cspdarknet_m' : 'https://github.com/ryanccc/YOLOSeries/releases/download/v1.0/cspdarknet_m_v6.1_backbone.pth',
-        'cspdarknet_l' : 'https://github.com/ryanccc/YOLOSeries/releases/download/v1.0/cspdarknet_l_v6.1_backbone.pth',
-        'cspdarknet_x' : 'https://github.com/ryanccc/YOLOSeries/releases/download/v1.0/cspdarknet_x_v6.1_backbone.pth',
+        "cspdarknet_n" : 'https://github.com/RyanCCC/YOLOSeries/releases/download/v1.0.0/cspdarknet_n_v6.1_backbone.pth',
+        "cspdarknet_s" : 'https://github.com/RyanCCC/YOLOSeries/releases/download/v1.0.0/cspdarknet_s_v6.1_backbone.pth',
+        'cspdarknet_m' : 'https://github.com/RyanCCC/YOLOSeries/releases/download/v1.0.0/cspdarknet_m_v6.1_backbone.pth',
+        'cspdarknet_l' : 'https://github.com/RyanCCC/YOLOSeries/releases/download/v1.0.0/cspdarknet_l_v6.1_backbone.pth',
+        'cspdarknet_x' : 'https://github.com/RyanCCC/YOLOSeries/releases/download/v1.0.0//cspdarknet_x_v6.1_backbone.pth',
     }
     url = download_urls[backbone]
     
