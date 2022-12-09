@@ -44,12 +44,10 @@ def yolov5(config):
 
     Freeze_Train = config.Freeze_Train
     Init_Epoch = config.Init_epoch
-    Freeze_Epoch = config.Freeze_Epoch
+    Freeze_Epoch = config.Freeze_epoch
     Freeze_batch_size = config.batch_size
     UnFreeze_Epoch = config.epoch
     Unfreeze_batch_size = config.Unfreeze_batch_size
-    
-
     
     Init_lr = config.learning_rate_unfreeze
     Min_lr = Init_lr * 0.01
@@ -88,7 +86,7 @@ def yolov5(config):
 
 
     class_names, num_classes = get_classes(classes_path)
-    anchors, num_anchors     = get_anchors(anchors_path)
+    anchors, num_anchors = get_anchors(anchors_path)
 
 
     if pretrained:
@@ -121,7 +119,7 @@ def yolov5(config):
         if local_rank == 0:
             print("\nSuccessful Load Key:", str(load_key)[:500], "……\nSuccessful Load Key Num:", len(load_key))
             print("\nFail To Load Key:", str(no_load_key)[:500], "……\nFail To Load Key num:", len(no_load_key))
-            print("\n\033[1;33;44m温馨提示，head部分没有载入是正常现象，Backbone部分没有载入是错误的。\033[0m")
+
 
 
     yolo_loss = YOLOLoss(anchors, num_classes, input_shape, Cuda, anchors_mask, label_smoothing)

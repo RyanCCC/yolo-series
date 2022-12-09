@@ -12,7 +12,7 @@ from sklearn.model_selection import train_test_split
 划分数据集：训练集、测试集以及验证集
 '''
 
-base_path = os.path.join(os.getcwd(), 'villages')
+base_path = os.path.join('./VOC2007')
 
 flags.DEFINE_string('jsonpath', '', 'path to label(*.json)')
 flags.DEFINE_bool('isJSON', False, 'convert jsonFile or not')
