@@ -27,6 +27,7 @@ def yolov5(config):
         mixup_prob = config.mixup_prob  
     else:
         mixup = config.mixup
+        mixup_prob = -1
     special_aug_ratio = config.special_aug_ratio
     label_smoothing = config.label_smoothing
     epoch = config.epoch
