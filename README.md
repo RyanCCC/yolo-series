@@ -1,9 +1,12 @@
 # YoloSeries
 
-本仓库主要实现`YOLO`系列的算法，主要是基于`Tensorflow2`或者`Pytorch`实现。特别说明一下，仓库代码中百分之一百会存在bug，欢迎参与到本仓库的建设或者提issue。当前实现的算法有：
+本仓库主要实现`YOLO`系列的算法，主要是基于`Tensorflow2`或者`Pytorch`实现。欢迎参与到本仓库的建设或者提issue。
+
+当前实现的算法有：
 
 - [x] YOLOV4
-- [x] YOLOV5
+- [x] YOLOV5(建议使用pytorch的版本)
+- [x] YOLOV5-V6.1(建议使用pytorch的版本)
 - [x] YOLOX
 - [x] YOLOV7
 - [ ] YOLOP
