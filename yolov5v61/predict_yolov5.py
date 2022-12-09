@@ -1,15 +1,15 @@
-import time
-import cv2
-import tensorflow as tf
 import colorsys
-from tensorflow.keras.layers import Input, Lambda
-from tensorflow.keras.models import Model
-from PIL import Image, ImageFont, ImageDraw
-from .nets.yolov5 import yolo_body
-from .lib.utils import get_anchors, get_classes, cvtColor
-from .lib.tools import DecodeBox
 import os
+import time
+from PIL import Image
 import numpy as np
+import torch
+import torch.nn as nn
+from PIL import ImageDraw, ImageFont
+
+from .nets.yolov5 import YoloBody
+from .lib.tools import cvtColor, get_anchors, get_classes, preprocess_input,resize_image
+from .lib.postprocessing import DecodeBox
 
 
 
@@ -28,9 +28,11 @@ class YOLOV5(object):
             "letterbox_image":kwargs['letterbox_image'],
             }
         self.__dict__.update(self._params)
+        self.cuda = False
         self.class_names, self.num_classes = get_classes(self.classes_path)
-        self.anchors = get_anchors(self.anchors_path)
+        self.anchors, _ = get_anchors(self.anchors_path)
         self.num_anchors = len(self.anchors)
+        self.bbox_util = DecodeBox(self.anchors, self.num_classes, (self.input_shape[0], self.input_shape[1]), self.anchors_mask)
 
         # 设置颜色
         hsv_tuples  = [(x / self.num_classes, 1., 1.) for x in range(self.num_classes)]
@@ -40,100 +42,76 @@ class YOLOV5(object):
 
     # 加载模型
     def get_predict_model(self):
-        model_path = os.path.expanduser(self.model_path)
-        assert model_path.endswith('.h5'), 'Keras model or weights must be a .h5 file.'
-        
-        self.model = yolo_body([None, None, 3], self.anchors_mask, self.num_classes, self.phi)
-        self.model.load_weights(self.model_path, skip_mismatch=True, by_name=True)
-        print('{} model, anchors, and classes loaded.'.format(model_path))
-        self.input_image_shape = Input([2,],batch_size=1)
-        inputs  = [*self.model.output, self.input_image_shape]
-        outputs = Lambda(
-            DecodeBox, 
-            output_shape = (1,), 
-            name = 'yolo_eval',
-            arguments = {
-                'anchors'           : self.anchors, 
-                'num_classes'       : self.num_classes, 
-                'input_shape'       : self.input_shape, 
-                'anchor_mask'       : self.anchors_mask,
-                'confidence'        : self.confidence, 
-                'nms_iou'           : self.nms_iou, 
-                'max_boxes'         : self.max_boxes, 
-                'letterbox_image'   : self.letterbox_image
-             }
-        )(inputs)
-        self.yolo_model = Model([self.model.input, self.input_image_shape], outputs)
-
-    @tf.function
-    def get_pred(self, image_data, input_image_shape):
-        out_boxes, out_scores, out_classes = self.yolo_model([image_data, input_image_shape], training=False)
-        return out_boxes, out_scores, out_classes
-    
-    def preprocess_input(self, image):
-        image /= 255.
-        return image
-    
-    def resize_image(self, image, size, letterbox_image):
-        iw, ih = image.size
-        w, h = size
-        if letterbox_image:
-            scale = min(w/iw, h/ih)
-            nw  = int(iw*scale)
-            nh = int(ih*scale)
-
-            image   = image.resize((nw,nh), Image.BICUBIC)
-            new_image = Image.new('RGB', size, (128,128,128))
-            new_image.paste(image, ((w-nw)//2, (h-nh)//2))
-        else:
-            new_image = image.resize((w, h), Image.BICUBIC)
-        return new_image
+        self.net    = YoloBody(self.anchors_mask, self.num_classes, self.phi)
+        device      = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.net.load_state_dict(torch.load(self.model_path, map_location=device))
+        self.net    = self.net.eval()
+        print('{} model, and classes loaded.'.format(self.model_path))
+        if self.cuda:
+            self.net = nn.DataParallel(self.net)
+            self.net = self.net.cuda()
 
     def detect(self, image, crop = False, count = False):
+        image_shape = np.array(np.shape(image)[0:2])
         image = cvtColor(image)
-        image_data  = self.resize_image(image, (self.input_shape[1], self.input_shape[0]), self.letterbox_image)
-        image_data  = np.expand_dims(self.preprocess_input(np.array(image_data, dtype='float32')), 0)
+        image_data  = resize_image(image, (self.input_shape[1], self.input_shape[0]), self.letterbox_image)
+        image_data  = np.expand_dims(np.transpose(preprocess_input(np.array(image_data, dtype='float32')), (2, 0, 1)), 0)
 
-        input_image_shape = np.expand_dims(np.array([image.size[1], image.size[0]], dtype='float32'), 0)
-        out_boxes, out_scores, out_classes = self.get_pred(image_data, input_image_shape) 
+        with torch.no_grad():
+            images = torch.from_numpy(image_data)
+            if self.cuda:
+                images = images.cuda()
+            outputs = self.net(images)
+            outputs = self.bbox_util.decode_box(outputs)
+            results = self.bbox_util.non_max_suppression(torch.cat(outputs, 1), self.num_classes, self.input_shape, 
+                        image_shape, self.letterbox_image, conf_thres = self.confidence, nms_thres = self.nms_iou)
+                                                    
+            if results[0] is None: 
+                return image
 
-        print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
-        font = ImageFont.truetype(font='./data/simhei.ttf', size=np.floor(3e-2 * image.size[1] + 0.5).astype('int32'))
-        thickness = int(max((image.size[0] + image.size[1]) // np.mean(self.input_shape), 1))
+            top_label   = np.array(results[0][:, 6], dtype = 'int32')
+            top_conf    = results[0][:, 4] * results[0][:, 5]
+            top_boxes   = results[0][:, :4]
+        # 设置字体
+        font = ImageFont.truetype(font='./font/simhei.ttf', size=np.floor(3e-2 * image.size[1] + 0.5).astype('int32'))
+        thickness   = int(max((image.size[0] + image.size[1]) // np.mean(self.input_shape), 1))
         if count:
-            print("top_label:", out_classes)
-            classes_nums = np.zeros([self.num_classes])
+            print("top_label:", top_label)
+            classes_nums    = np.zeros([self.num_classes])
             for i in range(self.num_classes):
-                num = np.sum(out_classes == i)
+                num = np.sum(top_label == i)
                 if num > 0:
                     print(self.class_names[i], " : ", num)
                 classes_nums[i] = num
             print("classes_nums:", classes_nums)
+
         if crop:
-            for i, c in list(enumerate(out_boxes)):
-                top, left, bottom, right = out_boxes[i]
-                top = max(0, np.floor(top).astype('int32'))
-                left = max(0, np.floor(left).astype('int32'))
-                bottom = min(image.size[1], np.floor(bottom).astype('int32'))
-                right = min(image.size[0], np.floor(right).astype('int32'))
+            for i, c in list(enumerate(top_boxes)):
+                top, left, bottom, right = top_boxes[i]
+                top     = max(0, np.floor(top).astype('int32'))
+                left    = max(0, np.floor(left).astype('int32'))
+                bottom  = min(image.size[1], np.floor(bottom).astype('int32'))
+                right   = min(image.size[0], np.floor(right).astype('int32'))
                 
                 dir_save_path = "img_crop"
                 if not os.path.exists(dir_save_path):
                     os.makedirs(dir_save_path)
                 crop_image = image.crop([left, top, right, bottom])
                 crop_image.save(os.path.join(dir_save_path, "crop_" + str(i) + ".png"), quality=95, subsampling=0)
-                print("save crop_" + str(i) + ".png to " + dir_save_path)
-        for i, c in list(enumerate(out_classes)):
+                print("save crop_" + str(i) + ".png to " + dir_save_path) 
+
+
+        for i, c in list(enumerate(top_label)):
             predicted_class = self.class_names[int(c)]
-            box = out_boxes[i]
-            score = out_scores[i]
+            box             = top_boxes[i]
+            score           = top_conf[i]
 
             top, left, bottom, right = box
 
-            top = max(0, np.floor(top).astype('int32'))
-            left = max(0, np.floor(left).astype('int32'))
-            bottom = min(image.size[1], np.floor(bottom).astype('int32'))
-            right = min(image.size[0], np.floor(right).astype('int32'))
+            top     = max(0, np.floor(top).astype('int32'))
+            left    = max(0, np.floor(left).astype('int32'))
+            bottom  = min(image.size[1], np.floor(bottom).astype('int32'))
+            right   = min(image.size[0], np.floor(right).astype('int32'))
 
             label = '{} {:.2f}'.format(predicted_class, score)
             draw = ImageDraw.Draw(image)
@@ -153,38 +131,44 @@ class YOLOV5(object):
             del draw
 
         return image
+
     def getdrtxt(self,image, pr_folder_name, image_id):
+        f = open(os.path.join(pr_folder_name, "detection-results/"+image_id+".txt"), "w", encoding='utf-8') 
+        image_shape = np.array(np.shape(image)[0:2])
         image = cvtColor(image)
-        image_data  = self.resize_image(image, (self.input_shape[1], self.input_shape[0]), self.letterbox_image)
-        image_data  = np.expand_dims(self.preprocess_input(np.array(image_data, dtype='float32')), 0)
+        image_data  = resize_image(image, (self.input_shape[1], self.input_shape[0]), self.letterbox_image)
+        image_data  = np.expand_dims(np.transpose(preprocess_input(np.array(image_data, dtype='float32')), (2, 0, 1)), 0)
 
-        input_image_shape = np.expand_dims(np.array([image.size[1], image.size[0]], dtype='float32'), 0)
-        out_boxes, out_scores, out_classes = self.get_pred(image_data, input_image_shape) 
-        print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
-        if len(out_boxes) == 0:
-            print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
-            dr_txt_path = os.path.join(pr_folder_name, image_id+'.txt')
-            with open(dr_txt_path, 'w') as f:
-                f.write(" ")
+        with torch.no_grad():
+            images = torch.from_numpy(image_data)
+            if self.cuda:
+                images = images.cuda()
+            outputs = self.net(images)
+            outputs = self.bbox_util.decode_box(outputs)
 
-        for i, c in list(enumerate(out_classes)):
-            predicted_class = self._class_names[c]
-            box = out_boxes[i]
-            score = out_scores[i]
+            results = self.bbox_util.non_max_suppression(torch.cat(outputs, 1), self.num_classes, self.input_shape, 
+                        image_shape, self.letterbox_image, conf_thres = self.confidence, nms_thres = self.nms_iou)
+                                                    
+            if results[0] is None: 
+                return 
+
+            top_label   = np.array(results[0][:, 6], dtype = 'int32')
+            top_conf    = results[0][:, 4] * results[0][:, 5]
+            top_boxes   = results[0][:, :4]
+
+        for i, c in list(enumerate(top_label)):
+            predicted_class = self.class_names[int(c)]
+            box = top_boxes[i]
+            score = str(top_conf[i])
 
             top, left, bottom, right = box
-            top = top - 5
-            left = left - 5
-            bottom = bottom + 5
-            right = right + 5
-            top = max(0, np.floor(top + 0.5).astype('int32'))
-            left = max(0, np.floor(left + 0.5).astype('int32'))
-            bottom = min(image.size[1], np.floor(bottom + 0.5).astype('int32'))
-            right = min(image.size[0], np.floor(right + 0.5).astype('int32'))
+            if predicted_class not in self.class_names:
+                continue
 
-            dr_txt_path = os.path.join(pr_folder_name, image_id+'.txt')
-            with open(dr_txt_path, 'w') as f:
-                f.write("%s %s %s %s %s %s\n" % (predicted_class, str(score.numpy()), str(int(left)), str(int(top)), str(int(right)),str(int(bottom))))
+            f.write("%s %s %s %s %s %s\n" % (predicted_class, score[:6], str(int(left)), str(int(top)), str(int(right)),str(int(bottom))))
+
+        f.close()
+
 
 def Inference_YOLOV5Model(YOLOV5Config, model_path):
     yolov5 = YOLOV5(

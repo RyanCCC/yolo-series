@@ -8,7 +8,7 @@ class YOLOV5Config(Config):
     task = 'village_detection'
     logdir = './yolov5/logs/'
     dataset_base_path = r'./villages'
-    classes_path = os.path.join(dataset_base_path, 'voc.names') 
+    classes_path = os.path.join(dataset_base_path, 'village.names2022') 
     train_txt= os.path.join(dataset_base_path, 'train.txt')
     val_txt= os.path.join(dataset_base_path, 'val.txt')
     test_txt = os.path.join(dataset_base_path, 'ImageSets/Main')
@@ -20,6 +20,7 @@ class YOLOV5Config(Config):
     Freeze_epoch = 50
     epoch = 100
     batch_size = 16
+    Unfreeze_batch_size = batch_size/2
     learning_rate_freeze = 1e-3
     learning_rate_unfreeze = 1e-4
     pretrain_weight = './yolov5v61/checkpoints/yolov5_l_v6.1.h5'
@@ -28,6 +29,7 @@ class YOLOV5Config(Config):
     save_weight = f'{task}_yolov5{phi}_{time_str}.h5'
     mosaic = True
     mosaic_prob = 0.5
+    eval_flag = True
     if mosaic:
         # mixup数据增强
         mixup = True
@@ -35,7 +37,7 @@ class YOLOV5Config(Config):
     else:
         mixup = False
     # Inference
-    score=0.5
+    score=0.2
     iou=0.5
     input_shape = [640, 640]
     
@@ -44,3 +46,4 @@ class YOLOV5Config(Config):
     focal_alpha = 0.25
     focal_gamma = 2
     gpus = '0'
+    Freeze_Train = True

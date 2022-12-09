@@ -1,62 +1,77 @@
-from tensorflow.keras.layers import Concatenate, Input, Lambda, UpSampling2D, ZeroPadding2D
-from tensorflow.keras.models import Model
-from .CSPdarknet import C3, DarknetConv2D, DarknetConv2D_BN_SiLU, darknet_body
-from ..lib.loss import yolo_loss
+import torch
+import torch.nn as nn
 
-def yolo_body(input_shape, anchors_mask, num_classes, phi, weight_decay=5e-4):
-    depth_dict = {'s' : 0.33, 'm' : 0.67, 'l' : 1.00, 'x' : 1.33,}
-    width_dict = {'s' : 0.50, 'm' : 0.75, 'l' : 1.00, 'x' : 1.25,}
-    dep_mul, wid_mul = depth_dict[phi], width_dict[phi]
+from .CSPdarknet import C3, Conv, CSPDarknet
 
-    base_channels = int(wid_mul * 64)  # 64
-    base_depth = max(round(dep_mul * 3), 1)  # 3
+class YoloBody(nn.Module):
+    def __init__(self, anchors_mask, num_classes, phi, pretrained=False):
+        super(YoloBody, self).__init__()
+        depth_dict = {'n': 0.33, 's' : 0.33, 'm' : 0.67, 'l' : 1.00, 'x' : 1.33,}
+        width_dict = {'n': 0.25, 's' : 0.50, 'm' : 0.75, 'l' : 1.00, 'x' : 1.25,}
+        dep_mul, wid_mul    = depth_dict[phi], width_dict[phi]
 
-    inputs = Input(input_shape)
-    feat1, feat2, feat3 = darknet_body(inputs, base_channels, base_depth, weight_decay)
+        base_channels = int(wid_mul * 64)  # 64
+        base_depth = max(round(dep_mul * 3), 1)  # 3
+        self.backbone = CSPDarknet(base_channels, base_depth, phi, pretrained)
+            
+        self.upsample   = nn.Upsample(scale_factor=2, mode="nearest")
 
-    P5          = DarknetConv2D_BN_SiLU(int(base_channels * 8), (1, 1), weight_decay=weight_decay, name = 'conv_for_feat3')(feat3)  
-    P5_upsample = UpSampling2D()(P5) 
-    P5_upsample = Concatenate(axis = -1)([P5_upsample, feat2])
-    P5_upsample = C3(P5_upsample, int(base_channels * 8), base_depth, shortcut = False, weight_decay=weight_decay, name = 'conv3_for_upsample1')
+        self.conv_for_feat3 = Conv(base_channels * 16, base_channels * 8, 1, 1)
+        self.conv3_for_upsample1    = C3(base_channels * 16, base_channels * 8, base_depth, shortcut=False)
 
-    P4          = DarknetConv2D_BN_SiLU(int(base_channels * 4), (1, 1), weight_decay=weight_decay, name = 'conv_for_feat2')(P5_upsample)
-    P4_upsample = UpSampling2D()(P4)
-    P4_upsample = Concatenate(axis = -1)([P4_upsample, feat1])
-    P3_out      = C3(P4_upsample, int(base_channels * 4), base_depth, shortcut = False, weight_decay=weight_decay, name = 'conv3_for_upsample2')
+        self.conv_for_feat2 = Conv(base_channels * 8, base_channels * 4, 1, 1)
+        self.conv3_for_upsample2    = C3(base_channels * 8, base_channels * 4, base_depth, shortcut=False)
 
-    P3_downsample   = ZeroPadding2D(((1, 0),(1, 0)))(P3_out)
-    P3_downsample   = DarknetConv2D_BN_SiLU(int(base_channels * 4), (3, 3), strides = (2, 2), weight_decay=weight_decay, name = 'down_sample1')(P3_downsample)
-    P3_downsample   = Concatenate(axis = -1)([P3_downsample, P4])
-    P4_out          = C3(P3_downsample, int(base_channels * 8), base_depth, shortcut = False, weight_decay=weight_decay, name = 'conv3_for_downsample1') 
+        self.down_sample1           = Conv(base_channels * 4, base_channels * 4, 3, 2)
+        self.conv3_for_downsample1  = C3(base_channels * 8, base_channels * 8, base_depth, shortcut=False)
 
-    P4_downsample   = ZeroPadding2D(((1, 0),(1, 0)))(P4_out)
-    P4_downsample   = DarknetConv2D_BN_SiLU(int(base_channels * 8), (3, 3), strides = (2, 2), weight_decay=weight_decay, name = 'down_sample2')(P4_downsample)
-    P4_downsample   = Concatenate(axis = -1)([P4_downsample, P5])
-    P5_out          = C3(P4_downsample, int(base_channels * 16), base_depth, shortcut = False, weight_decay=weight_decay, name = 'conv3_for_downsample2')
+        self.down_sample2           = Conv(base_channels * 8, base_channels * 8, 3, 2)
+        self.conv3_for_downsample2  = C3(base_channels * 16, base_channels * 16, base_depth, shortcut=False)
 
-    out2 = DarknetConv2D(len(anchors_mask[2]) * (5 + num_classes), (1, 1), strides = (1, 1), weight_decay=weight_decay, name = 'yolo_head_P3')(P3_out)
-    out1 = DarknetConv2D(len(anchors_mask[1]) * (5 + num_classes), (1, 1), strides = (1, 1), weight_decay=weight_decay, name = 'yolo_head_P4')(P4_out)
-    out0 = DarknetConv2D(len(anchors_mask[0]) * (5 + num_classes), (1, 1), strides = (1, 1), weight_decay=weight_decay, name = 'yolo_head_P5')(P5_out)
-    return Model(inputs, [out0, out1, out2])
+        # 80, 80, 256 => 80, 80, 3 * (5 + num_classes) => 80, 80, 3 * (4 + 1 + num_classes)
+        self.yolo_head_P3 = nn.Conv2d(base_channels * 4, len(anchors_mask[2]) * (5 + num_classes), 1)
+        # 40, 40, 512 => 40, 40, 3 * (5 + num_classes) => 40, 40, 3 * (4 + 1 + num_classes)
+        self.yolo_head_P4 = nn.Conv2d(base_channels * 8, len(anchors_mask[1]) * (5 + num_classes), 1)
+        # 20, 20, 1024 => 20, 20, 3 * (5 + num_classes) => 20, 20, 3 * (4 + 1 + num_classes)
+        self.yolo_head_P5 = nn.Conv2d(base_channels * 16, len(anchors_mask[0]) * (5 + num_classes), 1)
 
-def get_train_model(model_body, input_shape, num_classes, anchors, anchors_mask, label_smoothing):
-    y_true = [Input(shape = (input_shape[0] // {0:32, 1:16, 2:8}[l], input_shape[1] // {0:32, 1:16, 2:8}[l], \
-                                len(anchors_mask[l]), num_classes + 5)) for l in range(len(anchors_mask))]
-    model_loss  = Lambda(
-        yolo_loss, 
-        output_shape    = (1, ), 
-        name            = 'yolo_loss', 
-        arguments       = {
-            'input_shape'       : input_shape, 
-            'anchors'           : anchors, 
-            'anchors_mask'      : anchors_mask, 
-            'num_classes'       : num_classes, 
-            'label_smoothing'   : label_smoothing, 
-            'balance'           : [0.4, 1.0, 4],
-            'box_ratio'         : 0.05,
-            'obj_ratio'         : 1 * (input_shape[0] * input_shape[1]) / (640 ** 2), 
-            'cls_ratio'         : 0.5 * (num_classes / 80)
-        }
-    )([*model_body.output, *y_true])
-    model       = Model([model_body.input, *y_true], model_loss)
-    return model
+    def forward(self, x):
+        #  backbone
+        feat1, feat2, feat3 = self.backbone(x)
+
+        # 20, 20, 1024 -> 20, 20, 512
+        P5 = self.conv_for_feat3(feat3)
+        # 20, 20, 512 -> 40, 40, 512
+        P5_upsample = self.upsample(P5)
+        # 40, 40, 512 -> 40, 40, 1024
+        P4 = torch.cat([P5_upsample, feat2], 1)
+        # 40, 40, 1024 -> 40, 40, 512
+        P4 = self.conv3_for_upsample1(P4)
+
+        # 40, 40, 512 -> 40, 40, 256
+        P4          = self.conv_for_feat2(P4)
+        # 40, 40, 256 -> 80, 80, 256
+        P4_upsample = self.upsample(P4)
+        # 80, 80, 256 cat 80, 80, 256 -> 80, 80, 512
+        P3          = torch.cat([P4_upsample, feat1], 1)
+        # 80, 80, 512 -> 80, 80, 256
+        P3          = self.conv3_for_upsample2(P3)
+        
+        # 80, 80, 256 -> 40, 40, 256
+        P3_downsample = self.down_sample1(P3)
+        # 40, 40, 256 cat 40, 40, 256 -> 40, 40, 512
+        P4 = torch.cat([P3_downsample, P4], 1)
+        # 40, 40, 512 -> 40, 40, 512
+        P4 = self.conv3_for_downsample1(P4)
+
+        # 40, 40, 512 -> 20, 20, 512
+        P4_downsample = self.down_sample2(P4)
+        # 20, 20, 512 cat 20, 20, 512 -> 20, 20, 1024
+        P5 = torch.cat([P4_downsample, P5], 1)
+        # 20, 20, 1024 -> 20, 20, 1024
+        P5 = self.conv3_for_downsample2(P5)
+        out2 = self.yolo_head_P3(P3)
+        out1 = self.yolo_head_P4(P4)
+        out0 = self.yolo_head_P5(P5)
+        return out0, out1, out2
+

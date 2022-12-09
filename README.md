@@ -5,8 +5,8 @@
 当前实现的算法有：
 
 - [x] YOLOV4
-- [x] YOLOV5(建议使用pytorch的版本)
-- [x] YOLOV5-V6.1(建议使用pytorch的版本)
+- [x] YOLOV5(建议使用pytorch的版本，切换到pytorch分支)
+- [x] YOLOV5-V6.1(建议使用pytorch的版本，切换到pytorch分支)
 - [x] YOLOX
 - [x] YOLOV7
 - [ ] YOLOP
