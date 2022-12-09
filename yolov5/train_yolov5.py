@@ -96,7 +96,7 @@ def yolov5(config):
     Min_lr_fit = min(max(batch_size / nbs * min_learning_rate, lr_limit_min * 1e-2), lr_limit_max * 1e-2)
 
     # 设置callbacks
-    time_str = datetime.datetime.strftime(datetime.datetime.now(),'%Y_%m_%d_%H_%M_%S')
+    time_str = datetime.datetime.strftime(datetime.datetime.now(),'%Y_%m_%d')
     log_dir = os.path.join(save_dir, "loss_" + str(time_str))
     logging = TensorBoard(log_dir)
     checkpoint = ModelCheckpoint(os.path.join(save_dir, saved_weight_name), 

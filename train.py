@@ -7,7 +7,7 @@ def parse_args():
     parser.add_argument(
         '--model', 
         help='YOLOV4, YOLOV4-TINY, YOLOV5, YOLOX, YOLOV7...', 
-        choices=['YOLOV4', 'YOLOV4-TINY', 'YOLOV5','YOLOV5-V61' 'YOLOX', 'YOLOV7'],
+        choices=['YOLOV4', 'YOLOV4-TINY', 'YOLOV5','YOLOV5-V61', 'YOLOX', 'YOLOV7'],
         default='YOLOV5', 
         type=str)
     args = parser.parse_args()

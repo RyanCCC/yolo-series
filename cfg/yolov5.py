@@ -8,7 +8,7 @@ class YOLOV5Config(Config):
     task = 'village_detection'
     logdir = './yolov5/logs/'
     dataset_base_path = r'./villages'
-    classes_path = os.path.join(dataset_base_path, 'coco.names') 
+    classes_path = os.path.join(dataset_base_path, 'village.names') 
     train_txt= os.path.join(dataset_base_path, 'train.txt')
     val_txt= os.path.join(dataset_base_path, 'val.txt')
     test_txt = os.path.join(dataset_base_path, 'ImageSets/Main')
@@ -22,7 +22,7 @@ class YOLOV5Config(Config):
     batch_size = 16
     learning_rate_freeze = 1e-3
     learning_rate_unfreeze = 1e-4
-    pretrain_weight = './model/yolov5_l_v6.1.h5'
+    pretrain_weight = './yolov5v61/checkpoints/yolov5_l_v6.1.h5'
     anchors_path = './yolov5/data/yolov5_anchors.txt'
     phi='l'
     save_weight = f'{task}_yolov5{phi}_{time_str}.h5'
@@ -35,7 +35,7 @@ class YOLOV5Config(Config):
     else:
         mixup = False
     # Inference
-    score=0.8
+    score=0.1
     iou=0.5
     input_shape = [640, 640]
     
