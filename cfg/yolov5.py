@@ -37,7 +37,7 @@ class YOLOV5Config(Config):
     else:
         mixup = False
     # Inference
-    score=0.2
+    score=0.5
     iou=0.5
     input_shape = [640, 640]
     
