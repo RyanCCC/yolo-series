@@ -60,9 +60,9 @@
 2. `voc_annotation.py`：生成输入到网络的文档格式，如下所示：
 
 ```
-D:\villages\JPEGImages/wc_102.jpg 261,607,341,778,0
-D:\villages\JPEGImages/camera_20210817154550.jpg 94,149,165,251,11 22,164,97,249,11
-D:\villages\JPEGImages/pavilion_20210812155531.jpg 111,2,458,337,10
+your/dataset/root/path/JPEGImages/wc_102.jpg 261,607,341,778,0
+your/dataset/root/path/camera_20210817154550.jpg 94,149,165,251,11 22,164,97,249,11
+your/dataset/root/path/pavilion_20210812155531.jpg 111,2,458,337,10
 ```
 
 **注意两者之前生成顺序**：先划分数据集，生成`ImageSets/Main`下的txt文档，然后根据`ImageSets/Main`下的txt文档生成适用于文档格式的数据集。
