@@ -181,7 +181,7 @@ FLOPs：注意s小写，是floating point operations的缩写（s表复数），
 
 ### 模型转换
 
-模型转换主要应用在生产环境中，关于模型转换用了YOLOX作为例子，详情可以参考：[TF2ONNX](https://github.com/RyanCCC/Deployment/tree/main/ONNXDemo/Tensorflow)，当中有YOLOX转换成ONNX的例子。将模型转换成ONNX格式模型后就可以往后继续转换成其他的模型，比如需要部署到TensorRT或者Openvino中等都可以通过ONNX转换成对应的格式的模型。模型转换之后至于模型的性能，如精确度、速度等是否存在差异，在此没有做相应的测试，感兴趣的可以自行测评一下模型性能差异。
+在生产环境中需要进行模型转换，关于模型转换用了YOLOX作为例子，详情可以参考：[TF2ONNX](https://github.com/RyanCCC/Deployment/tree/main/ONNXDemo/Tensorflow)，当中有YOLOX转换成ONNX的例子。将模型转换成ONNX格式模型后就可以往后继续转换成其他的模型，比如需要部署到TensorRT或者Openvino中等都可以通过ONNX转换成对应的格式的模型。模型转换之后至于模型的性能，如精确度、速度等是否存在差异，在此没有做相应的测试，感兴趣的可以自行测评一下模型性能差异。
 
 模型导出脚本：`export.py`，相关参数说明如下：
 
@@ -213,6 +213,12 @@ python .\export.py --yolo yolox --weight .\model\village_yolox.h5 --save_onnx '.
 
 更多的ONNX推理和算法部署可参考：[Deployment](https://github.com/RyanCCC/Deployment)。
 
+
+## TODO
+
+1. 总结`doc`里面的文档
+2. 测试YOLOV5、YOLOV7的train情况
+3. 模型评估
 
 ## 参考
 
