@@ -214,12 +214,6 @@ python .\export.py --yolo yolox --weight .\model\village_yolox.h5 --save_onnx '.
 更多的ONNX推理和算法部署可参考：[Deployment](https://github.com/RyanCCC/Deployment)。
 
 
-## TODO
-
-1. 总结`doc`里面的文档
-2. 测试YOLOV5、YOLOV7的train情况
-3. 模型评估
-
 ## 参考
 
 更多算法的内容可以参考`doc`文件下的文档。
