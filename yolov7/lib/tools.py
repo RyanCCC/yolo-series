@@ -59,8 +59,8 @@ def download_weights(phi, model_dir="./model_data"):
     from torch.hub import load_state_dict_from_url
     
     download_urls = {
-        "l" : 'https://github.com/bubbliiiing/yolov7-pytorch/releases/download/v1.0/yolov7_backbone_weights.pth',
-        "x" : 'https://github.com/bubbliiiing/yolov7-pytorch/releases/download/v1.0/yolov7_x_backbone_weights.pth',
+        "l" : 'https://github.com/RyanCCC/YOLOSeries/releases/download/v1.0.0/yolov7_backbone_weights.pth',
+        "x" : 'https://github.com/RyanCCC/YOLOSeries/releases/download/v1.0.0/yolov7_x_backbone_weights.pth',
     }
     url = download_urls[phi]
     
