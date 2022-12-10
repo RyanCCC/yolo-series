@@ -4,8 +4,8 @@ import datetime
 
 class YOLOV7Config(Config):
     task = "village_Detection"
-    dataset_base_path = r'./villages'
-    classes_path = os.path.join(dataset_base_path, 'village.names') 
+    dataset_base_path = r'./VOC2007'
+    classes_path = os.path.join(dataset_base_path, 'coco.names') 
     train_txt= os.path.join(dataset_base_path, 'train.txt')
     val_txt= os.path.join(dataset_base_path, 'val.txt')
     test_txt = os.path.join(dataset_base_path, 'ImageSets/Main')
@@ -53,5 +53,6 @@ class YOLOV7Config(Config):
     Freeze_Train = True
     learning_rate = 1e-2
     early_stopping = False
+    cuda =False
 
 
