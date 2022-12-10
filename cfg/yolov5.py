@@ -9,7 +9,7 @@ class YOLOV5Config(Config):
     task = 'village_detection'
     logdir = './yolov5/logs/'
     dataset_base_path = r'./VOC2007'
-    classes_path = os.path.join(dataset_base_path, 'voc.names') 
+    classes_path = os.path.join(dataset_base_path, 'coco.names') 
     train_txt= os.path.join(dataset_base_path, 'train.txt')
     val_txt= os.path.join(dataset_base_path, 'val.txt')
     test_txt = os.path.join(dataset_base_path, 'ImageSets/Main')
@@ -51,3 +51,11 @@ class YOLOV5Config(Config):
     cuda = False
     gpus = '0'
     Freeze_Train = True
+    # YOLOV5
+    '''
+    cspdarknet（默认）
+    convnext_tiny
+    convnext_small
+    swin_transfomer_tiny
+    '''
+    backbone = 'cspdarknet'

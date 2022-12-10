@@ -1,116 +1,136 @@
-from functools import wraps
-
-import tensorflow as tf
-from tensorflow.keras import backend as K
-from tensorflow.keras.initializers import RandomNormal
-from tensorflow.keras.layers import (Add, BatchNormalization, Concatenate,
-                                     Conv2D, Layer, MaxPooling2D,
-                                     ZeroPadding2D)
-from tensorflow.keras.regularizers import l2
-from ..lib.utils import compose
+import torch
+import torch.nn as nn
 
 
-class SiLU(Layer):
-    def __init__(self, **kwargs):
-        super(SiLU, self).__init__(**kwargs)
-        self.supports_masking = True
+class SiLU(nn.Module):
+    @staticmethod
+    def forward(x):
+        return x * torch.sigmoid(x)
 
-    def call(self, inputs):
-        return inputs * K.sigmoid(inputs)
+def autopad(k, p=None):
+    if p is None:
+        p = k // 2 if isinstance(k, int) else [x // 2 for x in k] 
+    return p
 
-    def get_config(self):
-        config = super(SiLU, self).get_config()
-        return config
-
-    def compute_output_shape(self, input_shape):
-        return input_shape
-
-class Focus(Layer):
-    def __init__(self):
+class Focus(nn.Module):
+    def __init__(self, c1, c2, k=1, s=1, p=None, g=1, act=True):  # ch_in, ch_out, kernel, stride, padding, groups
         super(Focus, self).__init__()
+        self.conv = Conv(c1 * 4, c2, k, s, p, g, act)
 
-    def compute_output_shape(self, input_shape):
-        return (input_shape[0], input_shape[1] // 2 if input_shape[1] != None else input_shape[1], input_shape[2] // 2 if input_shape[2] != None else input_shape[2], input_shape[3] * 4)
-
-    def call(self, x):
-        return tf.concat(
-            [x[...,  ::2,  ::2, :],
-             x[..., 1::2,  ::2, :],
-             x[...,  ::2, 1::2, :],
-             x[..., 1::2, 1::2, :]],
-             axis=-1
+    def forward(self, x):
+        # 320, 320, 12 => 320, 320, 64
+        return self.conv(
+            # 640, 640, 3 => 320, 320, 12
+            torch.cat(
+                [
+                    x[..., ::2, ::2], 
+                    x[..., 1::2, ::2], 
+                    x[..., ::2, 1::2], 
+                    x[..., 1::2, 1::2]
+                ], 1
+            )
         )
 
-@wraps(Conv2D)
-def DarknetConv2D(*args, **kwargs):
-    darknet_conv_kwargs = {'kernel_initializer' : RandomNormal(stddev=0.02), 'kernel_regularizer' : l2(kwargs.get('weight_decay', 5e-4))}
-    darknet_conv_kwargs['padding'] = 'valid' if kwargs.get('strides')==(2, 2) else 'same'   
-    try:
-        del kwargs['weight_decay']
-    except:
-        pass
-    darknet_conv_kwargs.update(kwargs)
-    return Conv2D(*args, **darknet_conv_kwargs)
+class Conv(nn.Module):
+    def __init__(self, c1, c2, k=1, s=1, p=None, g=1, act=True):
+        super(Conv, self).__init__()
+        self.conv   = nn.Conv2d(c1, c2, k, s, autopad(k, p), groups=g, bias=False)
+        self.bn     = nn.BatchNorm2d(c2, eps=0.001, momentum=0.03)
+        self.act    = SiLU() if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
 
-def DarknetConv2D_BN_SiLU(*args, **kwargs):
-    no_bias_kwargs = {'use_bias': False}
-    no_bias_kwargs.update(kwargs)
-    if "name" in kwargs.keys():
-        no_bias_kwargs['name'] = kwargs['name'] + '.conv'
-    return compose(
-        DarknetConv2D(*args, **no_bias_kwargs),
-        BatchNormalization(momentum = 0.97, epsilon = 0.001, name = kwargs['name'] + '.bn'),
-        SiLU())
+    def forward(self, x):
+        return self.act(self.bn(self.conv(x)))
 
-def Bottleneck(x, out_channels, shortcut=True, weight_decay=5e-4, name = ""):
-    y = compose(
-            DarknetConv2D_BN_SiLU(out_channels, (1, 1), weight_decay=weight_decay, name = name + '.cv1'),
-            DarknetConv2D_BN_SiLU(out_channels, (3, 3), weight_decay=weight_decay, name = name + '.cv2'))(x)
-    if shortcut:
-        y = Add()([x, y])
-    return y
+    def fuseforward(self, x):
+        return self.act(self.conv(x))
 
-def C3(x, num_filters, num_blocks, shortcut=True, expansion=0.5, weight_decay=5e-4, name=""):
-    hidden_channels = int(num_filters * expansion)
-    x_1 = DarknetConv2D_BN_SiLU(hidden_channels, (1, 1), weight_decay=weight_decay, name = name + '.cv1')(x)
-    x_2 = DarknetConv2D_BN_SiLU(hidden_channels, (1, 1), weight_decay=weight_decay, name = name + '.cv2')(x)
-    for i in range(num_blocks):
-        x_1 = Bottleneck(x_1, hidden_channels, shortcut=shortcut, weight_decay=weight_decay, name = name + '.m.' + str(i))
-    route = Concatenate()([x_1, x_2])
-    return DarknetConv2D_BN_SiLU(num_filters, (1, 1), weight_decay=weight_decay, name = name + '.cv3')(route)
+class Bottleneck(nn.Module):
+    # Standard bottleneck
+    def __init__(self, c1, c2, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, shortcut, groups, expansion
+        super(Bottleneck, self).__init__()
+        c_ = int(c2 * e)  # hidden channels
+        self.cv1 = Conv(c1, c_, 1, 1)
+        self.cv2 = Conv(c_, c2, 3, 1, g=g)
+        self.add = shortcut and c1 == c2
 
-def SPPBottleneck(x, out_channels, weight_decay=5e-4, name = ""):
-    x = DarknetConv2D_BN_SiLU(out_channels // 2, (1, 1), weight_decay=weight_decay, name = name + '.cv1')(x)
-    maxpool1 = MaxPooling2D(pool_size=(5, 5), strides=(1, 1), padding='same')(x)
-    maxpool2 = MaxPooling2D(pool_size=(9, 9), strides=(1, 1), padding='same')(x)
-    maxpool3 = MaxPooling2D(pool_size=(13, 13), strides=(1, 1), padding='same')(x)
-    x = Concatenate()([x, maxpool1, maxpool2, maxpool3])
-    x = DarknetConv2D_BN_SiLU(out_channels, (1, 1), weight_decay=weight_decay, name = name + '.cv2')(x)
-    return x
-    
-def resblock_body(x, num_filters, num_blocks, expansion=0.5, shortcut=True, last=False, weight_decay=5e-4, name = ""):
+    def forward(self, x):
+        return x + self.cv2(self.cv1(x)) if self.add else self.cv2(self.cv1(x))
 
-    # 320, 320, 64 => 160, 160, 128
-    x = ZeroPadding2D(((1, 0),(1, 0)))(x)
-    x = DarknetConv2D_BN_SiLU(num_filters, (3, 3), strides = (2, 2), weight_decay=weight_decay, name = name + '.0')(x)
-    if last:
-        x = SPPBottleneck(x, num_filters, weight_decay=weight_decay, name = name + '.1')
-    return C3(x, num_filters, num_blocks, shortcut=shortcut, expansion=expansion, weight_decay=weight_decay, name = name + '.1' if not last else name + '.2')
+class C3(nn.Module):
+    # CSP Bottleneck with 3 convolutions
+    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, number, shortcut, groups, expansion
+        super(C3, self).__init__()
+        c_ = int(c2 * e)  # hidden channels
+        self.cv1 = Conv(c1, c_, 1, 1)
+        self.cv2 = Conv(c1, c_, 1, 1)
+        self.cv3 = Conv(2 * c_, c2, 1)  # act=FReLU(c2)
+        self.m = nn.Sequential(*[Bottleneck(c_, c_, shortcut, g, e=1.0) for _ in range(n)])
+        # self.m = nn.Sequential(*[CrossConv(c_, c_, 3, 1, g, 1.0, shortcut) for _ in range(n)])
 
-def darknet_body(x, base_channels, base_depth, weight_decay=5e-4):
-    # 640, 640, 3 => 320, 320, 12
-    x = Focus()(x)
-    # 320, 320, 12 => 320, 320, 64
-    x = DarknetConv2D_BN_SiLU(base_channels, (3, 3), weight_decay=weight_decay, name = 'backbone.stem.conv')(x)
-    # 320, 320, 64 => 160, 160, 128
-    x = resblock_body(x, base_channels * 2, base_depth, weight_decay=weight_decay, name = 'backbone.dark2')
-    # 160, 160, 128 => 80, 80, 256
-    x = resblock_body(x, base_channels * 4, base_depth * 3, weight_decay=weight_decay, name = 'backbone.dark3')
-    feat1 = x
-    # 80, 80, 256 => 40, 40, 512
-    x = resblock_body(x, base_channels * 8, base_depth * 3, weight_decay=weight_decay, name = 'backbone.dark4')
-    feat2 = x
-    # 40, 40, 512 => 20, 20, 1024
-    x = resblock_body(x, base_channels * 16, base_depth, shortcut=False, last=True, weight_decay=weight_decay, name = 'backbone.dark5')
-    feat3 = x
-    return feat1,feat2,feat3
+    def forward(self, x):
+        return self.cv3(torch.cat(
+            (
+                self.m(self.cv1(x)), 
+                self.cv2(x)
+            )
+            , dim=1))
+
+class SPP(nn.Module):
+    # Spatial pyramid pooling layer used in YOLOv3-SPP
+    def __init__(self, c1, c2, k=(5, 9, 13)):
+        super(SPP, self).__init__()
+        c_ = c1 // 2  # hidden channels
+        self.cv1 = Conv(c1, c_, 1, 1)
+        self.cv2 = Conv(c_ * (len(k) + 1), c2, 1, 1)
+        self.m = nn.ModuleList([nn.MaxPool2d(kernel_size=x, stride=1, padding=x // 2) for x in k])
+
+    def forward(self, x):
+        x = self.cv1(x)
+        return self.cv2(torch.cat([x] + [m(x) for m in self.m], 1))
+        
+class CSPDarknet(nn.Module):
+    def __init__(self, base_channels, base_depth, phi, pretrained):
+        super().__init__()
+        self.stem       = Focus(3, base_channels, k=3)
+        self.dark2 = nn.Sequential(
+            # 320, 320, 64 -> 160, 160, 128
+            Conv(base_channels, base_channels * 2, 3, 2),
+            # 160, 160, 128 -> 160, 160, 128
+            C3(base_channels * 2, base_channels * 2, base_depth),
+        )
+        self.dark3 = nn.Sequential(
+            Conv(base_channels * 2, base_channels * 4, 3, 2),
+            C3(base_channels * 4, base_channels * 4, base_depth * 3),
+        )
+
+        self.dark4 = nn.Sequential(
+            Conv(base_channels * 4, base_channels * 8, 3, 2),
+            C3(base_channels * 8, base_channels * 8, base_depth * 3),
+        )
+        
+        self.dark5 = nn.Sequential(
+            Conv(base_channels * 8, base_channels * 16, 3, 2),
+            SPP(base_channels * 16, base_channels * 16),
+            C3(base_channels * 16, base_channels * 16, base_depth, shortcut=False),
+        )
+        if pretrained:
+            url = {
+                's' : 'https://github.com/RyanCCC/YOLOSeries/releases/download/v1.0.0/cspdarknet_s_backbone.pth',
+                'm' : 'https://github.com/RyanCCC/YOLOSeries/releases/download/v1.0.0/cspdarknet_m_backbone.pth',
+                'l' : 'https://github.com/RyanCCC/YOLOSeries/releases/download/v1.0.0/cspdarknet_l_backbone.pth',
+                'x' : 'https://github.com/RyanCCC/YOLOSeries/releases/download/v1.0.0/cspdarknet_x_backbone.pth',
+            }[phi]
+            checkpoint = torch.hub.load_state_dict_from_url(url=url, map_location="cpu", model_dir="./model_data")
+            self.load_state_dict(checkpoint, strict=False)
+            print("Load weights from ", url.split('/')[-1])
+            
+    def forward(self, x):
+        x = self.stem(x)
+        x = self.dark2(x)
+        x = self.dark3(x)
+        feat1 = x
+        x = self.dark4(x)
+        feat2 = x
+        x = self.dark5(x)
+        feat3 = x
+        return feat1, feat2, feat3
