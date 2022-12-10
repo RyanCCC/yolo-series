@@ -1,17 +1,17 @@
-# YoloSeries
+# YOLOSeries
 
-本仓库主要实现`YOLO`系列的算法，主要是基于`Tensorflow2`或者`Pytorch`实现。欢迎参与到本仓库的建设或者提issue。
+本仓库主要实现`YOLO`目标检测算法，欢迎参与到本仓库的建设或者提issue。当前算法实现基本情况
 
-当前实现的算法有：
+|    算法     |    实现框架    |               备注                |
+| :---------: | :------------: | :-------------------------------: |
+|   YOLOV4    | Tensorflow-2.4 | 已实现，并通过测试。`main`分支。  |
+|   YOLOV5    |   Torch-1.9    | 已实现，未经过测试。`pytorch`分支。 |
+| YOLOV5-v6.1 |   Torch-1.9    | 已实现，并通过测试。`pytorch`分支。 |
+|    YOLOX    | Tensorflow-2.4 | 已实现，并通过测试。`main`分支。  |
+|   YOLOV7    |   Torch-1.9    | 已实现，但未通过测试。`pytorch`分支。|
+|    YOLOP    |   Torch-1.9    | 已实现，未通过测试。`main`分支。  |
 
-- [x] YOLOV4
-- [x] YOLOV5(建议使用pytorch的版本，切换到pytorch分支)
-- [x] YOLOV5-V6.1(建议使用pytorch的版本，切换到pytorch分支)
-- [x] YOLOX
-- [x] YOLOV7
-- [ ] YOLOP
-
-本仓库主要是算法的训练和算法的验证，后续的工程化应用部署可以参考我的另一个仓库：[Deployment](https://github.com/RyanCCC/Deployment)。部署仓库包括`python`或者`C++`的部署代码以及`OpenCV`的推理、`TensorRT`的推理，喜欢的话可以给个star或者一起参与建设仓库。毕竟人多力量大。
+本仓库主要是算法的训练和算法的验证，后续的工程化应用部署可以参考另一个仓库：[Deployment](https://github.com/RyanCCC/Deployment)。部署仓库包括模型的量化与压缩、`python`或者`C++`的部署代码以及`OpenCV`和`TensorRT`等推理，喜欢的话可以给个star或者一起参与建设仓库。
 
 ## 项目结构
 
@@ -20,7 +20,7 @@
 |---cfg: 存放配置文件。
 |---tools:存放工具：包括生成训练文档、类别统计等。
 |---deep_sort：目标跟踪Deepsort算法
-|---doc：存放YOLO资料文档
+|---doc：存放YOLO资料文档，包括backbone、后处理等算法文档
 |---evaluate：存放模型评估方法
 |---font：字体
 |---logs：存放训练日志的文档
@@ -28,32 +28,17 @@
 |   +---yolo4_voc_weights.h5：VOC预训练权重
 |   \---yolo4_weight.h5：COCO预训练权重
 |---result：推理结果保存的文件夹
-|---train：训练文档，
-|   +---train_tiny.py：YOLOV4 TINY训练
-|   +---train_yolox.py：YOLOX训练
-|   \---train.py：YOLOV4训练
-|---utils：基础模块，如配置文件，训callbacks练设置以及一些jupty notebook
-|---video：视频存放
-|---yolop：yolop实现算法
-|---yolov4：yolov4实现算法
-|---yolov5：yolov5实现算法
-|---yolov7：yolov7实现算法
-|---yolox：yolox实现算法
+|---video：视频保存文件夹
+|---yolop：yolop算法实现
+|---yolov4：yolov4算法实现
+|---yolov5：yolov5算法实现
+|---yolov7：yolov7算法实现
+|---yolox：yolox算法实现
 \---datasets：数据集，以VOC数据集格式
     +---Annotations：数据集标注
     +---ImageSets
     |   \---Main：划分训练集、测试集、验证集的txt文档
     \---JPEGImages：图像
-```
-
-每个算法文件夹下的结构如下，以`yolov4`为例：
-
-```
-+---checkppoints： 存放训练过程中的checkpoints
-|---data：anchor的文件等。
-|---lib：基础模块，如数据加载模块，损失函数设置模块。
-|---net：网络算法的实现
-\---predict.py：推理实现脚本
 ```
 
 
@@ -84,9 +69,7 @@ D:\villages\JPEGImages/pavilion_20210812155531.jpg 111,2,458,337,10
 
 ## 模型训练
 
-在模型开始训练之前，先在`cfg`文档下找到对应的算法配置文件进行修改，修改内容包括数据集路径、一些学习参数等。修改完之后执行：
-
-`python train.py --model YOLOX`。即可执行`YOLOX`算法的训练。其中`--model`参数默认为`YOLOV5`，可选的算法有`YOLOV4`，`YOLOV4-TINY`、`YOLOV5`、`YOLOX`，`YOLOV7`等。后续会继续优化，根据需要添加更多的参数。
+在模型开始训练之前，先在`cfg`文档下找到对应的算法配置文件进行修改，修改内容包括数据集路径、训练参数参数等。修改完之后执行：`python train.py --model YOLOX`。即可执行`YOLOX`算法的训练。其中`--model`参数默认为`YOLOV5`，可选的算法有`YOLOV4`，`YOLOV4-TINY`、`YOLOV5`、`YOLOX`，`YOLOV7`等。后续会继续优化，根据需要添加更多的算法参数。
 
 ## 模型推理
 
@@ -114,7 +97,7 @@ python ./predict.py --model YOLOV7-TINY --img_dir ./samples/ --weights ./model/v
 
 ### MAP计算
 
-1. 统计测试集的groundtrue
+1. **统计测试集的ground_True**
 
 ```python
 python ./evaluate/get_gt_txt.py --testset ./VOC2017/ImageSets/Main/test.txt --annotation ./villages/Annotations/ --gt_folder ./result/gt_folder
@@ -126,7 +109,7 @@ python ./evaluate/get_gt_txt.py --testset ./VOC2017/ImageSets/Main/test.txt --an
 - gt_folder：保存文件夹路径
 
 
-2. 计算模型推理测试集的结果
+2. **计算模型推理测试集的结果**
 
 ```python
 python ./evaluate/get_dr_txt.py --testset ./villages/ImageSets/Main/test.txt --pr_folder ./result/pr_folder --minoverlap 0.5 --model_path ./model/village_yolox.h5 --image_path ./villages/JPEGImages/ --model YOLOX
@@ -139,7 +122,7 @@ python ./evaluate/get_dr_txt.py --testset ./villages/ImageSets/Main/test.txt --p
 - image_path：图像路径
 - model：使用的算法模型
 
-3. 计算map的性能指标
+3. **计算map的性能指标**
 
 ```python
 python ./evaluate/get_map.py --GT_PATH ./result/evaluate --DR_PATH ./result/pr_folder/ --IMG_PATH ./villages/JPEGImages/ --MINOVERLAP 0.5
@@ -147,10 +130,10 @@ python ./evaluate/get_map.py --GT_PATH ./result/evaluate --DR_PATH ./result/pr_f
 
 参数说明：
 
-- GT_PATH：脚本`get_gt_txt.py`生成文件的保存路径
-- DR_PATH：脚本`get_dr_txt.py`生成文件的保存路径
-- IMG_PATH：测试集图像的路径
-- MINOVERLAP：map@**的值
+- **GT_PATH**：脚本`get_gt_txt.py`生成文件的保存路径
+- **DR_PATH**：脚本`get_dr_txt.py`生成文件的保存路径
+- **IMG_PATH**：测试集图像的路径
+- **MINOVERLAP**：map@**的值
 
 ### FPS计算
 
@@ -230,60 +213,12 @@ python .\export.py --yolo yolox --weight .\model\village_yolox.h5 --save_onnx '.
 
 更多的ONNX推理和算法部署可参考：[Deployment](https://github.com/RyanCCC/Deployment)。
 
-## 相关资料
-
-### YOLOV4
-
-**论文：**[YOLOV4论文](https://arxiv.org/pdf/2004.10934.pdf)
-
-**代码：**[YOLOV4代码实现](https://github.com/AlexeyAB/darknet)
-
-**网络结构：**
-
-![image](https://user-images.githubusercontent.com/27406337/178643886-4602cfc9-ccc3-4a87-8b59-76e80e18cc65.png)
-
-更多的YOLOV4资料可以参考：[yolov4](./doc/yolov4.md)、[目标检测算法Yolov4详解](https://cloud.tencent.com/developer/article/1748630) 
-
-### YOLOX
-
-**论文：**[YOLOX Paper](https://arxiv.org/abs/2107.08430)
-
-**代码：** [YOLOX Code](https://github.com/Megvii-BaseDetection/YOLOX)
-
-**网络结构：**
-
-![image](https://user-images.githubusercontent.com/27406337/178643992-8d3149e3-b54b-4949-81db-e7baf94cbf27.png)
-
-YOLOX的代码可以直接运行```train_yolox.py```即可。
-
-### YOLOV5
-
-**代码：**[YOLOV5 Code](https://github.com/ultralytics/yolov5)
-
-### YOLOV7
-
-**论文：**[YOLOv7: Trainable bag-of-freebies sets new state-of-the-art for real-time object detectors](https://arxiv.org/abs/2207.02696)
-
-**代码：**[CODE:yolov7](https://github.com/WongKinYiu/yolov7)
-
-**模型结构**
-
-![image](https://user-images.githubusercontent.com/27406337/192188598-0d3fd9e4-7c76-48b2-af0f-2aa3fc972661.png)
-
-**性能**
-
-![image](https://user-images.githubusercontent.com/27406337/192188766-30bf2071-d6a4-4e92-a617-842f7b7f05ab.png)
-
-![image](https://user-images.githubusercontent.com/27406337/192188827-9bf1f99c-8754-4032-8375-9f39277ed972.png)
-
-![image](https://user-images.githubusercontent.com/27406337/192188811-78912328-a279-4127-9be6-9bbb071a035f.png)
-
 
 ## 参考
 
+更多算法的内容可以参考`doc`文件下的文档。
+
 1. [Object-Detection-Metrics](./doc/Object-Detection-Metrics.md)
-
 2. [mAP计算代码](https://github.com/Cartucho/mAP)
-
 3. [YOLOV3-tf2](https://github.com/zzh8829/yolov3-tf2)
 
