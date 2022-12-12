@@ -204,39 +204,19 @@ class EvalCallback():
 
 # EarlyStopping
 class EarlyStopping:
-    '''
-    Early stop the training if validation loss doesn't improve after a given patience
-    '''
-    def __init__(self, patience, verbose =False, delta = 0):
+    def __init__(self, patience=1, delta=0, verbose =False):
         self.patience = patience
-        self.verbose = verbose
+        self.min_delta = delta
         self.counter = 0
-        self.bet_score = None
-        self.early_stop = False
-        self.val_loss_min = np.inf
-        self.delta =  delta
+        self.min_validation_loss = np.inf
 
-
-    def __call__(self, val_loss, model):
-        score -= val_loss
-        if self.best_score is None:
-            self.bet_score = score
-            # self.save_checkpoint(val_loss, model)
-        elif score<self.bet_score + self.delta:
-            self.counter+= 1
-            print(f'EarlyStopping Counter:{self.counter} out of {self.patience}')
-            if self.counter>=self.patience:
-                self.early_stop = True
-        else:
-            self.bet_score = score
-            # self.save_checkpoint(val_loss, model)
+    def __call__(self, validation_loss):
+        if validation_loss < self.min_validation_loss:
+            self.min_validation_loss = validation_loss
             self.counter = 0
-    
-    # def save_checkpoint(self, val_loss, model):
-    #     '''
-    #     save model when validation loss decreas
-    #     '''
-    #     if self.verbose:
-    #         print(f'validation loss decrease ({self.val_loss_min:.6f})')
-    #     torch.save(model.state_dict(), self.path)
-    #     self.val_loss_min = val_loss
+        elif validation_loss > (self.min_validation_loss + self.min_delta):
+            self.counter += 1
+            print(f'EarlyStopping Counter:{self.counter} out of {self.patience}')
+            if self.counter >= self.patience:
+                return True
+        return False

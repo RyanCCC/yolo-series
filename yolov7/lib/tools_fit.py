@@ -101,6 +101,5 @@ def fit_one_epoch(model_train, model, ema, yolo_loss, loss_history, eval_callbac
         torch.save(save_state_dict, os.path.join(save_dir, "last_epoch_weights.pth"))
 
         # EarlyStopping
-        early_stopping(val_loss, model)
-        res_earlystopping = early_stopping.early_stop
+        res_earlystopping = early_stopping(val_loss)
     return res_earlystopping

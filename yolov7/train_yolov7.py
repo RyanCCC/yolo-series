@@ -83,7 +83,7 @@ def yolov7(config):
         device      = torch.device("cuda", local_rank)
         if local_rank == 0:
             print(f"[{os.getpid()}] (rank = {rank}, local_rank = {local_rank}) training...")
-            print("Gpu Device Count : ", ngpus_per_node)
+            print("GPU Device Count : ", ngpus_per_node)
     else:
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         local_rank = 0
