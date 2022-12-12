@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader
 
 from .nets.yolov5 import YoloBody
 from .lib.loss import ModelEMA, YOLOLoss, get_lr_scheduler, set_optimizer_lr, weights_init
-from .lib.callbacks import LossHistory, EvalCallback
+from .lib.callbacks import LossHistory, EvalCallback, EarlyStopping
 from .lib.dataloader import YoloDataset, yolo_dataset_collate
 from .lib.tools import download_weights, get_anchors, get_classes, show_config
 from .lib.tools_fit import fit_one_epoch

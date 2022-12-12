@@ -21,6 +21,7 @@ class YOLOV7Config(Config):
     input_shape = [640, 640]
     cuda = False
     gpus = '1'
+    early_stopping = False
     '''
     单机多卡分布式训练
     DP模式：

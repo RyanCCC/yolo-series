@@ -12,7 +12,7 @@ from torch.utils.data import DataLoader
 from .nets.yolov7 import YoloBody
 from .nets.loss import (ModelEMA, YOLOLoss, get_lr_scheduler,
                                 set_optimizer_lr, weights_init)
-from .lib.callbacks import EvalCallback, LossHistory
+from .lib.callbacks import EvalCallback, LossHistory, EarlyStopping
 from .lib.dataloader import YoloDataset, yolo_dataset_collate
 from .lib.tools import download_weights, get_anchors, get_classes, show_config
 from .lib.tools_fit import fit_one_epoch
@@ -35,7 +35,7 @@ def yolov7(config):
     pretrained = False
     #   phi：n、s、m、l、x
     phi = config.phi
-    
+    flag_earlystopping = config.early_stopping
     mosaic = config.mosaic
     mosaic_prob = config.mosaic_prob
     mixup = config.mixup
@@ -239,8 +239,13 @@ def yolov7(config):
     if local_rank == 0:
         eval_callback   = EvalCallback(model, input_shape, anchors, anchors_mask, class_names, num_classes, val_lines, log_dir, Cuda, \
                                             eval_flag=eval_flag, period=eval_period)
+        # EarlyStoppoing
+        early_stopping = EarlyStopping(patience=5, delta=0.1, verbose=True)
     else:
         eval_callback   = None
+        early_stopping = None
+
+    
         
     for epoch in range(Init_Epoch, UnFreeze_Epoch):
            
@@ -284,10 +289,14 @@ def yolov7(config):
 
         set_optimizer_lr(optimizer, lr_scheduler_func, epoch)
 
-        fit_one_epoch(model_train, model, ema, yolo_loss, loss_history, eval_callback, optimizer, epoch, epoch_step, epoch_step_val, train_data, val_data, UnFreeze_Epoch, Cuda, fp16, scaler, save_period, save_dir, local_rank)
+        res_earlystopping = fit_one_epoch(model_train, model, ema, yolo_loss, loss_history, eval_callback, early_stopping, optimizer, epoch, epoch_step, epoch_step_val, train_data, val_data, UnFreeze_Epoch, Cuda, fp16, scaler, save_period, save_dir, local_rank)
             
         if distributed:
             dist.barrier()
+        
+        # early stopping
+        if res_earlystopping and flag_earlystopping:
+            break
 
     if local_rank == 0:
         loss_history.writer.close()
