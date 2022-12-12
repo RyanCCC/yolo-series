@@ -20,6 +20,7 @@ from .lib.tools_fit import fit_one_epoch
 
 def yolov7(config):
     Cuda = config.cuda
+    os.environ["CUDA_VISIBLE_DEVICES"] = config.gpus
     # 是否使用单机多卡分布式运行
     distributed = False
     #   sync_bn     是否使用sync_bn，DDP模式多卡可用
