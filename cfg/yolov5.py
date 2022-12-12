@@ -48,13 +48,14 @@ class YOLOV5Config(Config):
         mixup_prob = 0.5
     else:
         mixup = False
+    
+    # callback
     eval_flag = True
+    special_aug_ratio = 0.7
 
     score=0.3
     iou=0.5
     input_shape = [640, 640]
-    
-    special_aug_ratio = 0.7
 
     # focal loss
     focal_loss = False

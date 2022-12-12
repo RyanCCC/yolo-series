@@ -63,6 +63,8 @@ def yolov7(config):
     # 权重保存参数设置
     save_period = 10
     save_dir = config.logdir
+    save_weight = config.save_weight
+    save_best_weight = config.best_weight
     # 训练时推理的参数
     eval_flag = config.eval_flag
     eval_period = 10
@@ -290,7 +292,8 @@ def yolov7(config):
 
         set_optimizer_lr(optimizer, lr_scheduler_func, epoch)
 
-        res_earlystopping = fit_one_epoch(model_train, model, ema, yolo_loss, loss_history, eval_callback, early_stopping, optimizer, epoch, epoch_step, epoch_step_val, train_data, val_data, UnFreeze_Epoch, Cuda, fp16, scaler, save_period, save_dir, local_rank)
+        res_earlystopping = fit_one_epoch(model_train, model, ema, yolo_loss, loss_history, eval_callback, early_stopping, optimizer,\
+             epoch, epoch_step, epoch_step_val, train_data, val_data, UnFreeze_Epoch, Cuda, fp16, scaler, save_period, save_dir, local_rank, save_weight, save_best_weight)
             
         if distributed:
             dist.barrier()
