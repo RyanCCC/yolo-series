@@ -95,7 +95,6 @@ def yolov5(config):
     if pretrained:
         if distributed:
             if local_rank == 0:
-                # TODO:判断权重是否存在，若存在则直接加载，否则从url中加载
                 download_weights(phi, model_dir='./yolov5/checkpoints')  
             dist.barrier()
         else:
