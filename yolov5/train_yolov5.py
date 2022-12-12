@@ -18,7 +18,9 @@ from .lib.tools_fit import fit_one_epoch
 
 
 def yolov5(config):
+    # GPU SETTING
     Cuda = config.cuda
+    os.environ["CUDA_VISIBLE_DEVICES"] = config.gpus
     # 是否使用单机多卡分布式运行
     distributed = False
     #   sync_bn     是否使用sync_bn，DDP模式多卡可用
@@ -75,8 +77,8 @@ def yolov5(config):
     if distributed:
         dist.init_process_group(backend="nccl")
         local_rank  = int(os.environ["LOCAL_RANK"])
-        rank        = int(os.environ["RANK"])
-        device      = torch.device("cuda", local_rank)
+        rank = int(os.environ["RANK"])
+        device = torch.device("cuda", local_rank)
         if local_rank == 0:
             print(f"[{os.getpid()}] (rank = {rank}, local_rank = {local_rank}) training...")
             print("Gpu Device Count : ", ngpus_per_node)

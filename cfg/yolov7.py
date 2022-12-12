@@ -4,23 +4,34 @@ import datetime
 
 class YOLOV7Config(Config):
     task = "village_Detection"
+
+    # dataset
     dataset_base_path = r'./VOC2007'
     classes_path = os.path.join(dataset_base_path, 'coco.names') 
     train_txt= os.path.join(dataset_base_path, 'train.txt')
     val_txt= os.path.join(dataset_base_path, 'val.txt')
     test_txt = os.path.join(dataset_base_path, 'ImageSets/Main')
+    
+    # freeze train
+    Freeze_Train = True
+    learning_rate = 1e-2
     Init_epoch = 0
     Freeze_epoch = 50
     epoch = 100
     batch_size = 16
+
+
     anchor_path = './yolov7/data/yolo_anchors.txt'
     # x or l
     phi= 'l'
     score=0.3
     iou=0.5
     input_shape = [640, 640]
+    
+    # GPU SETTING 
     cuda = False
     gpus = '1'
+    
     early_stopping = False
     '''
     单机多卡分布式训练
@@ -38,6 +49,8 @@ class YOLOV7Config(Config):
     # 标签平滑。一般0.01以下。如0.01、0.005
     label_smoothing = 0
     # tiny: './yolov7/checkpoints/yolov7_tiny_weights.pth'
+
+    # weight init
     pretrain_weight = './yolov7/checkpoints/yolov7_weights.h5'
     time = str(datetime.datetime.strftime(datetime.datetime.now(),'%Y_%m_%d'))
     tiny =False
@@ -51,9 +64,7 @@ class YOLOV7Config(Config):
         logdir = f'./yolov7/logs/yolov7{phi}_{time}'
     # 0:DEBUG；1：INFO；2：warning；3：error
     log_level = '1'
-    Freeze_Train = True
-    learning_rate = 1e-2
-    early_stopping = False
-    cuda =False
+    
+    
 
 
