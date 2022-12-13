@@ -31,7 +31,7 @@ def parse_arg():
     parser.add_argument('--weight', type=str, help='model weight', default='')
     parser.add_argument('--saved_pb', action='store_true', help='save pb model to current directory')
     parser.add_argument('--saved_pb_dir', type=str, default='./save_model', help='save pb file if needed. Default:save_model')
-    parser.add_argument('--yolo', type=str, help='YOLO algorithm.', choices=['yolov4', 'yolov4_tiny','yolov5', 'yolox'], required=True)
+    parser.add_argument('--yolo', type=str, help='YOLO algorithm.', choices=['yolov4', 'yolov4_tiny', 'yolox'], required=True)
     parser.add_argument('--saved_model', type=str, help='Tensorflow saved_model', default='')
     parser.add_argument('--save_onnx', type=str, help='save onnx model name', required=True, default='')
     parser.add_argument('--opset', type=int, default=12, help='ONNX: opset version')
@@ -63,25 +63,11 @@ def main(args):
         weights = args.weight
         assert len(weights) > 0, 'weights cannot be none or empty.'
         if yolo_type == 'yolov4':
-            from cfg import YOLOV4Config
-            from yolov4.nets.yolo4 import yolo_body
-            anchors = get_anchors(YOLOV4Config.anchors_path)
-            class_names = get_class(YOLOV4Config.classes_path)
-            model_path = os.path.expanduser(weights)
-            assert model_path.endswith('.h5'), 'Tensorflow model or weights must be a .h5 file.'
-            num_anchors = len(anchors)
-            num_classes = len(class_names)
-            yolo_model = yolo_body(Input(shape=(None,None,3)), num_anchors//3, num_classes, phi=YOLOV4Config.ATTENTION)
-            yolo_model.load_weights(model_path)
-            yolo_model.compile()
+            from yolov4 import export_model
             save_pb = args.saved_pb
-            if save_pb:
-                save_name = args.saved_pb_dir
-                assert len(save_name) > 0, 'save_name cannot be none or empty.'
-                yolo_model.save(save_name, save_format='tf')
-            model_proto, _ = tf2onnx.convert.from_keras(yolo_model, opset=opset, output_path=onnx_save_path)
-            output_names = [n.name for n in model_proto.graph.output]
-            print(f'Model output names: ',output_names)
+            save_name = args.saved_pb_dir
+            export_model(weights, save_pb, save_name, opset=opset, onnx_save_path=onnx_save_path)
+            print('success export YOLOV4.')
         elif yolo_type == 'yolov4_tiny':
             from cfg import YOLOV4Config
             from yolov4.nets.yolo4_tiny import yolo_body
@@ -101,9 +87,6 @@ def main(args):
             model_proto, _ = tf2onnx.convert.from_keras(yolo_model, opset=opset, output_path=onnx_save_path)
             output_names = [n.name for n in model_proto.graph.output]
             print(f'Model output names: ',output_names)
-        elif yolo_type == 'yolov5':
-            # TODO
-            pass
         elif yolo_type == 'yolox':
             from cfg import YOLOXConfig
             from yolox import yolo_body
@@ -121,9 +104,6 @@ def main(args):
             model_proto, _ = tf2onnx.convert.from_keras(yolo_model, opset=opset, output_path=onnx_save_path)
             output_names = [n.name for n in model_proto.graph.output]
             print(f'Model output names: ',output_names)
-        elif yolo_type == 'yolov7':
-            # TODO
-            pass
 if __name__ == '__main__':
     parser = parse_arg()
     args = parser.parse_args()
