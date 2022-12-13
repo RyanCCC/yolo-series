@@ -27,7 +27,8 @@ class YOLO(object):
             "max_boxes" : kwargs['max_boxes'], 
             "letterbox_image" : kwargs['letterbox_image'],
             "tiny":kwargs['tiny'],
-            "cuda":kwargs['cuda']
+            "cuda":kwargs['cuda'],
+            "export":kwargs['export']
         }
         self.__dict__.update(self._params)
             
@@ -46,6 +47,8 @@ class YOLO(object):
         self.net.load_state_dict(torch.load(self.model_path, map_location=device))
         self.net    = self.net.fuse().eval()
         print('{} model, and classes loaded.'.format(self.model_path))
+        if self.export:
+            return
         if self.cuda:
             self.net = nn.DataParallel(self.net)
             self.net = self.net.cuda()
@@ -125,7 +128,7 @@ class YOLO(object):
         pass
 
 
-def Inference_YOLOV7Model(config, model_path = './model/village_Detection_yolov7_l_2022_10_28.pth'):
+def Inference_YOLOV7Model(config, model_path = './model/village_Detection_yolov7_l_2022_10_28.pth', export = False):
     yolo = YOLO(
         model_path = model_path,
         class_path = config.classes_path,
@@ -138,6 +141,7 @@ def Inference_YOLOV7Model(config, model_path = './model/village_Detection_yolov7
         letterbox_image = True,
         phi=config.phi,
         tiny = config.tiny,
-        cuda = config.cuda
+        cuda = config.cuda,
+        export = False
     )
     return yolo

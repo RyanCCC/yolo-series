@@ -12,6 +12,7 @@ class YOLOV5Config(Config):
     train_txt= os.path.join(dataset_base_path, 'train.txt')
     val_txt= os.path.join(dataset_base_path, 'val.txt')
     test_txt = os.path.join(dataset_base_path, 'ImageSets/Main')
+    input_shape = [640, 640]
 
     # cuda setting 
     cuda = False
@@ -35,7 +36,7 @@ class YOLOV5Config(Config):
     pretrain_weight = './yolov5v61/checkpoints/yolov5_l_v6.1.pth'
     # anchors
     anchors_path = './yolov5/data/yolov5_anchors.txt'
-    phi='l'
+    phi='s'
     # save weight
     time_str = str(datetime.datetime.strftime(datetime.datetime.now(),'%Y_%m_%d'))
     save_weight = f'{task}_yolov5{phi}_{time_str}.h5'
@@ -55,7 +56,6 @@ class YOLOV5Config(Config):
 
     score=0.3
     iou=0.5
-    input_shape = [640, 640]
 
     # focal loss
     focal_loss = False
