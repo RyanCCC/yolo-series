@@ -8,7 +8,7 @@
 |   YOLOV5    |   Torch-1.9    | 已实现，未经过测试。`pytorch`分支。 |
 | YOLOV5-v6.1 |   Torch-1.9    | 已实现，并通过测试。`pytorch`分支。 |
 |    YOLOX    | Tensorflow-2.4 | 已实现，并通过测试。`main`分支。  |
-|   YOLOV7    |   Torch-1.9    |       未实现。`pytorch`分支。       |
+|   YOLOV7    |   Torch-1.9    | 已实现，并通过测试。`pytorch`分支。       |
 |    YOLOP    |   Torch-1.9    | 已实现，未通过测试。`main`分支。  |
 
 本仓库主要是算法的训练和算法的验证，后续的工程化应用部署可以参考另一个仓库：[Deployment](https://github.com/RyanCCC/Deployment)。部署仓库包括模型的量化与压缩、`python`或者`C++`的部署代码以及`OpenCV`和`TensorRT`等推理，喜欢的话可以给个star或者一起参与建设仓库。
