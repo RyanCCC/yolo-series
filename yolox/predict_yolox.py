@@ -90,7 +90,8 @@ class YOLOX(object):
             'max_boxes':kwargs['max_boxes'], 
             'letterbox_image':kwargs['letterbox_image'],
             'model_path':kwargs['model_path'],
-            'phi':kwargs['phi']
+            'phi':kwargs['phi'],
+            'onnx':kwargs['onnx']
         }
         self.__dict__.update(self._arguments)
         self.class_names = get_classes(self.class_path)
@@ -117,6 +118,8 @@ class YOLOX(object):
         yolo_model = yolo_body([None, None, 3], num_classes=num_classes, phi=self.phi)
         yolo_model.load_weights(self.model_path)
         print('model weight success load.')
+        if self.onnx:
+            return yolo_model
         if export_model:
             yolo_model.save('./model/yolox_model', save_format='tf2')
             yolo_model = tf.keras.models.load_model('./model/yolox_model')
@@ -259,7 +262,7 @@ class YOLOX(object):
             with open(dr_txt_path, 'w') as f:
                 f.write("%s %s %s %s %s %s\n" % (predicted_class, str(score.numpy()), str(int(left)), str(int(top)), str(int(right)),str(int(bottom))))
 
-def Inference_YOLOXModel(YOLOXConfig, model_path = './model/village2022_yolox_s_20221017.h5'):
+def Inference_YOLOXModel(YOLOXConfig, model_path = './model/village2022_yolox_s_20221017.h5', onnx = False):
     yolox = YOLOX(
         class_path = YOLOXConfig.classes_path,
         input_shape = YOLOXConfig.input_shape,
@@ -268,7 +271,8 @@ def Inference_YOLOXModel(YOLOXConfig, model_path = './model/village2022_yolox_s_
         max_boxes=YOLOXConfig.max_boxes,
         letterbox_image = True,
         model_path = model_path,
-        phi=YOLOXConfig.phi
+        phi=YOLOXConfig.phi,
+        onnx = onnx
     )
     return yolox
 

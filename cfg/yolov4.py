@@ -4,8 +4,8 @@ from .base import Config
 class YOLOV4Config(Config):
     # Train
     logdir = './yolov4/logs/'
-    dataset_base_path = r'.\villages'
-    classes_path = os.path.join(dataset_base_path, 'village.names') 
+    dataset_base_path = r'./VOC2007'
+    classes_path = os.path.join(dataset_base_path, 'voc.names') 
     train_txt= os.path.join(dataset_base_path, 'train.txt')
     val_txt= os.path.join(dataset_base_path, 'val.txt')
     test_txt = os.path.join(dataset_base_path, 'ImageSets/Main')

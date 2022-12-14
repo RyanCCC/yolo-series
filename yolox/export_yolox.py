@@ -1,15 +1,15 @@
-from cfg import YOLOV4Config
+from cfg import YOLOXConfig
 import os
 import tensorflow as tf
 import tf2onnx
 import numpy as np
-from .predict_yolov4 import Inference_YOLOV4Model
+from .predict_yolox import Inference_YOLOXModel
 
 
 def export_model(weights, saved_pb, saved_pb_dir, opset, onnx_save_path):
     model_path = os.path.expanduser(weights)
     assert model_path.endswith('.h5'), 'Tensorflow model or weights must be a .h5 file.'
-    yolo_model = Inference_YOLOV4Model(YOLOV4Config, weights, True).yolo_model
+    yolo_model = Inference_YOLOXModel(YOLOXConfig, weights, True).model
     yolo_model.compile()
     if saved_pb:
         assert len(saved_pb_dir) > 0, 'save_name cannot be none or empty.'

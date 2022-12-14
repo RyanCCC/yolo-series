@@ -21,6 +21,7 @@ class YOLOV4(object):
             "input_size" : kwargs['input_size'],
             "letterbox_image" : kwargs['letterbox_image'],
             "istiny" : kwargs["istiny"],
+            "onnx":kwargs["onnx"],
             "attention" : kwargs["attention"],
             "result":'./result',
             "pr_folder_name":'tmp'
@@ -40,7 +41,7 @@ class YOLOV4(object):
         np.random.shuffle(self.colors)
         np.random.seed(None)
         # 初始化模型
-        self.yolo_model = self.get_model()
+        self.get_model()
     
     # 获得所有分类
     def get_classes(self):
@@ -70,17 +71,15 @@ class YOLOV4(object):
             from .nets.yolo4_tiny import yolo_body, yolo_eval
             self.yolo_model = yolo_body(Input(shape=(None,None,3)), num_anchors//2, num_classes, phi=self.attention)
         self.yolo_model.load_weights(self.model_path)
-
         print('{} model, anchors, and classes loaded.'.format(model_path))
-
-        
+        if self.onnx:
+            return
         self.input_image_shape = Input([2,],batch_size=1)
         inputs = [*self.yolo_model.output, self.input_image_shape]
         outputs = Lambda(yolo_eval, output_shape=(1,), name='yolo_eval',
             arguments={'anchors': self._anchors, 'num_classes': len(self._class_names), 'image_shape': self.input_size, 
             'score_threshold': self.score, 'eager': True, 'max_boxes': self.max_boxes, 'letterbox_image': self.letterbox_image})(inputs)
         self.yolo_model = Model([self.yolo_model.input, self.input_image_shape], outputs)
-        return self.yolo_model
     
     @tf.function
     def get_pred(self, image_data, input_image_shape):
@@ -207,7 +206,7 @@ class YOLOV4(object):
 
 
     
-def Inference_YOLOV4Model(YOLOV4Config, model_path):
+def Inference_YOLOV4Model(YOLOV4Config, model_path, onnx = False):
     yolov4 = YOLOV4(
         class_path = YOLOV4Config.classes_path,
         input_size = (YOLOV4Config.imagesize, YOLOV4Config.imagesize),
@@ -221,6 +220,7 @@ def Inference_YOLOV4Model(YOLOV4Config, model_path):
         anchor_path = YOLOV4Config.anchors_path,
         classes_path = YOLOV4Config.classes_path,
         score = YOLOV4Config.score,
+        onnx = onnx
     )
     return yolov4
     
