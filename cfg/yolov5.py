@@ -7,8 +7,8 @@ class YOLOV5Config(Config):
     time_str = str(datetime.datetime.strftime(datetime.datetime.now(),'%Y_%m_%d'))
     task = 'village_detection'
     logdir = './yolov5/logs/'
-    dataset_base_path = r'./villages'
-    classes_path = os.path.join(dataset_base_path, 'village.names') 
+    dataset_base_path = r'./VOC2007'
+    classes_path = os.path.join(dataset_base_path, 'voc.names') 
     train_txt= os.path.join(dataset_base_path, 'train.txt')
     val_txt= os.path.join(dataset_base_path, 'val.txt')
     test_txt = os.path.join(dataset_base_path, 'ImageSets/Main')
