@@ -60,9 +60,9 @@
 2. `voc_annotation.py`：生成输入到网络的文档格式，如下所示：
 
 ```
-D:\villages\JPEGImages/wc_102.jpg 261,607,341,778,0
-D:\villages\JPEGImages/camera_20210817154550.jpg 94,149,165,251,11 22,164,97,249,11
-D:\villages\JPEGImages/pavilion_20210812155531.jpg 111,2,458,337,10
+your/voc/root/path/JPEGImages/wc_102.jpg 261,607,341,778,0
+your/voc/root/pathJPEGImages/camera_20210817154550.jpg 94,149,165,251,11 22,164,97,249,11
+your/voc/root/pathJPEGImages/pavilion_20210812155531.jpg 111,2,458,337,10
 ```
 
 **注意两者之前生成顺序**：先划分数据集，生成`ImageSets/Main`下的txt文档，然后根据`ImageSets/Main`下的txt文档生成适用于文档格式的数据集。
@@ -86,11 +86,11 @@ D:\villages\JPEGImages/pavilion_20210812155531.jpg 111,2,458,337,10
 推理的示范：
 
 ```sh
-python ./predict.py --model YOLOV5 --mode dir --img_dir ./samples --weights ./model/village2022_yolov5_l_20221013.h5 --save
+python ./predict.py --model YOLOV5 --mode dir --img_dir ./samples --weights ./model/VOC2007_yolov5_l_20221013.h5 --save
 ```
 
 ```sh
-python ./predict.py --model YOLOV7-TINY --img_dir ./samples/ --weights ./model/village_Detection_yolov7_tiny_2022_10_28.pth --mode dir --save
+python ./predict.py --model YOLOV7-TINY --img_dir ./samples/ --weights ./model/VOC2007_yolov7_tiny_2022_10_28.pth --mode dir --save
 ```
 
 ## 模型验证
@@ -100,7 +100,7 @@ python ./predict.py --model YOLOV7-TINY --img_dir ./samples/ --weights ./model/v
 1. **统计测试集的ground_True**
 
 ```python
-python ./evaluate/get_gt_txt.py --testset ./VOC2017/ImageSets/Main/test.txt --annotation ./villages/Annotations/ --gt_folder ./result/gt_folder
+python ./evaluate/get_gt_txt.py --testset ./VOC2017/ImageSets/Main/test.txt --annotation ./VOC2007/Annotations/ --gt_folder ./result/gt_folder
 ```
 
 参数说明：
@@ -112,7 +112,7 @@ python ./evaluate/get_gt_txt.py --testset ./VOC2017/ImageSets/Main/test.txt --an
 2. **计算模型推理测试集的结果**
 
 ```python
-python ./evaluate/get_dr_txt.py --testset ./villages/ImageSets/Main/test.txt --pr_folder ./result/pr_folder --minoverlap 0.5 --model_path ./model/village_yolox.h5 --image_path ./villages/JPEGImages/ --model YOLOX
+python ./evaluate/get_dr_txt.py --testset ./voc2007/ImageSets/Main/test.txt --pr_folder ./result/pr_folder --minoverlap 0.5 --model_path ./model/voc2007_yolox.h5 --image_path ./voc2007/JPEGImages/ --model YOLOX
 ```
 
 参数说明：
@@ -125,7 +125,7 @@ python ./evaluate/get_dr_txt.py --testset ./villages/ImageSets/Main/test.txt --p
 3. **计算map的性能指标**
 
 ```python
-python ./evaluate/get_map.py --GT_PATH ./result/evaluate --DR_PATH ./result/pr_folder/ --IMG_PATH ./villages/JPEGImages/ --MINOVERLAP 0.5
+python ./evaluate/get_map.py --GT_PATH ./result/evaluate --DR_PATH ./result/pr_folder/ --IMG_PATH ./voc2007/JPEGImages/ --MINOVERLAP 0.5
 ```
 
 参数说明：
@@ -170,14 +170,14 @@ FLOPs：注意s小写，是floating point operations的缩写（s表复数），
 1. 从Tensorflow模型导出：
 
 ```
-python .\export.py --saved_model .\village_model\ --save_onnx './tmp.onnx' --yolo yolox --flag
+python .\export.py --saved_model .\voc2007_model\ --save_onnx './tmp.onnx' --yolo yolox --flag
 ```
 
 2. 从Tensorflow权重导出：
 
 记住：**一定要先在配置文件中配置好模型再进行导出！**
 ```
-python .\export.py --yolo yolox --weight .\model\village_yolox.h5 --save_onnx './tmp_yolox.onnx'
+python .\export.py --yolo yolox --weight .\model\voc2007_yolox.h5 --save_onnx './tmp_yolox.onnx'
 ```
 
 更多的ONNX推理和算法部署可参考：[Deployment](https://github.com/RyanCCC/Deployment)。

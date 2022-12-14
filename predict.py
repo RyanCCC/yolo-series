@@ -2,8 +2,9 @@
 YOLOV5推理
 
 Usage：
-    python ./predict.py --model YOLOV7 --mode dir --img_dir ./samples/ --weights ./model/voc_2007.pt --save --save_dir ./result/ 
-    python ./predict.py --model YOLOV5-V61 --mode dir --img_dir ./samples/images/ --weights ./model/voc_2007.onnx --save --save_dir ./result/
+    python ./predict.py --model YOLOV7 --source ./samples/ --weights ./model/voc_2007.pt --save --save_dir ./result/ 
+    
+    python ./predict.py --model YOLOV5-V61 --source ./samples/images/1.jpg --weights ./model/voc_2007.onnx --save --save_dir ./result/
 
 '''
 import os
@@ -27,9 +28,7 @@ def parse_args():
     parser.add_argument('--img_dir', default='./samples', help='predict image dir')
     parser.add_argument('--weights', help='model weights', required=True)
     parser.add_argument('--save_dir', default='./result', help='save_dir')
-    parser.add_argument('--image', help='image path')
-    parser.add_argument('--mode', help='detect mode, dir or image.', choices=['dir', 'image'], required=True)
-    args = parser.parse_args()
+    parser.add_argument('--source', help='source,image file/dir')
     return args
 
 def dir_inference(imag_dir, model, args):
@@ -57,13 +56,14 @@ def dir_inference(imag_dir, model, args):
 
 if __name__=='__main__':
     args = parse_args()
+    source = args.source
     if args.model.upper() == 'YOLOX':
         from yolox import Inference_YOLOXModel
         yolo = Inference_YOLOXModel(YOLOXConfig, args.weights)
-        if args.mode == 'dir':
+        if os.path.isdir(source):
             dir_inference(args.img_dir, yolo, args)
         else:
-            image = Image.open(args.image)
+            image = Image.open(source)
             img = yolo.detect(image)
             if args.show:
                 img.show()
@@ -73,10 +73,10 @@ if __name__=='__main__':
     elif  args.model.upper() == 'YOLOV4':
         from yolov4 import Inference_YOLOV4Model
         yolo = Inference_YOLOV4Model(YOLOV4Config, args.weights)
-        if args.mode == 'dir':
+        if os.path.isdir(source):
             dir_inference(args.img_dir, yolo, args)
         else:
-            image = Image.open(args.image)
+            image = Image.open(source)
             img = yolo.detect(image)
             if args.show:
                 img.show()
@@ -86,10 +86,10 @@ if __name__=='__main__':
     elif args.model.upper() == 'YOLOV4-TINY':
         from yolov4 import Inference_YOLOV4Model
         yolo = Inference_YOLOV4Model(YOLOV4Config, args.weights)
-        if args.mode == 'dir':
+        if os.path.isdir(source):
             dir_inference(args.img_dir, yolo, args)
         else:
-            image = Image.open(args.image)
+            image = Image.open(source)
             img = yolo.detect(image)
             if args.show:
                 img.show()
@@ -99,10 +99,10 @@ if __name__=='__main__':
     elif args.model.upper() == 'YOLOV5':
         from yolov5 import Inference_YOLOV5Model
         yolo = Inference_YOLOV5Model(YOLOV5Config, args.weights)
-        if args.mode == 'dir':
+        if os.path.isdir(source):
             dir_inference(args.img_dir, yolo, args)
         else:
-            image = Image.open(args.image)
+            image = Image.open(source)
             img = yolo.detect(image)
             if args.show:
                 img.show()
@@ -113,10 +113,10 @@ if __name__=='__main__':
     elif args.model.upper() == 'YOLOV5-V61':
         from yolov5v61 import Inference_YOLOV5Model
         yolo = Inference_YOLOV5Model(YOLOV5Config, args.weights)
-        if args.mode == 'dir':
+        if os.path.isdir(source):
             dir_inference(args.img_dir, yolo, args)
         else:
-            image = Image.open(args.image)
+            image = Image.open(source)
             img = yolo.detect(image)
             if args.show:
                 img.show()
@@ -127,10 +127,10 @@ if __name__=='__main__':
     elif args.model.upper() == 'YOLOV7':
         from yolov7 import Inference_YOLOV7Model
         yolo = Inference_YOLOV7Model(YOLOV7Config, args.weights)
-        if args.mode == 'dir':
+        if os.path.isdir(source):
             dir_inference(args.img_dir, yolo, args)
         else:
-            image = Image.open(args.image)
+            image = Image.open(source)
             img = yolo.detect(image)
             if args.show:
                 img.show()
@@ -140,10 +140,10 @@ if __name__=='__main__':
     elif args.model.upper() == 'YOLOV7-TINY':
         from yolov7 import Inference_YOLOV7Model
         yolo = Inference_YOLOV7Model(YOLOV7Config, args.weights)
-        if args.mode == 'dir':
+        if os.path.isdir(source):
             dir_inference(args.img_dir, yolo, args)
         else:
-            image = Image.open(args.image)
+            image = Image.open(source)
             img = yolo.detect(image)
             if args.show:
                 img.show()
