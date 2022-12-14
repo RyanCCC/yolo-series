@@ -86,11 +86,11 @@ your/voc/root/pathJPEGImages/pavilion_20210812155531.jpg 111,2,458,337,10
 推理的示范：
 
 ```sh
-python ./predict.py --model YOLOV5 --mode dir --img_dir ./samples --weights ./model/VOC2007_yolov5_l_20221013.h5 --save
+python ./predict.py --model YOLOV5  --source ./samples --weights ./model/VOC2007_yolov5_l_20221013.h5 --save
 ```
 
 ```sh
-python ./predict.py --model YOLOV7-TINY --img_dir ./samples/ --weights ./model/VOC2007_yolov7_tiny_2022_10_28.pth --mode dir --save
+python ./predict.py --model YOLOV7-TINY --source ./samples/1.jpg --weights ./model/VOC2007_yolov7_tiny_2022_10_28.pth --save
 ```
 
 ## 模型验证
