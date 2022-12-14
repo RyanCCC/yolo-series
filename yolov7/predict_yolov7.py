@@ -34,7 +34,8 @@ class YOLO(object):
             "nms_iou" : kwargs['nms_iou'],
             "max_boxes" : kwargs['max_boxes'], 
             "letterbox_image" : kwargs['letterbox_image'],
-            "tiny":kwargs['tiny']
+            "tiny":kwargs['tiny'],
+            "onnx":kwargs['onnx']
         }
         self.__dict__.update(self._params)
             
@@ -66,6 +67,8 @@ class YOLO(object):
             gc.collect()
             self.model = self.model_fuse
         print('{} model, anchors, and classes loaded.'.format(model_path))
+        if self.onnx:
+            return
         self.input_image_shape = Input([2,],batch_size=1)
         inputs  = [*self.model.output, self.input_image_shape]
         outputs = Lambda(
@@ -232,7 +235,7 @@ class YOLO(object):
         plt.show()
 
 
-def Inference_YOLOV7Model(config, model_path = './model/village_Detection_yolov7_l_2022_10_28.pth'):
+def Inference_YOLOV7Model(config, model_path, onnx = False):
     yolo = YOLO(
         model_path = model_path,
         class_path = config.classes_path,
@@ -244,6 +247,7 @@ def Inference_YOLOV7Model(config, model_path = './model/village_Detection_yolov7
         max_boxes=config.max_boxes,
         letterbox_image = True,
         phi=config.phi,
-        tiny = config.tiny
+        tiny = config.tiny,
+        onnx = False
     )
     return yolo

@@ -5,7 +5,7 @@
 |    算法     |    实现框架    |               备注                |
 | :---------: | :------------: | :-------------------------------: |
 |   YOLOV4    | Tensorflow-2.4 | 已实现，并通过测试。`main`分支。  |
-|   YOLOV5    |   Torch-1.9    | 已实现，未经过测试。`pytorch`分支。 |
+|   YOLOV5    |   Torch-1.9    | 已实现，并经过测试。`pytorch`分支。 |
 | YOLOV5-v6.1 |   Torch-1.9    | 已实现，并通过测试。`pytorch`分支。 |
 |    YOLOX    | Tensorflow-2.4 | 已实现，并通过测试。`main`分支。  |
 |   YOLOV7    |   Torch-1.9    | 已实现，并通过测试。`pytorch`分支。       |

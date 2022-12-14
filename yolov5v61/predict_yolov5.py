@@ -26,6 +26,7 @@ class YOLOV5(object):
             "nms_iou" : kwargs['nms_iou'],
             "max_boxes": kwargs['max_boxes'],
             "letterbox_image":kwargs['letterbox_image'],
+            "onnx":kwargs['onnx']
             }
         self.__dict__.update(self._params)
         self.class_names, self.num_classes = get_classes(self.classes_path)
@@ -46,6 +47,8 @@ class YOLOV5(object):
         self.model = yolo_body([None, None, 3], self.anchors_mask, self.num_classes, self.phi)
         self.model.load_weights(self.model_path, skip_mismatch=True, by_name=True)
         print('{} model, anchors, and classes loaded.'.format(model_path))
+        if self.onnx:
+            return
         self.input_image_shape = Input([2,],batch_size=1)
         inputs  = [*self.model.output, self.input_image_shape]
         outputs = Lambda(
@@ -186,7 +189,7 @@ class YOLOV5(object):
             with open(dr_txt_path, 'w') as f:
                 f.write("%s %s %s %s %s %s\n" % (predicted_class, str(score.numpy()), str(int(left)), str(int(top)), str(int(right)),str(int(bottom))))
 
-def Inference_YOLOV5Model(YOLOV5Config, model_path):
+def Inference_YOLOV5Model(YOLOV5Config, model_path, onnx = False):
     yolov5 = YOLOV5(
         model_path = model_path,
         classes_path = YOLOV5Config.classes_path,
@@ -197,7 +200,8 @@ def Inference_YOLOV5Model(YOLOV5Config, model_path):
         nms_iou = YOLOV5Config.iou,
         max_boxes=YOLOV5Config.max_boxes,
         letterbox_image = True,
-        phi=YOLOV5Config.phi
+        phi=YOLOV5Config.phi,
+        onnx = False
     )
     return yolov5
 

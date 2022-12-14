@@ -24,7 +24,7 @@ def parse_arg():
     parser.add_argument('--weight', type=str, help='model weight', default='')
     parser.add_argument('--saved_pb', action='store_true', help='save pb model to current directory')
     parser.add_argument('--saved_pb_dir', type=str, default='./save_model', help='save pb file if needed. Default:save_model')
-    parser.add_argument('--yolo', type=str, help='YOLO algorithm.', choices=['yolov4', 'yolov4_tiny', 'yolox'], required=True)
+    parser.add_argument('--yolo', type=str, help='YOLO algorithm.', choices=['yolov4', 'yolov4_tiny', 'yolov5', 'yolov5-v61', 'yolox', 'yolov7'], required=True)
     parser.add_argument('--saved_model', type=str, help='Tensorflow saved_model', default='')
     parser.add_argument('--save_onnx', type=str, help='save onnx model name', required=True, default='')
     parser.add_argument('--opset', type=int, default=12, help='ONNX: opset version')
@@ -56,17 +56,35 @@ def main(args):
         weights = args.weight
         assert len(weights) > 0, 'weights cannot be none or empty.'
         if yolo_type == 'yolov4' or yolo_type == 'yolov4_tiny':
-            from yolov4 import export_model
+            from yolov4 import export_yolov4
             save_pb = args.saved_pb
             save_name = args.saved_pb_dir
-            export_model(weights, save_pb, save_name, opset=opset, onnx_save_path=onnx_save_path)
+            export_yolov4(weights, save_pb, save_name, opset=opset, onnx_save_path=onnx_save_path)
             print('success export YOLOV4.')
         elif yolo_type == 'yolox':
-            from yolox import export_model
+            from yolox import export_yolox
             save_pb = args.saved_pb
             save_name = args.saved_pb_dir
-            export_model(weights, save_pb, save_name, opset=opset, onnx_save_path=onnx_save_path)
+            export_yolox(weights, save_pb, save_name, opset=opset, onnx_save_path=onnx_save_path)
             print('success export YOLOX.')
+        elif yolo_type == 'yolov5':
+            from yolov5 import export_yolov5
+            save_pb = args.saved_pb
+            save_name = args.saved_pb_dir
+            export_yolov5(weights, save_pb, save_name, opset=opset, onnx_save_path=onnx_save_path)
+            print('success export yolov5.')
+        elif yolo_type == 'yolov5-v61':
+            from yolov5v61 import export_yolov5v61
+            save_pb = args.saved_pb
+            save_name = args.saved_pb_dir
+            export_yolov5v61(weights, save_pb, save_name, opset=opset, onnx_save_path=onnx_save_path)
+            print('success export yolov5-v61.')
+        elif yolo_type == 'yolov5-v61':
+            from yolov7 import export_yolov7
+            save_pb = args.saved_pb
+            save_name = args.saved_pb_dir
+            export_yolov7(weights, save_pb, save_name, opset=opset, onnx_save_path=onnx_save_path)
+            print('success export yolov71.')
 if __name__ == '__main__':
     parser = parse_arg()
     args = parser.parse_args()
