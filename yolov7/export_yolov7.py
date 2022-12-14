@@ -57,7 +57,6 @@ def export_onnx(model, file, opset, train, dynamic, simplify, prefix='\033[91m')
             except Exception as e:
                 print(f'{prefix} simplifier failure: {e}')
         print(f'{prefix} export success, saved as {file}')
-        print(f"{prefix} run --dynamic ONNX model inference with: 'python detect.py --weights {file}'")
     except Exception as e:
         print(f'{prefix} export failure: {e}')
 

@@ -1,5 +1,6 @@
 import numpy as np
 from PIL import Image
+from pathlib import Path
 
 def cvtColor(image):
     if len(np.shape(image)) == 3 and np.shape(image)[2] == 3:
@@ -7,6 +8,13 @@ def cvtColor(image):
     else:
         image = image.convert('RGB')
         return image 
+
+def check_suffix(file='yolov5s.pth', suffix = ('.pth'), msg = '' ):
+    if file and suffix:
+        if isinstance(suffix, str):
+            suffix = [suffix]
+        for f in file if isinstance(file, (list, tuple)) else [file]:
+            assert Path(f).suffix.lower() in suffix, f"{msg}{f} acceptable suffix is {suffix}"
 
 def resize_image(image, size, letterbox_image):
     iw, ih  = image.size

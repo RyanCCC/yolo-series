@@ -1,3 +1,11 @@
+'''
+YOLOV5推理
+
+Usage：
+    python ./predict.py --model YOLOV7 --mode dir --img_dir ./samples/ --weights ./model/voc_2007.pt --save --save_dir ./result/ 
+    python ./predict.py --model YOLOV5-V61 --mode dir --img_dir ./samples/images/ --weights ./model/voc_2007.onnx --save --save_dir ./result/
+
+'''
 import os
 from cfg import *
 from PIL import Image

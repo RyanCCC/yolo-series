@@ -46,7 +46,6 @@ def export_onnx(model, file, opset, train, dynamic, simplify, prefix='\033[91m')
         if simplify:
             try:
                 import onnxsim
-
                 print(f'{prefix} simplifying with onnx-simplifier {onnxsim.__version__}...')
                 model_onnx, check = onnxsim.simplify(
                     model_onnx,
@@ -57,7 +56,6 @@ def export_onnx(model, file, opset, train, dynamic, simplify, prefix='\033[91m')
             except Exception as e:
                 print(f'{prefix} simplifier failure: {e}')
         print(f'{prefix} export success, saved as {file}')
-        print(f"{prefix} run --dynamic ONNX model inference with: 'python detect.py --weights {file}'")
     except Exception as e:
         print(f'{prefix} export failure: {e}')
 
@@ -72,6 +70,8 @@ def export_model(
     opset = 12, #ONNX: opset version
     ):
     yolov5 = Inference_YOLOV5Model(YOLOV5Config, weights, export=True).net
+    #TODO checksuffix
+    
     include = [x.lower() for x in include]
     if 'onnx' in include:
         print('Exporting onnx model....')

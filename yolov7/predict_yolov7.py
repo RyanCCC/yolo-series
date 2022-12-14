@@ -1,15 +1,14 @@
 import colorsys
 import os
 import time
-
+from pathlib import Path
 import numpy as np
 import torch
 import torch.nn as nn
 from PIL import ImageDraw, ImageFont
 
 from .nets.yolov7 import YoloBody
-from .lib.tools import (cvtColor, get_anchors, get_classes, preprocess_input,
-                         resize_image, show_config)
+from .lib.tools import cvtColor, get_anchors, get_classes, preprocess_input,resize_image, check_suffix
 from .lib.decodebox import DecodeBox
 
 
@@ -42,28 +41,55 @@ class YOLO(object):
         self.init_model()
 
     def init_model(self):
-        self.net    = YoloBody(self.anchors_mask, self.num_classes, self.phi)
-        device      = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.net.load_state_dict(torch.load(self.model_path, map_location=device))
-        self.net    = self.net.fuse().eval()
-        print('{} model, and classes loaded.'.format(self.model_path))
-        if self.export:
-            return
-        if self.cuda:
-            self.net = nn.DataParallel(self.net)
-            self.net = self.net.cuda()
+        # 加载不同类型的模型
+        weights = str(self.model_path[0] if isinstance(self.model_path, list) else self.model_path)
+        suffix, suffixes = Path(weights).suffix.lower(), ['.pth', '.onnx']
+        # check weights have acceptable suffix
+        check_suffix(weights, suffixes)
+        # backbend booleans
+        self.pt, self.onnx = (suffix==x for x in suffixes)
+
+        if self.pt:
+            self.net = YoloBody(self.anchors_mask, self.num_classes, self.phi)
+            device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+            self.net.load_state_dict(torch.load(self.model_path, map_location=device))
+            self.net = self.net.fuse().eval()
+            print('{} model, and classes loaded.'.format(self.model_path))
+            if self.export:
+                return
+            if self.cuda:
+                self.net = nn.DataParallel(self.net)
+                self.net = self.net.cuda()
+        if self.onnx:
+            import onnxruntime
+            print('Init ONNX model')
+            self.net = onnxruntime.InferenceSession(weights, None)
 
     def detect(self, image, crop = False, istrack=False):
         image_shape = np.array(np.shape(image)[0:2])
-        image       = cvtColor(image)
+        image = cvtColor(image)
         image_data  = resize_image(image, (self.input_shape[1], self.input_shape[0]), self.letterbox_image)
         image_data  = np.expand_dims(np.transpose(preprocess_input(np.array(image_data, dtype='float32')), (2, 0, 1)), 0)
+        # 推理
+        if self.pt:
+            with torch.no_grad():
+                images = torch.from_numpy(image_data)
+                if self.cuda:
+                    images = images.cuda()
+                outputs = self.net(images)
+                outputs = self.bbox_util.decode_box(outputs)
+                results = self.bbox_util.non_max_suppression(torch.cat(outputs, 1), self.num_classes, self.input_shape, 
+                        image_shape, self.letterbox_image, conf_thres = self.confidence, nms_thres = self.nms_iou)
+                                                    
+                if results[0] is None: 
+                    return image
 
-        with torch.no_grad():
-            images = torch.from_numpy(image_data)
-            if self.cuda:
-                images = images.cuda()
-            outputs = self.net(images)
+                top_label = np.array(results[0][:, 6], dtype = 'int32')
+                top_conf = results[0][:, 4] * results[0][:, 5]
+                top_boxes = results[0][:, :4]
+        if self.onnx:
+            print('ONNNX Inference...')
+            outputs = torch.tensor(self.net.run([self.net.get_outputs()[0].name], {self.net.get_inputs()[0].name: image_data}))
             outputs = self.bbox_util.decode_box(outputs)
             results = self.bbox_util.non_max_suppression(torch.cat(outputs, 1), self.num_classes, self.input_shape, 
                         image_shape, self.letterbox_image, conf_thres = self.confidence, nms_thres = self.nms_iou)
@@ -71,9 +97,11 @@ class YOLO(object):
             if results[0] is None: 
                 return image
 
-            top_label   = np.array(results[0][:, 6], dtype = 'int32')
-            top_conf    = results[0][:, 4] * results[0][:, 5]
-            top_boxes   = results[0][:, :4]
+            top_label = np.array(results[0][:, 6], dtype = 'int32')
+            top_conf = results[0][:, 4] * results[0][:, 5]
+            top_boxes = results[0][:, :4]
+
+        # 结果展示
         font = ImageFont.truetype(font='./font/simhei.ttf', size=np.floor(3e-2 * image.size[1] + 0.5).astype('int32'))
         thickness   = int(max((image.size[0] + image.size[1]) // np.mean(self.input_shape), 1))
         if crop:

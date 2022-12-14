@@ -23,50 +23,33 @@ def fit_one_epoch(model_train, model, ema, yolo_loss, loss_history, eval_callbac
                 images  = images.cuda(local_rank)
                 targets = [ann.cuda(local_rank) for ann in targets]
                 y_trues = [ann.cuda(local_rank) for ann in y_trues]
-        #----------------------#
-        #   清零梯度
-        #----------------------#
         optimizer.zero_grad()
         if not fp16:
-            #----------------------#
-            #   前向传播
-            #----------------------#
-            outputs         = model_train(images)
+            outputs = model_train(images)
 
             loss_value_all  = 0
-            #----------------------#
-            #   计算损失
-            #----------------------#
             for l in range(len(outputs)):
                 loss_item = yolo_loss(l, outputs[l], targets, y_trues[l])
                 loss_value_all  += loss_item
             loss_value = loss_value_all
 
-            #----------------------#
-            #   反向传播
-            #----------------------#
+            # backward
             loss_value.backward()
             optimizer.step()
         else:
             from torch.cuda.amp import autocast
             with autocast():
-                #----------------------#
-                #   前向传播
-                #----------------------#
-                outputs         = model_train(images)
+                # forward
+                outputs = model_train(images)
 
+                # loss
                 loss_value_all  = 0
-                #----------------------#
-                #   计算损失
-                #----------------------#
                 for l in range(len(outputs)):
                     loss_item = yolo_loss(l, outputs[l], targets, y_trues[l])
                     loss_value_all  += loss_item
                 loss_value = loss_value_all
 
-            #----------------------#
-            #   反向传播
-            #----------------------#
+            # backforward
             scaler.scale(loss_value).backward()
             scaler.step(optimizer)
             scaler.update()
@@ -100,19 +83,10 @@ def fit_one_epoch(model_train, model, ema, yolo_loss, loss_history, eval_callbac
                 images  = images.cuda(local_rank)
                 targets = [ann.cuda(local_rank) for ann in targets]
                 y_trues = [ann.cuda(local_rank) for ann in y_trues]
-            #----------------------#
-            #   清零梯度
-            #----------------------#
             optimizer.zero_grad()
-            #----------------------#
-            #   前向传播
-            #----------------------#
-            outputs         = model_train_eval(images)
+            outputs = model_train_eval(images)
 
             loss_value_all  = 0
-            #----------------------#
-            #   计算损失
-            #----------------------#
             for l in range(len(outputs)):
                 loss_item = yolo_loss(l, outputs[l], targets, y_trues[l])
                 loss_value_all  += loss_item
@@ -131,9 +105,7 @@ def fit_one_epoch(model_train, model, ema, yolo_loss, loss_history, eval_callbac
         print('Epoch:'+ str(epoch + 1) + '/' + str(Epoch))
         print('Total Loss: %.3f || Val Loss: %.3f ' % (loss / epoch_step, val_loss / epoch_step_val))
         
-        #-----------------------------------------------#
-        #   保存权值
-        #-----------------------------------------------#
+        # save weight
         if ema:
             save_state_dict = ema.ema.state_dict()
         else:
