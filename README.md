@@ -86,11 +86,13 @@ your/dataset/root/path/pavilion_20210812155531.jpg 111,2,458,337,10
 推理的示范：
 
 ```sh
-python ./predict.py --model YOLOV5 --mode dir --img_dir ./samples --weights ./model/village2022_yolov5_l_20221013.h5 --save
+# directory inference
+python ./predict.py --model YOLOV5 --source ./samples --weights ./model/voc2007.h5 --save
 ```
 
 ```sh
-python ./predict.py --model YOLOV7-TINY --img_dir ./samples/ --weights ./model/village_Detection_yolov7_tiny_2022_10_28.pth --mode dir --save
+# image inference
+python ./predict.py --model YOLOV7-TINY --source ./samples/test.jpg --weights ./model/VOC2007_yolov7_tiny_2022_10_28.pth --save
 ```
 
 ## 模型验证
@@ -100,7 +102,7 @@ python ./predict.py --model YOLOV7-TINY --img_dir ./samples/ --weights ./model/v
 1. **统计测试集的ground_True**
 
 ```python
-python ./evaluate/get_gt_txt.py --testset ./VOC2017/ImageSets/Main/test.txt --annotation ./villages/Annotations/ --gt_folder ./result/gt_folder
+python ./evaluate/get_gt_txt.py --testset ./VOC2017/ImageSets/Main/test.txt --annotation ./VOC2007/Annotations/ --gt_folder ./result/gt_folder
 ```
 
 参数说明：
@@ -112,7 +114,7 @@ python ./evaluate/get_gt_txt.py --testset ./VOC2017/ImageSets/Main/test.txt --an
 2. **计算模型推理测试集的结果**
 
 ```python
-python ./evaluate/get_dr_txt.py --testset ./villages/ImageSets/Main/test.txt --pr_folder ./result/pr_folder --minoverlap 0.5 --model_path ./model/village_yolox.h5 --image_path ./villages/JPEGImages/ --model YOLOX
+python ./evaluate/get_dr_txt.py --testset ./VOC2007/ImageSets/Main/test.txt --pr_folder ./result/pr_folder --minoverlap 0.5 --model_path ./model/voc_yolox.h5 --image_path ./VOC2007/JPEGImages/ --model YOLOX
 ```
 
 参数说明：
@@ -125,7 +127,7 @@ python ./evaluate/get_dr_txt.py --testset ./villages/ImageSets/Main/test.txt --p
 3. **计算map的性能指标**
 
 ```python
-python ./evaluate/get_map.py --GT_PATH ./result/evaluate --DR_PATH ./result/pr_folder/ --IMG_PATH ./villages/JPEGImages/ --MINOVERLAP 0.5
+python ./evaluate/get_map.py --GT_PATH ./result/evaluate --DR_PATH ./result/pr_folder/ --IMG_PATH ./VOC2007/JPEGImages/ --MINOVERLAP 0.5
 ```
 
 参数说明：
@@ -170,14 +172,14 @@ FLOPs：注意s小写，是floating point operations的缩写（s表复数），
 1. 从Tensorflow模型导出：
 
 ```
-python .\export.py --saved_model .\village_model\ --save_onnx './tmp.onnx' --yolo yolox --flag
+python .\export.py --saved_model .\VOC2007_model\ --save_onnx './tmp.onnx' --yolo yolox --flag
 ```
 
 2. 从Tensorflow权重导出：
 
 记住：**一定要先在配置文件中配置好模型再进行导出！**
 ```
-python .\export.py --yolo yolox --weight .\model\village_yolox.h5 --save_onnx './tmp_yolox.onnx'
+python .\export.py --yolo yolox --weight .\model\VOC2007_yolox.h5 --save_onnx './tmp_yolox.onnx'
 ```
 
 更多的ONNX推理和算法部署可参考：[Deployment](https://github.com/RyanCCC/Deployment)。
