@@ -49,13 +49,14 @@ def DecodeBox(outputs,
             anchors,
             num_classes,
             input_shape,
+            image_shape,
             anchor_mask = [[6, 7, 8], [3, 4, 5], [0, 1, 2]],
             max_boxes = 100,
             confidence = 0.5,
             nms_iou = 0.3,
             letterbox_image = True):
     
-    image_shape = K.reshape(outputs[-1],[-1])
+    # image_shape = K.reshape(outputs[-1],[-1])
 
     box_xy = []
     box_wh = []

@@ -2,7 +2,15 @@ from functools import reduce
 
 import numpy as np
 from PIL import Image
+from pathlib import Path
 
+def check_suffix(file='yolov5s.pt', suffix=('.pt',), msg=''):
+    # Check file(s) for acceptable suffixes
+    if file and suffix:
+        if isinstance(suffix, str):
+            suffix = [suffix]
+        for f in file if isinstance(file, (list, tuple)) else [file]:
+            assert Path(f).suffix.lower() in suffix, f"{msg}{f} acceptable suffix is {suffix}"
 
 def compose(*funcs):
     if funcs:

@@ -17,8 +17,10 @@ from tensorflow.keras.layers import Input, Lambda
 from tensorflow.keras.models import Model
 
 from .nets import yolo_body, fusion_rep_vgg
-from .lib.tools import cvtColor, get_anchors, get_classes, preprocess_input,resize_image, show_config
+from .lib.tools import cvtColor, get_anchors, get_classes, preprocess_input,resize_image, check_suffix
 from .lib.decodebox import DecodeBox
+from pathlib import Path
+
 
 
 class YOLO(object):
@@ -34,8 +36,7 @@ class YOLO(object):
             "nms_iou" : kwargs['nms_iou'],
             "max_boxes" : kwargs['max_boxes'], 
             "letterbox_image" : kwargs['letterbox_image'],
-            "tiny":kwargs['tiny'],
-            "onnx":kwargs['onnx']
+            "tiny":kwargs['tiny']
         }
         self.__dict__.update(self._params)
             
@@ -47,60 +48,88 @@ class YOLO(object):
         self.init_model()
 
     def init_model(self):
-        model_path = os.path.expanduser(self.model_path)
-        assert model_path.endswith('.h5'), 'Keras model or weights must be a .h5 file.'
-        
-        self.model = yolo_body([None, None, 3], self.anchors_mask, self.num_classes, self.phi)
-        self.model.load_weights(self.model_path, by_name=True)
-        
-        if self.phi == "l":
-            fuse_layers = [
-                ["rep_conv_1", False, True],
-                ["rep_conv_2", False, True],
-                ["rep_conv_3", False, True],
-            ]
-            self.model_fuse = yolo_body([None, None, 3], self.anchors_mask, self.num_classes, self.phi, mode="predict")
-            self.model_fuse.load_weights(self.model_path, by_name=True)
+         # 加载不同类型的模型
+        weights = str(self.model_path[0] if isinstance(self.model_path, list) else self.model_path)
+        suffix, suffixes = Path(weights).suffix.lower(), ['.h5', '.onnx', '']
+        # check weights have acceptable suffix
+        check_suffix(weights, suffixes)
+        # backbend booleans
+        self.h5, self.onnx, self.saved_model = (suffix == x for x in suffixes)
 
-            fusion_rep_vgg(fuse_layers, self.model, self.model_fuse)
-            del self.model
-            gc.collect()
-            self.model = self.model_fuse
-        print('{} model, anchors, and classes loaded.'.format(model_path))
-        if self.onnx:
-            return
-        self.input_image_shape = Input([2,],batch_size=1)
-        inputs  = [*self.model.output, self.input_image_shape]
-        outputs = Lambda(
-            DecodeBox, 
-            output_shape = (1,), 
-            name = 'yolo_eval',
-            arguments = {
-                'anchors'           : self.anchors, 
-                'num_classes'       : self.num_classes, 
-                'input_shape'       : self.input_shape, 
-                'anchor_mask'       : self.anchors_mask,
-                'confidence'        : self.confidence, 
-                'nms_iou'           : self.nms_iou, 
-                'max_boxes'         : self.max_boxes, 
-                'letterbox_image'   : self.letterbox_image
-             }
-        )(inputs)
-        self.yolo_model = Model([self.model.input, self.input_image_shape], outputs)
+        if self.h5:
+            model_path = os.path.expanduser(self.model_path)
+            assert model_path.endswith('.h5'), 'Keras model or weights must be a .h5 file.'
+            self.model = yolo_body([None, None, 3], self.anchors_mask, self.num_classes, self.phi)
+            self.model.load_weights(self.model_path, by_name=True)
+        
+            if self.phi == "l":
+                fuse_layers = [
+                    ["rep_conv_1", False, True],
+                    ["rep_conv_2", False, True],
+                    ["rep_conv_3", False, True],
+                ]
+                self.model_fuse = yolo_body([None, None, 3], self.anchors_mask, self.num_classes, self.phi, mode="predict")
+                self.model_fuse.load_weights(self.model_path, by_name=True)
+
+                fusion_rep_vgg(fuse_layers, self.model, self.model_fuse)
+                del self.model
+                gc.collect()
+                self.model = self.model_fuse
+            print('{} model, anchors, and classes loaded.'.format(model_path))
+
+        
+        # self.input_image_shape = Input([2,],batch_size=1)
+        # inputs  = [*self.model.output, self.input_image_shape]
+        # outputs = Lambda(
+        #     DecodeBox, 
+        #     output_shape = (1,), 
+        #     name = 'yolo_eval',
+        #     arguments = {
+        #         'anchors'           : self.anchors, 
+        #         'num_classes'       : self.num_classes, 
+        #         'input_shape'       : self.input_shape, 
+        #         'anchor_mask'       : self.anchors_mask,
+        #         'confidence'        : self.confidence, 
+        #         'nms_iou'           : self.nms_iou, 
+        #         'max_boxes'         : self.max_boxes, 
+        #         'letterbox_image'   : self.letterbox_image
+        #      }
+        # )(inputs)
+        # self.model = Model([self.model.input, self.input_image_shape], outputs)
+
+
 
     @tf.function
-    def get_pred(self, image_data, input_image_shape):
-        out_boxes, out_scores, out_classes = self.yolo_model([image_data, input_image_shape], training=False)
-        return out_boxes, out_scores, out_classes
+    def get_pred(self, image_data):
+        yolo_head_P5, yolo_head_P4, yolo_head_P3 = self.model([image_data], training=False)
+        return [yolo_head_P5, yolo_head_P4, yolo_head_P3]
+
+    # @tf.function
+    # def get_pred(self, image_data, input_image_shape):
+    #     out_boxes, out_scores, out_classes = self.model([image_data, input_image_shape], training=False)
+    #     return out_boxes, out_scores, out_classes
 
     def detect(self, image, crop = False, istrack=False):
         image = cvtColor(image)
         image_data  = resize_image(image, (self.input_shape[1], self.input_shape[0]), self.letterbox_image)
         image_data  = np.expand_dims(preprocess_input(np.array(image_data, dtype='float32')), 0)
         input_image_shape = np.expand_dims(np.array([image.size[1], image.size[0]], dtype='float32'), 0)
-        out_boxes, out_scores, out_classes = self.get_pred(image_data, input_image_shape) 
-
+        outputs = self.get_pred(image_data)
+        out_boxes, out_scores, out_classes = DecodeBox(
+            outputs=outputs,
+            anchors=self.anchors,
+            num_classes = self.num_classes,
+            image_shape = input_image_shape,
+            input_shape = self.input_shape,
+            anchor_mask = self.anchors_mask,
+            confidence = self.confidence,
+            nms_iou = self.nms_iou,
+            max_boxes = self.max_boxes,
+            letterbox_image = self.letterbox_image
+        )
+        # out_boxes, out_scores, out_classes = self.get_pred(image_data, input_image_shape)
         print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
+
         
         if crop:
             for i, c in list(enumerate(out_boxes)):
@@ -235,7 +264,7 @@ class YOLO(object):
         plt.show()
 
 
-def Inference_YOLOV7Model(config, model_path, onnx = False):
+def Inference_YOLOV7Model(config, model_path):
     yolo = YOLO(
         model_path = model_path,
         class_path = config.classes_path,
@@ -247,7 +276,6 @@ def Inference_YOLOV7Model(config, model_path, onnx = False):
         max_boxes=config.max_boxes,
         letterbox_image = True,
         phi=config.phi,
-        tiny = config.tiny,
-        onnx = False
+        tiny = config.tiny
     )
     return yolo
