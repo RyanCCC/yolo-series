@@ -10,7 +10,7 @@ Tensorflow 模型命名规则：数据集（功能）_算法模型_版本.h5
 ONNX模型命名规则：数据集功能_算法模型_OP_输入维度_版本.onnx
 
 Usage:
-    python .\export.py --model .\model\VOC.h5 --yolo yolox --save_onnx 'voc_yolox_l_13_640_v1.onnx' 
+    python ./export.py --model ./model/VOC.h5 --yolo yolox --save_onnx 'voc_yolox_l_13_640_v1.onnx' 
 
 '''
 

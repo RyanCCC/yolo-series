@@ -1,15 +1,14 @@
 # YOLOSeries
 
-本仓库主要实现`YOLO`目标检测算法，欢迎参与到本仓库的建设或者提issue。当前算法实现基本情况
+本仓库主要实现`YOLO`目标检测算法，欢迎参与到本仓库的建设或者提issue。本仓库有两个分支，一个分支为`main`，主要是基于`Tensorflow`实现yolo算法，另一个分支是`pytorch`，主要是基于`pytorch`实现yolo算法。`main`分支当前算法实现基本情况如下：
 
 |    算法     |    实现框架    |               备注                |
 | :---------: | :------------: | :-------------------------------: |
-|   YOLOV4    | Tensorflow-2.4 | 已实现，并通过测试。`main`分支。  |
-|   YOLOV5    |   Torch-1.9    | 已实现，并经过测试。`pytorch`分支。 |
-| YOLOV5-v6.1 |   Torch-1.9    | 已实现，并通过测试。`pytorch`分支。 |
-|    YOLOX    | Tensorflow-2.4 | 已实现，并通过测试。`main`分支。  |
-|   YOLOV7    |   Torch-1.9    | 已实现，并通过测试。`pytorch`分支。       |
-|    YOLOP    |   Torch-1.9    | 已实现，未通过测试。`main`分支。  |
+|   YOLOV4    | Tensorflow-2.4 | 已实现，并通过测试 |
+|   YOLOV5    | Tensorflow-2.4 | 已实现，并经过测试 |
+| YOLOV5-v6.1 | Tensorflow-2.4 | 已实现，并通过测试 |
+|    YOLOX    | Tensorflow-2.4 | 已实现，并通过测试 |
+|   YOLOV7    | Tensorflow-2.4 | 已实现，并通过测试 |
 
 本仓库主要是算法的训练和算法的验证，后续的工程化应用部署可以参考另一个仓库：[Deployment](https://github.com/RyanCCC/Deployment)。部署仓库包括模型的量化与压缩、`python`或者`C++`的部署代码以及`OpenCV`和`TensorRT`等推理，喜欢的话可以给个star或者一起参与建设仓库。
 
@@ -19,7 +18,7 @@
 +---cfg: 存放配置文件。
 |---components： CNN组件，如batch_renorm、注意力机制
 |---tools:存放工具：包括生成训练文档、类别统计等。
-|---deep_sort：目标跟踪Deepsort算法
+|---tracking：目标跟踪Deepsort算法
 |---doc：存放YOLO资料文档，包括backbone、后处理等算法文档
 |---evaluate：存放模型评估方法
 |---font：字体
@@ -29,7 +28,6 @@
 |   \---yolo4_weight.h5：COCO预训练权重
 |---result：推理结果保存的文件夹
 |---video：视频保存文件夹
-|---yolop：yolop算法实现
 |---yolov4：yolov4算法实现
 |---yolov5：yolov5算法实现
 |---yolov7：yolov7算法实现
@@ -87,12 +85,12 @@ your/dataset/root/path/pavilion_20210812155531.jpg 111,2,458,337,10
 
 ```sh
 # directory inference
-python ./predict.py --model YOLOV5 --source ./samples --weights ./model/voc2007.h5 --save
+python predict.py --yolo yolox --model /your/model/path/voc.h5 --source ./samples/
 ```
 
 ```sh
 # image inference
-python ./predict.py --model YOLOV7-TINY --source ./samples/test.jpg --weights ./model/VOC2007_yolov7_tiny_2022_10_28.pth --save
+python ./predict.py --yolo YOLOV7-TINY --source ./samples/test.jpg --model ./model/VOC2007_yolov7_tiny_2022_10_28.h5 --save
 ```
 
 ## 模型验证
@@ -171,15 +169,8 @@ FLOPs：注意s小写，是floating point operations的缩写（s表复数），
 
 1. 从Tensorflow模型导出：
 
-```
-python .\export.py --saved_model .\VOC2007_model\ --save_onnx './tmp.onnx' --yolo yolox --flag
-```
-
-2. 从Tensorflow权重导出：
-
-记住：**一定要先在配置文件中配置好模型再进行导出！**
-```
-python .\export.py --yolo yolox --weight .\model\VOC2007_yolox.h5 --save_onnx './tmp_yolox.onnx'
+``` sh
+python ./export.py --model ./model/VOC.h5 --yolo yolox --save_onnx 'voc_yolox_l_13_640_v1.onnx' 
 ```
 
 更多的ONNX推理和算法部署可参考：[Deployment](https://github.com/RyanCCC/Deployment)。
