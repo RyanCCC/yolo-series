@@ -76,6 +76,12 @@ class YOLO(object):
                 gc.collect()
                 self.model = self.model_fuse
             print('{} model, anchors, and classes loaded.'.format(model_path))
+        if self.onnx:
+            import onnxruntime
+            self.model = onnxruntime.InferenceSession(weights, None)
+        if self.saved_model:
+            self.model = tf.keras.models.load_model(weights)
+            
 
         
         # self.input_image_shape = Input([2,],batch_size=1)
@@ -114,7 +120,13 @@ class YOLO(object):
         image_data  = resize_image(image, (self.input_shape[1], self.input_shape[0]), self.letterbox_image)
         image_data  = np.expand_dims(preprocess_input(np.array(image_data, dtype='float32')), 0)
         input_image_shape = np.expand_dims(np.array([image.size[1], image.size[0]], dtype='float32'), 0)
-        outputs = self.get_pred(image_data)
+        
+        if self.h5 or self.saved_model:
+            outputs = self.get_pred(image_data)
+        if self.onnx:
+            output_names = [output.name for output in self.model.get_outputs()]
+            outputs = self.model.run(output_names, {self.model.get_inputs()[0].name: image_data})
+        
         out_boxes, out_scores, out_classes = DecodeBox(
             outputs=outputs,
             anchors=self.anchors,

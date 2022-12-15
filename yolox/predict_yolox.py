@@ -118,21 +118,17 @@ class YOLOX(object):
         input_image_shape = np.expand_dims(np.array([image.size[1], image.size[0]], dtype='float32'), 0)
         
         # 推理以及后处理
-        if self.h5:
+        if self.h5 or self.saved_model:
             # out_boxes, out_scores, out_classes  = self.prediction(self.model, image_data, input_image_shape) 
             outputs = self.prediction(self.model, image_data) 
-            out_boxes, out_scores, out_classes = DecodeBox_numpy(outputs, input_image_shape, self.input_shape, self.class_names, self.confidence)
-            print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
+            
         if self.onnx:
-            outputs_names =  ['concatenate_13', 'concatenate_14', 'concatenate_15']
-            outputs = self.model.run(outputs_names, {"input": image_data})
-            out_boxes, out_scores, out_classes = DecodeBox_numpy(outputs, input_image_shape, self.input_shape, self.class_names, self.confidence)
-            print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
-        if self.saved_model:
-            outputs = self.prediction(self.model, image_data) 
-            out_boxes, out_scores, out_classes = DecodeBox_numpy(outputs, input_image_shape, self.input_shape, self.class_names, self.confidence)
-            print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
+            output_names = [output.name for output in self.model.get_outputs()]
+            outputs = self.model.run(output_names, {self.model.get_inputs()[0].name: image_data})
         
+        out_boxes, out_scores, out_classes = DecodeBox_numpy(outputs, input_image_shape, self.input_shape, self.class_names, self.confidence)
+        print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
+
         if istrack:
             boxes = []
             for i, c in list(enumerate(out_classes)):

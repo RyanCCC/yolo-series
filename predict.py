@@ -6,7 +6,8 @@ import argparse
 import time
 
 '''
-
+Usage:
+    python predict.py --yolo yolox --model /your/model/path/voc.h5 --source ./samples/test.jpg
 '''
 
 def parse_args():
@@ -15,12 +16,12 @@ def parse_args():
         '--yolo', 
         help='YOLOV4, YOLOV4-TINY, YOLOV5 or YOLOX', 
         choices=['YOLOV4', 'YOLOV4-TINY', 'YOLOV5','YOLOV5-V61', 'YOLOX', 'YOLOV7', 'YOLOV7-TINY'],
-        default='YOLOV7', 
+        default='YOLOX', 
         type=str)
     parser.add_argument('--show', action='store_true', help='show preidict result. Not recommended')
     parser.add_argument('--save', action='store_true', help='save result image.')
     parser.add_argument('--img_dir', default='./samples', help='predict image dir')
-    parser.add_argument('--model', help='model', default='./yolov7/checkpoints/yolov7_weights.h5')
+    parser.add_argument('--model', help='model', default='./model/yolox/model_yolox_13_1_640_640_640_3.onnx')
     parser.add_argument('--save_dir', default='./result', help='save_dir')
     parser.add_argument('--source', help='source,image file/dir',default='./samples/IMG_3032.jpg')
     args = parser.parse_args()
@@ -140,25 +141,3 @@ if __name__=='__main__':
                 img.save(save_path)
     else:
         pass
-    # path_pattern = './samples/*'
-    # from yolov5 import Inference_YOLOV5Model
-    # # yolox = Inference_YOLOXModel(YOLOXConfig)
-    # # letterbox_image = True
-    # # for path in glob(path_pattern):
-    # #     image = Image.open(path)
-    # #     img = yolox.detect(image)
-    # #     img.show()
-    # # print('finish yolox')
-    # # yolov4 = Inference_YOLOV4Model(YOLOV4Config, './model/village2022_yolov4_20221013.h5')
-    # # letterbox_image = True
-    # # for path in glob(path_pattern):
-    # #     image = Image.open(path)
-    # #     img = yolov4.inference(image)
-    # #     img.show()
-    # # print('finish')
-    # yolov5 = Inference_YOLOV5Model(YOLOV5Config, './model/village2022_yolov5_l_20221013.h5')
-    # for path in glob(path_pattern):
-    #     image = Image.open(path)
-    #     img = yolov5.detect_image(image)
-    #     img.show()
-    # print('finish')
