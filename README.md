@@ -16,8 +16,8 @@
 ## 项目结构
 
 ``` python
-+---Attention： 实现注意力机制
-|---cfg: 存放配置文件。
++---cfg: 存放配置文件。
+|---components： CNN组件，如batch_renorm、注意力机制
 |---tools:存放工具：包括生成训练文档、类别统计等。
 |---deep_sort：目标跟踪Deepsort算法
 |---doc：存放YOLO资料文档，包括backbone、后处理等算法文档
