@@ -7,9 +7,10 @@ from tensorflow.keras.models import Model
 from PIL import Image, ImageFont, ImageDraw
 from .nets.yolov5 import yolo_body
 from .lib.utils import get_anchors, get_classes, cvtColor
-from .lib.tools import DecodeBox
+from .lib.tools import DecodeBox, check_suffix
 import os
 import numpy as np
+from pathlib import Path
 
 
 
@@ -25,8 +26,7 @@ class YOLOV5(object):
             "confidence" : kwargs['confidence'],
             "nms_iou" : kwargs['nms_iou'],
             "max_boxes": kwargs['max_boxes'],
-            "letterbox_image":kwargs['letterbox_image'],
-            "onnx":kwargs['onnx']
+            "letterbox_image":kwargs['letterbox_image']
             }
         self.__dict__.update(self._params)
         self.class_names, self.num_classes = get_classes(self.classes_path)
@@ -41,37 +41,54 @@ class YOLOV5(object):
 
     # 加载模型
     def get_predict_model(self):
-        model_path = os.path.expanduser(self.model_path)
-        assert model_path.endswith('.h5'), 'Keras model or weights must be a .h5 file.'
+         # 加载不同类型的模型
+        weights = str(self.model_path[0] if isinstance(self.model_path, list) else self.model_path)
+        suffix, suffixes = Path(weights).suffix.lower(), ['.h5', '.onnx', '']
+        # check weights have acceptable suffix
+        check_suffix(weights, suffixes)
+        # backbend booleans
+        self.h5, self.onnx, self.saved_model = (suffix == x for x in suffixes)
+        if self.h5:
+            model_path = os.path.expanduser(self.model_path)
+            assert model_path.endswith('.h5'), 'Keras model or weights must be a .h5 file.'
         
-        self.model = yolo_body([None, None, 3], self.anchors_mask, self.num_classes, self.phi)
-        self.model.load_weights(self.model_path, skip_mismatch=True, by_name=True)
-        print('{} model, anchors, and classes loaded.'.format(model_path))
+            self.model = yolo_body([None, None, 3], self.anchors_mask, self.num_classes, self.phi)
+            self.model.load_weights(self.model_path, skip_mismatch=True, by_name=True)
+            print('{} model, anchors, and classes loaded.'.format(model_path))
         if self.onnx:
-            return
-        self.input_image_shape = Input([2,],batch_size=1)
-        inputs  = [*self.model.output, self.input_image_shape]
-        outputs = Lambda(
-            DecodeBox, 
-            output_shape = (1,), 
-            name = 'yolo_eval',
-            arguments = {
-                'anchors'           : self.anchors, 
-                'num_classes'       : self.num_classes, 
-                'input_shape'       : self.input_shape, 
-                'anchor_mask'       : self.anchors_mask,
-                'confidence'        : self.confidence, 
-                'nms_iou'           : self.nms_iou, 
-                'max_boxes'         : self.max_boxes, 
-                'letterbox_image'   : self.letterbox_image
-             }
-        )(inputs)
-        self.yolo_model = Model([self.model.input, self.input_image_shape], outputs)
+            import onnxruntime
+            self.model = onnxruntime.InferenceSession(weights, None)
+        if self.saved_model:
+            self.model = tf.keras.models.load_model(weights)
+
+        # self.input_image_shape = Input([2,],batch_size=1)
+        # inputs  = [*self.model.output, self.input_image_shape]
+        # outputs = Lambda(
+        #     DecodeBox, 
+        #     output_shape = (1,), 
+        #     name = 'yolo_eval',
+        #     arguments = {
+        #         'anchors'           : self.anchors, 
+        #         'num_classes'       : self.num_classes, 
+        #         'input_shape'       : self.input_shape, 
+        #         'anchor_mask'       : self.anchors_mask,
+        #         'confidence'        : self.confidence, 
+        #         'nms_iou'           : self.nms_iou, 
+        #         'max_boxes'         : self.max_boxes, 
+        #         'letterbox_image'   : self.letterbox_image
+        #      }
+        # )(inputs)
+        # self.model = Model([self.model.input, self.input_image_shape], outputs)
+
+    # @tf.function
+    # def get_pred(self, image_data, input_image_shape):
+    #     out_boxes, out_scores, out_classes = self.model([image_data, input_image_shape], training=False)
+    #     return out_boxes, out_scores, out_classes
 
     @tf.function
-    def get_pred(self, image_data, input_image_shape):
-        out_boxes, out_scores, out_classes = self.yolo_model([image_data, input_image_shape], training=False)
-        return out_boxes, out_scores, out_classes
+    def get_pred(self, image_data):
+        yolo_head_P5, yolo_head_P4, yolo_head_P3 = self.model([image_data], training=False)
+        return [yolo_head_P5, yolo_head_P4, yolo_head_P3]
     
     def preprocess_input(self, image):
         image /= 255.
@@ -96,11 +113,29 @@ class YOLOV5(object):
         image = cvtColor(image)
         image_data  = self.resize_image(image, (self.input_shape[1], self.input_shape[0]), self.letterbox_image)
         image_data  = np.expand_dims(self.preprocess_input(np.array(image_data, dtype='float32')), 0)
-
         input_image_shape = np.expand_dims(np.array([image.size[1], image.size[0]], dtype='float32'), 0)
-        out_boxes, out_scores, out_classes = self.get_pred(image_data, input_image_shape) 
-
+        
+        if self.h5 or self.saved_model:
+            outputs = self.get_pred(image_data)
+        if self.onnx:
+            output_names = [output.name for output in self.model.get_outputs()]
+            outputs = self.model.run(output_names, {self.model.get_inputs()[0].name: image_data})
+        
+        out_boxes, out_scores, out_classes = DecodeBox(
+            outputs=outputs,
+            anchors=self.anchors,
+            num_classes = self.num_classes,
+            image_shape = input_image_shape,
+            input_shape = self.input_shape,
+            anchor_mask = self.anchors_mask,
+            confidence = self.confidence,
+            nms_iou = self.nms_iou,
+            max_boxes = self.max_boxes,
+            letterbox_image = self.letterbox_image
+        )
+        # out_boxes, out_scores, out_classes = self.get_pred(image_data, input_image_shape)
         print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
+
         font = ImageFont.truetype(font='./data/simhei.ttf', size=np.floor(3e-2 * image.size[1] + 0.5).astype('int32'))
         thickness = int(max((image.size[0] + image.size[1]) // np.mean(self.input_shape), 1))
         if count:
@@ -189,7 +224,7 @@ class YOLOV5(object):
             with open(dr_txt_path, 'w') as f:
                 f.write("%s %s %s %s %s %s\n" % (predicted_class, str(score.numpy()), str(int(left)), str(int(top)), str(int(right)),str(int(bottom))))
 
-def Inference_YOLOV5Model(YOLOV5Config, model_path, onnx = False):
+def Inference_YOLOV5Model(YOLOV5Config, model_path):
     yolov5 = YOLOV5(
         model_path = model_path,
         classes_path = YOLOV5Config.classes_path,
@@ -200,8 +235,7 @@ def Inference_YOLOV5Model(YOLOV5Config, model_path, onnx = False):
         nms_iou = YOLOV5Config.iou,
         max_boxes=YOLOV5Config.max_boxes,
         letterbox_image = True,
-        phi=YOLOV5Config.phi,
-        onnx = False
+        phi=YOLOV5Config.phi
     )
     return yolov5
 

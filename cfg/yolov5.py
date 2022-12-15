@@ -5,7 +5,7 @@ import datetime
 class YOLOV5Config(Config):
     # Train
     time_str = str(datetime.datetime.strftime(datetime.datetime.now(),'%Y_%m_%d'))
-    task = 'village_detection'
+    task = 'VOC2007'
     logdir = './yolov5/logs/'
     dataset_base_path = r'./VOC2007'
     classes_path = os.path.join(dataset_base_path, 'voc.names') 

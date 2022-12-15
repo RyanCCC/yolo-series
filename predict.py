@@ -16,12 +16,12 @@ def parse_args():
         '--yolo', 
         help='YOLOV4, YOLOV4-TINY, YOLOV5 or YOLOX', 
         choices=['YOLOV4', 'YOLOV4-TINY', 'YOLOV5','YOLOV5-V61', 'YOLOX', 'YOLOV7', 'YOLOV7-TINY'],
-        default='YOLOX', 
+        default='YOLOV5-V61', 
         type=str)
     parser.add_argument('--show', action='store_true', help='show preidict result. Not recommended')
     parser.add_argument('--save', action='store_true', help='save result image.')
     parser.add_argument('--img_dir', default='./samples', help='predict image dir')
-    parser.add_argument('--model', help='model', default='./model/yolox/model_yolox_13_1_640_640_640_3.onnx')
+    parser.add_argument('--model', help='model', default='./test.onnx')
     parser.add_argument('--save_dir', default='./result', help='save_dir')
     parser.add_argument('--source', help='source,image file/dir',default='./samples/IMG_3032.jpg')
     args = parser.parse_args()

@@ -3,7 +3,7 @@ import os
 import datetime
 
 class YOLOV7Config(Config):
-    task = "village_Detection"
+    task = "VOC2007"
     dataset_base_path = r'./VOC2007'
     classes_path = os.path.join(dataset_base_path, 'voc.names') 
     train_txt= os.path.join(dataset_base_path, 'train.txt')

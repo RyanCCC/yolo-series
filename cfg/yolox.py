@@ -3,7 +3,7 @@ import os
 import datetime
 
 class YOLOXConfig(Config):
-    task = 'village_detection'
+    task = 'VOC2007'
     gpus = '0'
     logdir = './yolox/logs/'
     learning_rate = 1e-2

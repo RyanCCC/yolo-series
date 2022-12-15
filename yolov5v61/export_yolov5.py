@@ -9,7 +9,7 @@ from .predict_yolov5 import Inference_YOLOV5Model
 def export_model(weights, saved_pb, saved_pb_dir, opset, onnx_save_path):
     model_path = os.path.expanduser(weights)
     assert model_path.endswith('.h5'), 'Tensorflow model or weights must be a .h5 file.'
-    yolo_model = Inference_YOLOV5Model(YOLOV5Config, weights, True).model
+    yolo_model = Inference_YOLOV5Model(YOLOV5Config, weights).model
     yolo_model.compile()
     if saved_pb:
         assert len(saved_pb_dir) > 0, 'save_name cannot be none or empty.'
