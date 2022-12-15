@@ -1,7 +1,5 @@
 import colorsys
 import os
-import sys 
-from cfg import YOLOXConfig
 import numpy as np
 import tensorflow as tf
 from PIL import ImageDraw, ImageFont,Image
@@ -9,75 +7,11 @@ from tensorflow.keras.layers import Input, Lambda
 from tensorflow.keras.models import Model
 from .nets.yolox import yolo_body
 from .lib.dataloader import cvtColor, get_classes, preprocess_input
-import tensorflow.keras.backend as K
+from .lib.utils_box import DecodeBox, DecodeBox_numpy
 import gc
 from glob import glob
-
-def yolo_correct_boxes(box_xy, box_wh, input_shape, image_shape, letterbox_image):
-    box_yx = box_xy[..., ::-1]
-    box_hw = box_wh[..., ::-1]
-    input_shape = K.cast(input_shape, K.dtype(box_yx))
-    image_shape = K.cast(image_shape, K.dtype(box_yx))
-
-    if letterbox_image:
-        new_shape = K.round(image_shape * K.min(input_shape/image_shape))
-        offset = (input_shape - new_shape)/2./input_shape
-        scale = input_shape/new_shape
-
-        box_yx  = (box_yx - offset) * scale
-        box_hw *= scale
-
-    box_mins = box_yx - (box_hw / 2.)
-    box_maxes = box_yx + (box_hw / 2.)
-    boxes = K.concatenate([box_mins[..., 0:1], box_mins[..., 1:2], box_maxes[..., 0:1], box_maxes[..., 1:2]])
-    boxes *= K.concatenate([image_shape, image_shape])
-    return boxes
-
-def DecodeBox(outputs, num_classes, input_shape, max_boxes = 100, confidence=0.5, nms_iou=0.3, letterbox_image=True):
-    image_shape = K.reshape(outputs[-1], [-1])
-    outputs = outputs[:-1]
-    batch_size = K.shape(outputs[0])[0]
-    grids = []
-    strides = []
-    hw = [K.shape(x)[1:3] for x in outputs]
-    outputs = tf.concat([tf.reshape(x, [batch_size, -1, 5 + num_classes]) for x in outputs], axis = 1)
-    for i in range(len(hw)):
-        grid_x, grid_y  = tf.meshgrid(tf.range(hw[i][1]), tf.range(hw[i][0]))
-        grid = tf.reshape(tf.stack((grid_x, grid_y), 2), (1, -1, 2))
-        shape = tf.shape(grid)[:2]
-        grids.append(tf.cast(grid, K.dtype(outputs)))
-        strides.append(tf.ones((shape[0], shape[1], 1)) * input_shape[0] / tf.cast(hw[i][0], K.dtype(outputs)))
-    grids = tf.concat(grids, axis=1)
-    strides = tf.concat(strides, axis=1)
-    box_xy = (outputs[..., :2] + grids) * strides / K.cast(input_shape[::-1], K.dtype(outputs))
-    box_wh = tf.exp(outputs[..., 2:4]) * strides / K.cast(input_shape[::-1], K.dtype(outputs))
-    box_confidence  = K.sigmoid(outputs[..., 4:5])
-    box_class_probs = K.sigmoid(outputs[..., 5: ])
-    boxes = yolo_correct_boxes(box_xy, box_wh, input_shape, image_shape, letterbox_image)
-    box_scores  = box_confidence * box_class_probs
-
-    mask = box_scores >= confidence
-    max_boxes_tensor = K.constant(max_boxes, dtype='int32')
-    boxes_out   = []
-    scores_out  = []
-    classes_out = []
-    for c in range(num_classes):
-        class_boxes = tf.boolean_mask(boxes, mask[..., c])
-        class_box_scores = tf.boolean_mask(box_scores[..., c], mask[..., c])
-        nms_index = tf.image.non_max_suppression(class_boxes, class_box_scores, max_boxes_tensor, iou_threshold=nms_iou)
-
-        class_boxes = K.gather(class_boxes, nms_index)
-        class_box_scores = K.gather(class_box_scores, nms_index)
-        classes = K.ones_like(class_box_scores, 'int32') * c
-
-        boxes_out.append(class_boxes)
-        scores_out.append(class_box_scores)
-        classes_out.append(classes)
-    boxes_out = K.concatenate(boxes_out, axis=0)
-    scores_out = K.concatenate(scores_out, axis=0)
-    classes_out = K.concatenate(classes_out, axis=0)
-
-    return boxes_out, scores_out, classes_out
+from .lib.utils import check_suffix
+from pathlib import Path
 
 
 class YOLOX(object):
@@ -113,43 +47,63 @@ class YOLOX(object):
             new_image = image.resize((w, h), Image.BICUBIC)
         return new_image
 
+    # 加载模型
     def build_model(self, export_model = False):
-        num_classes = len(self.class_names)
-        yolo_model = yolo_body([None, None, 3], num_classes=num_classes, phi=self.phi)
-        yolo_model.load_weights(self.model_path)
-        print('model weight success load.')
-        if self.onnx:
+        # 加载不同类型的模型
+        weights = str(self.model_path[0] if isinstance(self.model_path, list) else self.model_path)
+        suffix, suffixes = Path(weights).suffix.lower(), ['.h5', '.onnx', '']
+        # check weights have acceptable suffix
+        check_suffix(weights, suffixes)
+        # backbend booleans
+        self.h5, self.onnx, self.saved_model = (suffix == x for x in suffixes)
+        if self.h5:
+            num_classes = len(self.class_names) 
+            yolo_model = yolo_body([None, None, 3], num_classes=num_classes, phi=self.phi)
+            yolo_model.load_weights(weights)
+            print('model weight success load.')
+            if self.onnx:
+                return yolo_model
+            if export_model:
+                yolo_model.save('./model/yolox_model', save_format='tf2')
+                yolo_model = tf.keras.models.load_model('./model/yolox_model')
+                print('model export success.')
+            
+            # input_image_shape = Input([2, ], batch_size=1)
+            # inputs = [*yolo_model.output, input_image_shape]
+            # outputs = Lambda(
+            #     DecodeBox,
+            #     output_shape = (1, ), 
+            #     name = 'yolo_eval',
+            #     arguments = {
+            #         'num_classes' : num_classes, 
+            #         'input_shape' : self.input_shape, 
+            #         'confidence' : self.confidence, 
+            #         'nms_iou' : self.nms_iou, 
+            #         'max_boxes' : self.max_boxes, 
+            #         'letterbox_image' : self.letterbox_image
+            #     }
+            # )(inputs)
+            # model = Model([yolo_model.input, input_image_shape], outputs)
+            # gc.collect()
             return yolo_model
-        if export_model:
-            yolo_model.save('./model/yolox_model', save_format='tf2')
-            yolo_model = tf.keras.models.load_model('./model/yolox_model')
-            print('model export success.')
-        input_image_shape = Input([2, ], batch_size=1)
-        inputs = [*yolo_model.output, input_image_shape]
-        outputs = Lambda(
-            DecodeBox,
-            output_shape = (1, ), 
-            name = 'yolo_eval',
-            arguments = {
-                'num_classes'       : num_classes, 
-                'input_shape'       : self.input_shape, 
-                'confidence'        : self.confidence, 
-                'nms_iou'           : self.nms_iou, 
-                'max_boxes'         : self.max_boxes, 
-                'letterbox_image'   : self.letterbox_image
-            }
-        )(inputs)
-        # if export_model:
-        #     yolo_model.save('./model/yolox_model', save_format='tf2')
-        #     yolo_model = tf.keras.models.load_model('./model/yolox_model', custom_objects={'yolo_eval':self.DecodeBox})
-        model = Model([yolo_model.input, input_image_shape], outputs)
-        gc.collect()
-        return model
+        if self.onnx:
+            import onnxruntime
+            model = onnxruntime.InferenceSession(weights, None)
+            return model
+        if self.saved_model:
+            model = tf.keras.models.load_model(weights)
+            return model
+    
+    # @tf.function
+    # def prediction(self, model, image_data, input_image_shape):
+    #     out_boxes, out_scores, out_classes = model([image_data, input_image_shape], training=False)
+    #     return out_boxes, out_scores, out_classes
 
     @tf.function
-    def prediction(self, model, image_data, input_image_shape):
-        out_boxes, out_scores, out_classes = model([image_data, input_image_shape], training=False)
-        return out_boxes, out_scores, out_classes
+    def prediction(self, model, image_data):
+        concatenate_13, concatenate_14, concatenate_15 = model([image_data], training=False)
+        outputs = [concatenate_13, concatenate_14, concatenate_15]
+        return outputs
 
     def detect(self, image, crop=False, istrack=False):
         num_classes = len(self.class_names)
@@ -162,8 +116,22 @@ class YOLOX(object):
         image_data = self.resize_image(image)
         image_data = np.expand_dims(preprocess_input(np.array(image_data, dtype='float32')), 0)
         input_image_shape = np.expand_dims(np.array([image.size[1], image.size[0]], dtype='float32'), 0)
-        out_boxes, out_scores, out_classes = self.prediction(self.model, image_data, input_image_shape) 
-        print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
+        
+        # 推理以及后处理
+        if self.h5:
+            # out_boxes, out_scores, out_classes  = self.prediction(self.model, image_data, input_image_shape) 
+            outputs = self.prediction(self.model, image_data) 
+            out_boxes, out_scores, out_classes = DecodeBox_numpy(outputs, input_image_shape, self.input_shape, self.class_names, self.confidence)
+            print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
+        if self.onnx:
+            outputs_names =  ['concatenate_13', 'concatenate_14', 'concatenate_15']
+            outputs = self.model.run(outputs_names, {"input": image_data})
+            out_boxes, out_scores, out_classes = DecodeBox_numpy(outputs, input_image_shape, self.input_shape, self.class_names, self.confidence)
+            print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
+        if self.saved_model:
+            outputs = self.prediction(self.model, image_data) 
+            out_boxes, out_scores, out_classes = DecodeBox_numpy(outputs, input_image_shape, self.input_shape, self.class_names, self.confidence)
+            print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
         
         if istrack:
             boxes = []

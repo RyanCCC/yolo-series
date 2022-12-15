@@ -16,7 +16,7 @@ class YOLOXConfig(Config):
     epoch = 100
     batch_size = 32
     time_str = str(datetime.datetime.strftime(datetime.datetime.now(),'%Y_%m_%d'))
-    phi= 's'
+    phi= 'l'
     save_weight = f'{task}_yolox_{phi}_{time_str}.h5'
     score=0.5
     iou=0.5
