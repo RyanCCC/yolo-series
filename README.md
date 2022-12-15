@@ -99,7 +99,7 @@ python ./predict.py --yolo YOLOV7-TINY --source ./samples/test.jpg --model ./mod
 
 1. **统计测试集的ground_True**
 
-```python
+```sh
 python ./evaluate/get_gt_txt.py --testset ./VOC2017/ImageSets/Main/test.txt --annotation ./VOC2007/Annotations/ --gt_folder ./result/gt_folder
 ```
 
@@ -111,7 +111,7 @@ python ./evaluate/get_gt_txt.py --testset ./VOC2017/ImageSets/Main/test.txt --an
 
 2. **计算模型推理测试集的结果**
 
-```python
+```sh
 python ./evaluate/get_dr_txt.py --testset ./VOC2007/ImageSets/Main/test.txt --pr_folder ./result/pr_folder --minoverlap 0.5 --model_path ./model/voc_yolox.h5 --image_path ./VOC2007/JPEGImages/ --model YOLOX
 ```
 
@@ -124,7 +124,7 @@ python ./evaluate/get_dr_txt.py --testset ./VOC2007/ImageSets/Main/test.txt --pr
 
 3. **计算map的性能指标**
 
-```python
+```sh
 python ./evaluate/get_map.py --GT_PATH ./result/evaluate --DR_PATH ./result/pr_folder/ --IMG_PATH ./VOC2007/JPEGImages/ --MINOVERLAP 0.5
 ```
 
