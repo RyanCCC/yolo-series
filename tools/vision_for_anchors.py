@@ -5,9 +5,6 @@ import numpy as np
 def sigmoid(x):
     s = 1 / (1 + np.exp(-x))
     return s
-#---------------------------------------------------#
-#   将预测值的每个特征层调成真实值
-#---------------------------------------------------#
 # 13x13
 def yolo_head(feats, anchors, num_classes):
     # 3

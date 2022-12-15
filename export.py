@@ -2,7 +2,7 @@
 Export model(YOLOV5、YOLOV5-V61、YOLOV7) to ONNX.
 
 Usage:
-    python .\export.py --weight ./voc_yolov5_l.pth --save_file ./yolov5_l_12.onnx --yolo yolov5
+    python ./export.py --weight ./voc_yolov5_l.pth --save_file ./yolov5_l_12.onnx --yolo yolov5
 '''
 
 import argparse

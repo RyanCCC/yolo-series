@@ -1,27 +1,26 @@
 # YOLOSeries
 
-本仓库主要实现`YOLO`目标检测算法，欢迎参与到本仓库的建设或者提issue。当前算法实现基本情况
+本仓库主要实现`YOLO`目标检测算法，欢迎参与到本仓库的建设或者提issue。当前算法实现基本情况如下：
 
 |    算法     |    实现框架    |               备注                |
 | :---------: | :------------: | :-------------------------------: |
-|   YOLOV4    | Tensorflow-2.4 | 已实现，并通过测试。`main`分支。  |
-|   YOLOV5    |   Torch-1.9    | 已实现，并通过测试。`pytorch`分支。 |
-| YOLOV5-v6.1 |   Torch-1.9    | 已实现，并通过测试。`pytorch`分支。 |
-|    YOLOX    | Tensorflow-2.4 | 已实现，并通过测试。`main`分支。  |
-|   YOLOV7    |   Torch-1.9    | 已实现，并通过测试。`pytorch`分支。|
-|    YOLOP    |   Torch-1.9    | 已实现，未通过测试。`main`分支。  |
+|   YOLOV4    |   Torch-1.9    | 未实现  |
+|   YOLOV5    |   Torch-1.9    | 已实现，并通过测试。 |
+| YOLOV5-v6.1 |   Torch-1.9    | 已实现，并通过测试。 |
+|    YOLOX    |   Torch-1.9    | 未实现  |
+|   YOLOV7    |   Torch-1.9    | 已实现，并通过测试。|
+|    YOLOP    |   Torch-1.9    | 已实现，未通过测试。 |
 
 本仓库主要是算法的训练和算法的验证，后续的工程化应用部署可以参考另一个仓库：[Deployment](https://github.com/RyanCCC/Deployment)。部署仓库包括模型的量化与压缩、`python`或者`C++`的部署代码以及`OpenCV`和`TensorRT`等推理，喜欢的话可以给个star或者一起参与建设仓库。
 
 ## 项目结构
 
 ``` python
-+---Attention： 实现注意力机制
-|---cfg: 存放配置文件。
++---cfg: 存放配置文件。
 |---tools:存放工具：包括生成训练文档、类别统计等。
-|---deep_sort：目标跟踪Deepsort算法
+|---tracking：目标跟踪Deepsort算法
 |---doc：存放YOLO资料文档，包括backbone、后处理等算法文档
-|---evaluate：存放模型评估方法
+|---evaluate：模型评估方法
 |---font：字体
 |---logs：存放训练日志的文档
 |---model：存放模型和权重
@@ -61,8 +60,8 @@
 
 ```
 your/voc/root/path/JPEGImages/wc_102.jpg 261,607,341,778,0
-your/voc/root/pathJPEGImages/camera_20210817154550.jpg 94,149,165,251,11 22,164,97,249,11
-your/voc/root/pathJPEGImages/pavilion_20210812155531.jpg 111,2,458,337,10
+your/voc/root/path/JPEGImages/camera_20210817154550.jpg 94,149,165,251,11 22,164,97,249,11
+your/voc/root/path/JPEGImages/pavilion_20210812155531.jpg 111,2,458,337,10
 ```
 
 **注意两者之前生成顺序**：先划分数据集，生成`ImageSets/Main`下的txt文档，然后根据`ImageSets/Main`下的txt文档生成适用于文档格式的数据集。
@@ -154,40 +153,20 @@ FLOPs：注意s小写，是floating point operations的缩写（s表复数），
 
 模型导出脚本：`export.py`，相关参数说明如下：
 
-- `weight`：YOLO模型的权重路径，用于从权重路径中导出pb模型或者ONNX模型
-- `saved_pb`：是否保存Tensorfow的PB模型，带上这个参数后需要指定`saved_pb_dir`参数，表示模型保存的路径。
-- `saved_pb_dir`：保存PB模型的路径。
+- `weight`：YOLO模型的权重路径，用于从权重路径中导出模型
 - `yolo`：选择需要导出的YOLO算法。
-- `saved_model`：该参数用于直接加载Tensorflow的PB模型，并导出成ONNX模型。
-- `save_onnx`：ONNX模型保存的路径。
+- `save_file`：ONNX模型保存的路径。
+- `dynamic`：onnx的动态输入
 - `opset`：ONNX的算子类型，默认12
-- `flag`：带上这个参数表示从Tensorflow的PB模型进行导出，否则从权重中导出。
+- `simplify`：ONNX简化模型，一般为不简化。
 
 注意：使用权重模型的时候要在`cfg`目录下对应的配置文件中核实类别文件和anchor文件是否配置正确。另外后续需要导出成TensorRT的Engine模型或者Openvino的模型可以自行定义。当前的参数已经足以使用，后续假设㓟更多参数需求会持续更新优化。
 
 使用例子：
 
-1. 从Tensorflow模型导出：
+```sh
+
+python ./export.py --weight ./voc_yolov5_l.pth --save_file ./yolov5_l_12.onnx --yolo yolov5
 
 ```
-python .\export.py --saved_model .\voc2007_model\ --save_onnx './tmp.onnx' --yolo yolox --flag
-```
-
-2. 从Tensorflow权重导出：
-
-记住：**一定要先在配置文件中配置好模型再进行导出！**
-```
-python .\export.py --yolo yolox --weight .\model\voc2007_yolox.h5 --save_onnx './tmp_yolox.onnx'
-```
-
-更多的ONNX推理和算法部署可参考：[Deployment](https://github.com/RyanCCC/Deployment)。
-
-
-## 参考
-
-更多算法的内容可以参考`doc`文件下的文档。
-
-1. [Object-Detection-Metrics](./doc/Object-Detection-Metrics.md)
-2. [mAP计算代码](https://github.com/Cartucho/mAP)
-3. [YOLOV3-tf2](https://github.com/zzh8829/yolov3-tf2)
 
