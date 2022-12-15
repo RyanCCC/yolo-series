@@ -1,12 +1,13 @@
 import colorsys
 import os
 import time
-from .lib.utils import letterbox_image
+from .lib.utils import letterbox_image, check_suffix
 import numpy as np
 import tensorflow as tf
 from PIL import Image, ImageDraw, ImageFont
 from tensorflow.keras.layers import Input, Lambda
 from tensorflow.keras.models import Model
+from pathlib import Path
 
 
 class YOLOV4(object):
@@ -21,8 +22,8 @@ class YOLOV4(object):
             "input_size" : kwargs['input_size'],
             "letterbox_image" : kwargs['letterbox_image'],
             "istiny" : kwargs["istiny"],
-            "onnx":kwargs["onnx"],
             "attention" : kwargs["attention"],
+            "anchors_mask":kwargs['anchors_mask'],
             "result":'./result',
             "pr_folder_name":'tmp'
         }
@@ -59,32 +60,51 @@ class YOLOV4(object):
         return np.array(anchors).reshape(-1, 2)
     
     def get_model(self):
-        model_path = os.path.expanduser(self.model_path)
-        assert model_path.endswith('.h5'), 'Keras model or weights must be a .h5 file.'
-        
-        num_anchors = len(self._anchors)
-        num_classes = len(self._class_names)
-        if not self.istiny:
-            from .nets.yolo4 import yolo_body, yolo_eval
-            self.yolo_model = yolo_body(Input(shape=(None,None,3)), num_anchors//3, num_classes, phi=self.attention)
-        else:
-            from .nets.yolo4_tiny import yolo_body, yolo_eval
-            self.yolo_model = yolo_body(Input(shape=(None,None,3)), num_anchors//2, num_classes, phi=self.attention)
-        self.yolo_model.load_weights(self.model_path)
-        print('{} model, anchors, and classes loaded.'.format(model_path))
+
+         # 加载不同类型的模型
+        weights = str(self.model_path[0] if isinstance(self.model_path, list) else self.model_path)
+        suffix, suffixes = Path(weights).suffix.lower(), ['.h5', '.onnx', '']
+        # check weights have acceptable suffix
+        check_suffix(weights, suffixes)
+        # backbend booleans
+        self.h5, self.onnx, self.saved_model = (suffix == x for x in suffixes)
+
+        if self.h5:
+            model_path = os.path.expanduser(self.model_path)
+            assert model_path.endswith('.h5'), 'Keras model or weights must be a .h5 file.'
+            num_anchors = len(self._anchors)
+            num_classes = len(self._class_names)
+            if not self.istiny:
+                from .nets.yolo4 import yolo_body
+                self.model = yolo_body(Input(shape=(None,None,3)), num_anchors//3, num_classes, phi=self.attention)
+            else:
+                from .nets.yolo4_tiny import yolo_body
+                self.model = yolo_body(Input(shape=(None,None,3)), num_anchors//2, num_classes, phi=self.attention)
+            self.model.load_weights(self.model_path)
+            print('{} model, anchors, and classes loaded.'.format(model_path))
         if self.onnx:
-            return
-        self.input_image_shape = Input([2,],batch_size=1)
-        inputs = [*self.yolo_model.output, self.input_image_shape]
-        outputs = Lambda(yolo_eval, output_shape=(1,), name='yolo_eval',
-            arguments={'anchors': self._anchors, 'num_classes': len(self._class_names), 'image_shape': self.input_size, 
-            'score_threshold': self.score, 'eager': True, 'max_boxes': self.max_boxes, 'letterbox_image': self.letterbox_image})(inputs)
-        self.yolo_model = Model([self.yolo_model.input, self.input_image_shape], outputs)
+            import onnxruntime
+            self.model = onnxruntime.InferenceSession(weights, None)
+        if self.saved_model:
+            self.model = tf.keras.models.load_model(weights)
+
+
+        # self.input_image_shape = Input([2,],batch_size=1)
+        # inputs = [*self.yolo_model.output, self.input_image_shape]
+        # outputs = Lambda(yolo_eval, output_shape=(1,), name='yolo_eval',
+        #     arguments={'anchors': self._anchors, 'num_classes': len(self._class_names), 'image_shape': self.input_size, 
+        #     'score_threshold': self.score, 'eager': True, 'max_boxes': self.max_boxes, 'letterbox_image': self.letterbox_image})(inputs)
+        # self.model = Model([self.yolo_model.input, self.input_image_shape], outputs)
     
+    # @tf.function
+    # def get_pred(self, image_data, input_image_shape):
+    #     out_boxes, out_scores, out_classes = self.model([image_data, input_image_shape], training=False)
+    #     return out_boxes, out_scores, out_classes
+
     @tf.function
-    def get_pred(self, image_data, input_image_shape):
-        out_boxes, out_scores, out_classes = self.yolo_model([image_data, input_image_shape], training=False)
-        return out_boxes, out_scores, out_classes
+    def get_pred(self, image_data):
+        yolo_head_P5, yolo_head_P4, yolo_head_P3 = self.model([image_data], training=False)
+        return [yolo_head_P5, yolo_head_P4, yolo_head_P3]
     
     def detect(self, image,istrack=False):
         '''
@@ -102,7 +122,31 @@ class YOLOV4(object):
         image_data /= 255.
         image_data = np.expand_dims(image_data, 0)  # Add batch dimension.
         input_image_shape = np.expand_dims(np.array([image.size[1], image.size[0]], dtype='float32'), 0)
-        out_boxes, out_scores, out_classes = self.get_pred(image_data, input_image_shape) 
+        # out_boxes, out_scores, out_classes = self.get_pred(image_data, input_image_shape) 
+
+        if self.h5 or self.saved_model:
+            outputs = self.get_pred(image_data)
+        if self.onnx:
+            output_names = [output.name for output in self.model.get_outputs()]
+            outputs = self.model.run(output_names, {self.model.get_inputs()[0].name: image_data})
+        
+        # 判断是否是tiny
+        if self.istiny:
+            from .nets.yolo4_tiny import yolo_eval
+        else:
+            from .nets.yolo4 import yolo_eval
+        out_boxes, out_scores, out_classes = yolo_eval(
+            yolo_outputs=outputs,
+            anchors=self._anchors,
+            num_classes = len(self._class_names),
+            image_shape = input_image_shape,
+            anchor_mask = self.anchors_mask,
+            score_threshold = self.score,
+            iou_threshold = self.iou,
+            max_boxes = self.max_boxes,
+            letterbox_image = self.letterbox_image
+        )
+
         print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
         if istrack:
             boxes = []
@@ -206,7 +250,7 @@ class YOLOV4(object):
 
 
     
-def Inference_YOLOV4Model(YOLOV4Config, model_path, onnx = False):
+def Inference_YOLOV4Model(YOLOV4Config, model_path):
     yolov4 = YOLOV4(
         class_path = YOLOV4Config.classes_path,
         input_size = (YOLOV4Config.imagesize, YOLOV4Config.imagesize),
@@ -220,7 +264,8 @@ def Inference_YOLOV4Model(YOLOV4Config, model_path, onnx = False):
         anchor_path = YOLOV4Config.anchors_path,
         classes_path = YOLOV4Config.classes_path,
         score = YOLOV4Config.score,
-        onnx = onnx
+        anchors_mask = YOLOV4Config.ANCHOR_MASK
+        
     )
     return yolov4
     

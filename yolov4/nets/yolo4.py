@@ -14,12 +14,10 @@ from ..lib.utils import compose
 
 from .CSPdarknet53 import darknet_body
 from Attention.attention import cbam_block, eca_block, se_block
-import cfg
 
 attention_block = [se_block, cbam_block, eca_block]
 
 
-#   如果步长为2则自己设定padding方式。
 @wraps(Conv2D)
 def DarknetConv2D(*args, **kwargs):
     # darknet_conv_kwargs = {'kernel_regularizer': l2(5e-4)}
@@ -47,7 +45,7 @@ def make_five_convs(x, num_filters):
     return x
 
 
-#   Panet网络的构建，并且获得预测结果
+
 def yolo_body(inputs, num_anchors, num_classes, phi=0):
     if phi >=4:
         raise AssertionError("Phi must be less than or equal to 3. ")
@@ -97,10 +95,6 @@ def yolo_body(inputs, num_anchors, num_classes, phi=0):
     # 52,52,256 -> 52,52,128 -> 52,52,256 -> 52,52,128 -> 52,52,256 -> 52,52,128
     P3 = make_five_convs(P3,128)
     
-    #---------------------------------------------------#
-    #   第三个特征层
-    #   y3=(batch_size,52,52,3,85)
-    #---------------------------------------------------#
     P3_output = DarknetConv2D_BN_Leaky(256, (3,3))(P3)
     P3_output = DarknetConv2D(num_anchors*(num_classes+5), (1,1), kernel_initializer=keras.initializers.RandomNormal(mean=0.0, stddev=0.01))(P3_output)
 
@@ -112,10 +106,7 @@ def yolo_body(inputs, num_anchors, num_classes, phi=0):
     # 26,26,512 -> 26,26,256 -> 26,26,512 -> 26,26,256 -> 26,26,512 -> 26,26,256
     P4 = make_five_convs(P4,256)
     
-    #---------------------------------------------------#
-    #   第二个特征层
-    #   y2=(batch_size,26,26,3,85)
-    #---------------------------------------------------#
+
     P4_output = DarknetConv2D_BN_Leaky(512, (3,3))(P4)
     P4_output = DarknetConv2D(num_anchors*(num_classes+5), (1,1), kernel_initializer=keras.initializers.RandomNormal(mean=0.0, stddev=0.01))(P4_output)
     
@@ -127,10 +118,6 @@ def yolo_body(inputs, num_anchors, num_classes, phi=0):
     # 13,13,1024 -> 13,13,512 -> 13,13,1024 -> 13,13,512 -> 13,13,1024 -> 13,13,512
     P5 = make_five_convs(P5,512)
     
-    #---------------------------------------------------#
-    #   第一个特征层
-    #   y1=(batch_size,13,13,3,85)
-    #---------------------------------------------------#
     P5_output = DarknetConv2D_BN_Leaky(1024, (3,3))(P5)
     P5_output = DarknetConv2D(num_anchors*(num_classes+5), (1,1), kernel_initializer=keras.initializers.RandomNormal(mean=0.0, stddev=0.01))(P5_output)
 
@@ -138,9 +125,6 @@ def yolo_body(inputs, num_anchors, num_classes, phi=0):
 
 def yolo_head(feats, anchors, num_classes, input_shape, calc_loss=False):
     num_anchors = len(anchors)
-    #---------------------------------------------------#
-    #   [1, 1, 1, num_anchors, 2]
-    #---------------------------------------------------#
     feats = tf.convert_to_tensor(feats)
     anchors_tensor = K.reshape(K.constant(anchors), [1, 1, 1, num_anchors, 2])
 
@@ -224,6 +208,7 @@ def yolo_eval(yolo_outputs,
               anchors,
               num_classes,
               image_shape,
+              anchor_mask,
               max_boxes=20,
               score_threshold=.6,
               iou_threshold=.5,
@@ -235,7 +220,6 @@ def yolo_eval(yolo_outputs,
     else:
         num_layers = len(yolo_outputs)
 
-    anchor_mask = cfg.YOLOV4Config.ANCHOR_MASK
     input_shape = K.shape(yolo_outputs[0])[1:3] * 32
     boxes = []
     box_scores = []
