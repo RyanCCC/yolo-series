@@ -7,7 +7,7 @@
 |   YOLOV4    |   Torch-1.9    | 未实现  |
 |   YOLOV5    |   Torch-1.9    | 已实现，并通过测试。 |
 | YOLOV5-v6.1 |   Torch-1.9    | 已实现，并通过测试。 |
-|    YOLOX    |   Torch-1.9    | 未实现  |
+|    YOLOX    |   Torch-1.9    | 已实现，并通过测试。  |
 |   YOLOV7    |   Torch-1.9    | 已实现，并通过测试。|
 |    YOLOP    |   Torch-1.9    | 已实现，未通过测试。 |
 
@@ -24,8 +24,8 @@
 |---font：字体
 |---logs：存放训练日志的文档
 |---model：存放模型和权重
-|   +---yolo4_voc_weights.h5：VOC预训练权重
-|   \---yolo4_weight.h5：COCO预训练权重
+|   +---yolo4_voc_weights.pth：VOC预训练权重
+|   \---yolo4_weight.pth：COCO预训练权重
 |---result：推理结果保存的文件夹
 |---video：视频保存文件夹
 |---yolop：yolop算法实现
@@ -98,7 +98,7 @@ python ./predict.py --model YOLOV7-TINY --source ./samples/1.jpg --weights ./mod
 
 1. **统计测试集的ground_True**
 
-```python
+```sh
 python ./evaluate/get_gt_txt.py --testset ./VOC2017/ImageSets/Main/test.txt --annotation ./VOC2007/Annotations/ --gt_folder ./result/gt_folder
 ```
 
@@ -110,7 +110,7 @@ python ./evaluate/get_gt_txt.py --testset ./VOC2017/ImageSets/Main/test.txt --an
 
 2. **计算模型推理测试集的结果**
 
-```python
+```sh
 python ./evaluate/get_dr_txt.py --testset ./voc2007/ImageSets/Main/test.txt --pr_folder ./result/pr_folder --minoverlap 0.5 --model_path ./model/voc2007_yolox.h5 --image_path ./voc2007/JPEGImages/ --model YOLOX
 ```
 
@@ -123,7 +123,7 @@ python ./evaluate/get_dr_txt.py --testset ./voc2007/ImageSets/Main/test.txt --pr
 
 3. **计算map的性能指标**
 
-```python
+```sh
 python ./evaluate/get_map.py --GT_PATH ./result/evaluate --DR_PATH ./result/pr_folder/ --IMG_PATH ./voc2007/JPEGImages/ --MINOVERLAP 0.5
 ```
 
