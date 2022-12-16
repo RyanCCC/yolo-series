@@ -19,3 +19,4 @@ torchmetrics==0.8.2
 torchtext==0.6.0
 torchversion==0.0.4
 torchvision==0.13.0
+onnxsim==0.4.8
