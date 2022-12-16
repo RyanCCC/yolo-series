@@ -42,8 +42,6 @@ def dir_inference(imag_dir, model, args):
         img = model.detect(image)
         end_time = time.time()
         result += (end_time-start_time)
-        if args.show:
-            img.show()
         if args.save:
             if not os.path.exists(args.save_dir):
                 os.makedirs(args.save_dir)
