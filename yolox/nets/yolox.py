@@ -1,60 +1,189 @@
-import tensorflow as tf
-from tensorflow.keras.layers import Concatenate, Input, Lambda, UpSampling2D, ZeroPadding2D
-from tensorflow.keras.models import Model
-from .CSPdarknet53 import CSPLayer, DarknetConv2D_BN_SiLU
-from .CSPdarknet53 import darknet_body_yolox as darknet_body
-from .CSPdarknet53 import DarknetConv2D_withL2 as DarknetConv2D
-from ..lib.loss_yolox import get_yolo_loss
+#!/usr/bin/env python3
+# -*- coding:utf-8 -*-
+# Copyright (c) Megvii, Inc. and its affiliates.
+
+import torch
+import torch.nn as nn
+
+from .CSPdarknet53 import BaseConv, CSPDarknet, CSPLayer, DWConv
 
 
-def yolo_body(input_shape, num_classes, phi, weight_decay=5e-4):
-    depth_dict = {'tiny': 0.33, 's' : 0.33, 'm' : 0.67, 'l' : 1.00, 'x' : 1.33,}
-    width_dict = {'tiny': 0.375, 's' : 0.50, 'm' : 0.75, 'l' : 1.00, 'x' : 1.25,}
-    depth, width = depth_dict[phi], width_dict[phi]
-    in_channels = [256, 512, 1024]
-    inputs = Input(input_shape)
-    feat1, feat2, feat3 = darknet_body(inputs, depth, width)
-    P5 = DarknetConv2D_BN_SiLU(int(in_channels[1] * width), (1, 1), weight_decay=weight_decay, name = 'backbone.lateral_conv0')(feat3)  
-    P5_upsample = UpSampling2D()(P5)  # 512/16
-    P5_upsample = Concatenate(axis = -1)([P5_upsample, feat2])  # 512->1024/16
-    P5_upsample = CSPLayer(P5_upsample, int(in_channels[1] * width), round(3 * depth), shortcut = False, weight_decay=weight_decay, name = 'backbone.C3_p4')  # 1024->512/16
-    P4 = DarknetConv2D_BN_SiLU(int(in_channels[0] * width), (1, 1), weight_decay=weight_decay, name = 'backbone.reduce_conv1')(P5_upsample)  # 512->256/16
-    P4_upsample = UpSampling2D()(P4)  # 256/8
-    P4_upsample = Concatenate(axis = -1)([P4_upsample, feat1])  # 256->512/8
-    P3_out = CSPLayer(P4_upsample, int(in_channels[0] * width), round(3 * depth), shortcut = False, weight_decay=weight_decay, name = 'backbone.C3_p3')  # 1024->512/16
-    P3_downsample = ZeroPadding2D(((1, 0),(1, 0)))(P3_out)
-    P3_downsample = DarknetConv2D_BN_SiLU(int(in_channels[0] * width), (3, 3), strides = (2, 2), weight_decay=weight_decay, name = 'backbone.bu_conv2')(P3_downsample)  # 256->256/16
-    P3_downsample = Concatenate(axis = -1)([P3_downsample, P4])  # 256->512/16
-    P4_out = CSPLayer(P3_downsample, int(in_channels[1] * width), round(3 * depth), shortcut = False, weight_decay=weight_decay, name = 'backbone.C3_n3')  # 1024->512/16
-    P4_downsample = ZeroPadding2D(((1, 0),(1, 0)))(P4_out)
-    P4_downsample = DarknetConv2D_BN_SiLU(int(in_channels[1] * width), (3, 3), strides = (2, 2), weight_decay=weight_decay, name = 'backbone.bu_conv1')(P4_downsample)  # 256->256/16
-    P4_downsample = Concatenate(axis = -1)([P4_downsample, P5])  # 512->1024/32
-    P5_out = CSPLayer(P4_downsample, int(in_channels[2] * width), round(3 * depth), shortcut = False, weight_decay=weight_decay, name = 'backbone.C3_n4')  # 1024->512/16
-    fpn_outs = [P3_out, P4_out, P5_out]
-    yolo_outs = []
+class YOLOXHead(nn.Module):
+    def __init__(self, num_classes, width = 1.0, in_channels = [256, 512, 1024], act = "silu", depthwise = False,):
+        super().__init__()
+        Conv = DWConv if depthwise else BaseConv
+        
+        self.cls_convs  = nn.ModuleList()
+        self.reg_convs  = nn.ModuleList()
+        self.cls_preds  = nn.ModuleList()
+        self.reg_preds  = nn.ModuleList()
+        self.obj_preds  = nn.ModuleList()
+        self.stems      = nn.ModuleList()
 
-    for i, out in enumerate(fpn_outs):
-        stem = DarknetConv2D_BN_SiLU(int(256 * width), (1, 1), strides = (1, 1), weight_decay=weight_decay, name = 'head.stems.' + str(i))(out)
-        # 物体分类分支
-        cls_conv = DarknetConv2D_BN_SiLU(int(256 * width), (3, 3), strides = (1, 1), weight_decay=weight_decay, name = 'head.cls_convs.' + str(i) + '.0')(stem)
-        cls_conv = DarknetConv2D_BN_SiLU(int(256 * width), (3, 3), strides = (1, 1), weight_decay=weight_decay, name = 'head.cls_convs.' + str(i) + '.1')(cls_conv)
-        cls_pred = DarknetConv2D(num_classes, (1, 1), strides = (1, 1), weight_decay=weight_decay, name = 'head.cls_preds.' + str(i))(cls_conv)
-        reg_conv = DarknetConv2D_BN_SiLU(int(256 * width), (3, 3), strides = (1, 1), weight_decay=weight_decay, name = 'head.reg_convs.' + str(i) + '.0')(stem)
-        reg_conv = DarknetConv2D_BN_SiLU(int(256 * width), (3, 3), strides = (1, 1), weight_decay=weight_decay, name = 'head.reg_convs.' + str(i) + '.1')(reg_conv)
-        reg_pred = DarknetConv2D(4, (1, 1), strides = (1, 1), weight_decay=weight_decay, name = 'head.reg_preds.' + str(i))(reg_conv)
-        obj_pred = DarknetConv2D(1, (1, 1), strides = (1, 1), weight_decay=weight_decay, name = 'head.obj_preds.' + str(i))(reg_conv)
-        output = Concatenate(axis = -1)([reg_pred, obj_pred, cls_pred])
-        yolo_outs.append(output)
-    return Model(inputs, yolo_outs)
+        for i in range(len(in_channels)):
+            self.stems.append(BaseConv(in_channels = int(in_channels[i] * width), out_channels = int(256 * width), ksize = 1, stride = 1, act = act))
+            self.cls_convs.append(nn.Sequential(*[
+                Conv(in_channels = int(256 * width), out_channels = int(256 * width), ksize = 3, stride = 1, act = act), 
+                Conv(in_channels = int(256 * width), out_channels = int(256 * width), ksize = 3, stride = 1, act = act), 
+            ]))
+            self.cls_preds.append(
+                nn.Conv2d(in_channels = int(256 * width), out_channels = num_classes, kernel_size = 1, stride = 1, padding = 0)
+            )
+            
 
-def get_yolox_model(model_body, input_shape, num_classes):
-    y_true = [Input(shape = (None, 5))]
-    model_loss  = Lambda(
-        get_yolo_loss(input_shape, len(model_body.output), num_classes), 
-        output_shape = (1, ), 
-        name = 'yolo_loss')([*model_body.output, *y_true])
+            self.reg_convs.append(nn.Sequential(*[
+                Conv(in_channels = int(256 * width), out_channels = int(256 * width), ksize = 3, stride = 1, act = act), 
+                Conv(in_channels = int(256 * width), out_channels = int(256 * width), ksize = 3, stride = 1, act = act)
+            ]))
+            self.reg_preds.append(
+                nn.Conv2d(in_channels = int(256 * width), out_channels = 4, kernel_size = 1, stride = 1, padding = 0)
+            )
+            self.obj_preds.append(
+                nn.Conv2d(in_channels = int(256 * width), out_channels = 1, kernel_size = 1, stride = 1, padding = 0)
+            )
+
+    def forward(self, inputs):
+        outputs = []
+        for k, x in enumerate(inputs):
+            x = self.stems[k](x)
+            cls_feat    = self.cls_convs[k](x)
+
+            cls_output  = self.cls_preds[k](cls_feat)
+            reg_feat    = self.reg_convs[k](x)
+            reg_output  = self.reg_preds[k](reg_feat)
+            obj_output  = self.obj_preds[k](reg_feat)
+
+            output      = torch.cat([reg_output, obj_output, cls_output], 1)
+            outputs.append(output)
+        return outputs
+
+class YOLOPAFPN(nn.Module):
+    def __init__(self, depth = 1.0, width = 1.0, in_features = ("dark3", "dark4", "dark5"), in_channels = [256, 512, 1024], depthwise = False, act = "silu"):
+        super().__init__()
+        Conv = DWConv if depthwise else BaseConv
+        self.backbone = CSPDarknet(depth, width, depthwise = depthwise, act = act)
+        self.in_features = in_features
+
+        self.upsample = nn.Upsample(scale_factor=2, mode="nearest")
+        self.lateral_conv0  = BaseConv(int(in_channels[2] * width), int(in_channels[1] * width), 1, 1, act=act)
     
-    model = Model([model_body.input, *y_true], model_loss)
-    return model
+        self.C3_p4 = CSPLayer(
+            int(2 * in_channels[1] * width),
+            int(in_channels[1] * width),
+            round(3 * depth),
+            False,
+            depthwise = depthwise,
+            act = act,
+        )  
 
+        self.reduce_conv1   = BaseConv(int(in_channels[1] * width), int(in_channels[0] * width), 1, 1, act=act)
+        self.C3_p3 = CSPLayer(
+            int(2 * in_channels[0] * width),
+            int(in_channels[0] * width),
+            round(3 * depth),
+            False,
+            depthwise = depthwise,
+            act = act,
+        )
 
+        self.bu_conv2 = Conv(int(in_channels[0] * width), int(in_channels[0] * width), 3, 2, act=act)
+        self.C3_n3 = CSPLayer(
+            int(2 * in_channels[0] * width),
+            int(in_channels[1] * width),
+            round(3 * depth),
+            False,
+            depthwise = depthwise,
+            act = act,
+        )
+
+        self.bu_conv1 = Conv(int(in_channels[1] * width), int(in_channels[1] * width), 3, 2, act=act)
+        self.C3_n4 = CSPLayer(
+            int(2 * in_channels[1] * width),
+            int(in_channels[2] * width),
+            round(3 * depth),
+            False,
+            depthwise = depthwise,
+            act = act,
+        )
+
+    def forward(self, input):
+        out_features            = self.backbone.forward(input)
+        [feat1, feat2, feat3]   = [out_features[f] for f in self.in_features]
+
+        #-------------------------------------------#
+        #   20, 20, 1024 -> 20, 20, 512
+        #-------------------------------------------#
+        P5          = self.lateral_conv0(feat3)
+        #-------------------------------------------#
+        #  20, 20, 512 -> 40, 40, 512
+        #-------------------------------------------#
+        P5_upsample = self.upsample(P5)
+        #-------------------------------------------#
+        #  40, 40, 512 + 40, 40, 512 -> 40, 40, 1024
+        #-------------------------------------------#
+        P5_upsample = torch.cat([P5_upsample, feat2], 1)
+        #-------------------------------------------#
+        #   40, 40, 1024 -> 40, 40, 512
+        #-------------------------------------------#
+        P5_upsample = self.C3_p4(P5_upsample)
+
+        #-------------------------------------------#
+        #   40, 40, 512 -> 40, 40, 256
+        #-------------------------------------------#
+        P4          = self.reduce_conv1(P5_upsample) 
+        #-------------------------------------------#
+        #   40, 40, 256 -> 80, 80, 256
+        #-------------------------------------------#
+        P4_upsample = self.upsample(P4) 
+        #-------------------------------------------#
+        #   80, 80, 256 + 80, 80, 256 -> 80, 80, 512
+        #-------------------------------------------#
+        P4_upsample = torch.cat([P4_upsample, feat1], 1) 
+        #-------------------------------------------#
+        #   80, 80, 512 -> 80, 80, 256
+        #-------------------------------------------#
+        P3_out      = self.C3_p3(P4_upsample)  
+
+        #-------------------------------------------#
+        #   80, 80, 256 -> 40, 40, 256
+        #-------------------------------------------#
+        P3_downsample   = self.bu_conv2(P3_out) 
+        #-------------------------------------------#
+        #   40, 40, 256 + 40, 40, 256 -> 40, 40, 512
+        #-------------------------------------------#
+        P3_downsample   = torch.cat([P3_downsample, P4], 1) 
+        #-------------------------------------------#
+        #   40, 40, 256 -> 40, 40, 512
+        #-------------------------------------------#
+        P4_out          = self.C3_n3(P3_downsample) 
+
+        #-------------------------------------------#
+        #   40, 40, 512 -> 20, 20, 512
+        #-------------------------------------------#
+        P4_downsample   = self.bu_conv1(P4_out)
+        #-------------------------------------------#
+        #   20, 20, 512 + 20, 20, 512 -> 20, 20, 1024
+        #-------------------------------------------#
+        P4_downsample   = torch.cat([P4_downsample, P5], 1)
+        #-------------------------------------------#
+        #   20, 20, 1024 -> 20, 20, 1024
+        #-------------------------------------------#
+        P5_out          = self.C3_n4(P4_downsample)
+
+        return (P3_out, P4_out, P5_out)
+
+class YoloBody(nn.Module):
+    def __init__(self, num_classes, phi):
+        super().__init__()
+        depth_dict = {'nano': 0.33, 'tiny': 0.33, 's' : 0.33, 'm' : 0.67, 'l' : 1.00, 'x' : 1.33,}
+        width_dict = {'nano': 0.25, 'tiny': 0.375, 's' : 0.50, 'm' : 0.75, 'l' : 1.00, 'x' : 1.25,}
+        depth, width    = depth_dict[phi], width_dict[phi]
+        depthwise       = True if phi == 'nano' else False 
+
+        self.backbone   = YOLOPAFPN(depth, width, depthwise=depthwise)
+        self.head       = YOLOXHead(num_classes, width, depthwise=depthwise)
+
+    def forward(self, x):
+        fpn_outs    = self.backbone.forward(x)
+        outputs     = self.head.forward(fpn_outs)
+        return outputs

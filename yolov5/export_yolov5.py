@@ -70,7 +70,7 @@ def export_model(
     dynamic = False, # onnx:dynamic axes
     opset = 12, #ONNX: opset version
     ):
-    yolov5 = Inference_YOLOV5Model(YOLOV5Config, weights, export=True).net
+    yolov5 = Inference_YOLOV5Model(YOLOV5Config, weights).net
     include = [x.lower() for x in include]
     if 'onnx' in include:
         print('Exporting onnx model....')

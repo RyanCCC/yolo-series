@@ -26,8 +26,7 @@ class YOLOV5(object):
             "nms_iou" : kwargs['nms_iou'],
             "backbone":kwargs['backbone'],
             "max_boxes": kwargs['max_boxes'],
-            "letterbox_image":kwargs['letterbox_image'],
-            "export":kwargs['export']
+            "letterbox_image":kwargs['letterbox_image']
             }
         self.__dict__.update(self._params)
         self.cuda = False
@@ -57,8 +56,6 @@ class YOLOV5(object):
             self.net.load_state_dict(torch.load(self.model_path, map_location=device))
             self.net = self.net.eval()
             print('{} model, and classes loaded.'.format(self.model_path))
-            if self.export:
-                return
             if self.cuda:
                 self.net = nn.DataParallel(self.net)
                 self.net = self.net.cuda()
@@ -202,7 +199,7 @@ class YOLOV5(object):
         f.close()
 
 
-def Inference_YOLOV5Model(YOLOV5Config, model_path, export = False):
+def Inference_YOLOV5Model(YOLOV5Config, model_path):
     yolov5 = YOLOV5(
         model_path = model_path,
         classes_path = YOLOV5Config.classes_path,
@@ -214,8 +211,7 @@ def Inference_YOLOV5Model(YOLOV5Config, model_path, export = False):
         max_boxes=YOLOV5Config.max_boxes,
         letterbox_image = True,
         phi=YOLOV5Config.phi,
-        backbone = YOLOV5Config.backbone,
-        export = export
+        backbone = YOLOV5Config.backbone
     )
     return yolov5
 

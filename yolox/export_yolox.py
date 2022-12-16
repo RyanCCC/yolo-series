@@ -8,8 +8,8 @@ import time
 from pathlib import Path
 import torch
 import torch.nn as nn
-from .predict_yolov5 import Inference_YOLOV5Model
-from cfg import YOLOV5Config
+from .predict_yolox import Inference_YOLOXModel
+from cfg import YOLOXConfig
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]
@@ -22,7 +22,7 @@ def export_onnx(model, file, opset, train, dynamic, simplify, prefix='\033[91m')
     try:
         import onnx
         print(f'\n{prefix} starting export with onnx {onnx.__version__}...')
-        im = torch.zeros(1, 3, *YOLOV5Config.input_shape).to('cpu')  # image size(1, 3, 512, 512) BCHW
+        im = torch.zeros(1, 3, *YOLOXConfig.input_shape).to('cpu')  # image size(1, 3, 512, 512) BCHW
         torch.onnx.export(
             model, 
             im, 
@@ -46,6 +46,7 @@ def export_onnx(model, file, opset, train, dynamic, simplify, prefix='\033[91m')
         if simplify:
             try:
                 import onnxsim
+
                 print(f'{prefix} simplifying with onnx-simplifier {onnxsim.__version__}...')
                 model_onnx, check = onnxsim.simplify(
                     model_onnx,
@@ -69,9 +70,7 @@ def export_model(
     dynamic = False, # onnx:dynamic axes
     opset = 12, #ONNX: opset version
     ):
-    yolov5 = Inference_YOLOV5Model(YOLOV5Config, weights).net
-    #TODO checksuffix
-    
+    yolov5 = Inference_YOLOXModel(YOLOXConfig, weights).net
     include = [x.lower() for x in include]
     if 'onnx' in include:
         print('Exporting onnx model....')

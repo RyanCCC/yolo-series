@@ -36,7 +36,7 @@ class YOLOV5Config(Config):
     pretrain_weight = './yolov5v61/checkpoints/yolov5_l_v6.1.pth'
     # anchors
     anchors_path = './yolov5/data/yolov5_anchors.txt'
-    phi='l'
+    phi='s'
     # save weight
     time_str = str(datetime.datetime.strftime(datetime.datetime.now(),'%Y_%m_%d'))
     save_weight = f'{task}_yolov5{phi}_{time_str}.h5'

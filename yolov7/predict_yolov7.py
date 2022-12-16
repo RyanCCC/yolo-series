@@ -12,7 +12,7 @@ from .lib.tools import cvtColor, get_anchors, get_classes, preprocess_input,resi
 from .lib.decodebox import DecodeBox
 
 
-class YOLO(object):
+class YOLOV7(object):
     def __init__(self, **kwargs):
         self._params = {
             "model_path" : kwargs['model_path'], 
@@ -26,8 +26,7 @@ class YOLO(object):
             "max_boxes" : kwargs['max_boxes'], 
             "letterbox_image" : kwargs['letterbox_image'],
             "tiny":kwargs['tiny'],
-            "cuda":kwargs['cuda'],
-            "export":kwargs['export']
+            "cuda":kwargs['cuda']
         }
         self.__dict__.update(self._params)
             
@@ -55,8 +54,6 @@ class YOLO(object):
             self.net.load_state_dict(torch.load(self.model_path, map_location=device))
             self.net = self.net.fuse().eval()
             print('{} model, and classes loaded.'.format(self.model_path))
-            if self.export:
-                return
             if self.cuda:
                 self.net = nn.DataParallel(self.net)
                 self.net = self.net.cuda()
@@ -156,8 +153,8 @@ class YOLO(object):
         pass
 
 
-def Inference_YOLOV7Model(config, model_path = './model/village_Detection_yolov7_l_2022_10_28.pth', export = False):
-    yolo = YOLO(
+def Inference_YOLOV7Model(config, model_path):
+    yolo = YOLOV7(
         model_path = model_path,
         class_path = config.classes_path,
         anchors_path = config.anchors_path,
@@ -169,7 +166,6 @@ def Inference_YOLOV7Model(config, model_path = './model/village_Detection_yolov7
         letterbox_image = True,
         phi=config.phi,
         tiny = config.tiny,
-        cuda = config.cuda,
-        export = False
+        cuda = config.cuda
     )
     return yolo

@@ -1,184 +1,159 @@
-from functools import wraps
-import tensorflow as tf
-from tensorflow.keras import backend as K
-from tensorflow.keras.initializers import RandomNormal
-from tensorflow.keras.layers import (Add, BatchNormalization, Concatenate,
-                                     Conv2D, Layer, LeakyReLU, MaxPooling2D,
-                                     UpSampling2D, ZeroPadding2D)
-from tensorflow.keras.regularizers import l2
-from ..lib.utils import compose
-import tensorflow_model_optimization as tfmot
+#!/usr/bin/env python3
+# -*- coding:utf-8 -*-
+# Copyright (c) Megvii, Inc. and its affiliates.
 
-class Mish(Layer, tfmot.sparsity.keras.PrunableLayer):  
-    def __init__(self, **kwargs):
-        super(Mish, self).__init__(**kwargs)
-        self.supports_masking = True
+import torch
+from torch import nn
 
-    def call(self, inputs):
-        return inputs * K.tanh(K.softplus(inputs))
+class SiLU(nn.Module):
+    @staticmethod
+    def forward(x):
+        return x * torch.sigmoid(x)
 
-    def get_config(self):
-        config = super(Mish, self).get_config()
-        return config
+def get_activation(name="silu", inplace=True):
+    if name == "silu":
+        module = SiLU()
+    elif name == "relu":
+        module = nn.ReLU(inplace=inplace)
+    elif name == "lrelu":
+        module = nn.LeakyReLU(0.1, inplace=inplace)
+    else:
+        raise AttributeError("Unsupported act type: {}".format(name))
+    return module
 
-    def compute_output_shape(self, input_shape):
-        return input_shape  
-    
-    def get_prunable_weights(self):
-        return self.weights
+class Focus(nn.Module):
+    def __init__(self, in_channels, out_channels, ksize=1, stride=1, act="silu"):
+        super().__init__()
+        self.conv = BaseConv(in_channels * 4, out_channels, ksize, stride, act=act)
 
-class SiLU(Layer):
-    def __init__(self, **kwargs):
-        super(SiLU, self).__init__(**kwargs)
-        self.supports_masking = True
+    def forward(self, x):
+        patch_top_left  = x[...,  ::2,  ::2]
+        patch_bot_left  = x[..., 1::2,  ::2]
+        patch_top_right = x[...,  ::2, 1::2]
+        patch_bot_right = x[..., 1::2, 1::2]
+        x = torch.cat((patch_top_left, patch_bot_left, patch_top_right, patch_bot_right,), dim=1,)
+        return self.conv(x)
 
-    def call(self, inputs):
-        return inputs*K.sigmoid(inputs)
-    
-    def get_config(self):
-        return super(SiLU, self).get_config()
-    
-    def compute_output_shape(self, input_shape):
-        return input_shape
+class BaseConv(nn.Module):
+    def __init__(self, in_channels, out_channels, ksize, stride, groups=1, bias=False, act="silu"):
+        super().__init__()
+        pad         = (ksize - 1) // 2
+        self.conv   = nn.Conv2d(in_channels, out_channels, kernel_size=ksize, stride=stride, padding=pad, groups=groups, bias=bias)
+        self.bn     = nn.BatchNorm2d(out_channels, eps=0.001, momentum=0.03)
+        self.act    = get_activation(act, inplace=True)
 
-class Focus(Layer):
-    def __init__(self):
-        super(Focus, self).__init__()
+    def forward(self, x):
+        return self.act(self.bn(self.conv(x)))
 
-    def compute_output_shape(self, input_shape):
-        return (input_shape[0], input_shape[1] // 2 if input_shape[1] != None else input_shape[1], input_shape[2] // 2 if input_shape[2] != None else input_shape[2], input_shape[3] * 4)
-    
-    def call(self,x):
-        return tf.concat(
-            [x[...,  ::2,  ::2, :],
-             x[..., 1::2,  ::2, :],
-             x[...,  ::2, 1::2, :],
-             x[..., 1::2, 1::2, :]],
-             axis=-1
+    def fuseforward(self, x):
+        return self.act(self.conv(x))
+
+class DWConv(nn.Module):
+    def __init__(self, in_channels, out_channels, ksize, stride=1, act="silu"):
+        super().__init__()
+        self.dconv = BaseConv(in_channels, in_channels, ksize=ksize, stride=stride, groups=in_channels, act=act,)
+        self.pconv = BaseConv(in_channels, out_channels, ksize=1, stride=1, groups=1, act=act)
+
+    def forward(self, x):
+        x = self.dconv(x)
+        return self.pconv(x)
+
+class SPPBottleneck(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_sizes=(5, 9, 13), activation="silu"):
+        super().__init__()
+        hidden_channels = in_channels // 2
+        self.conv1      = BaseConv(in_channels, hidden_channels, 1, stride=1, act=activation)
+        self.m          = nn.ModuleList([nn.MaxPool2d(kernel_size=ks, stride=1, padding=ks // 2) for ks in kernel_sizes])
+        conv2_channels  = hidden_channels * (len(kernel_sizes) + 1)
+        self.conv2      = BaseConv(conv2_channels, out_channels, 1, stride=1, act=activation)
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = torch.cat([x] + [m(x) for m in self.m], dim=1)
+        x = self.conv2(x)
+        return x
+
+class Bottleneck(nn.Module):
+    # Standard bottleneck
+    def __init__(self, in_channels, out_channels, shortcut=True, expansion=0.5, depthwise=False, act="silu",):
+        super().__init__()
+        hidden_channels = int(out_channels * expansion)
+        Conv = DWConv if depthwise else BaseConv
+        self.conv1 = BaseConv(in_channels, hidden_channels, 1, stride=1, act=act)
+        self.conv2 = Conv(hidden_channels, out_channels, 3, stride=1, act=act)
+        self.use_add = shortcut and in_channels == out_channels
+
+    def forward(self, x):
+        y = self.conv2(self.conv1(x))
+        if self.use_add:
+            y = y + x
+        return y
+
+class CSPLayer(nn.Module):
+    def __init__(self, in_channels, out_channels, n=1, shortcut=True, expansion=0.5, depthwise=False, act="silu",):
+        # ch_in, ch_out, number, shortcut, groups, expansion
+        super().__init__()
+        hidden_channels = int(out_channels * expansion)  
+        self.conv1  = BaseConv(in_channels, hidden_channels, 1, stride=1, act=act)
+        self.conv2  = BaseConv(in_channels, hidden_channels, 1, stride=1, act=act)
+        self.conv3  = BaseConv(2 * hidden_channels, out_channels, 1, stride=1, act=act)
+        module_list = [Bottleneck(hidden_channels, hidden_channels, shortcut, 1.0, depthwise, act=act) for _ in range(n)]
+        self.m      = nn.Sequential(*module_list)
+
+    def forward(self, x):
+        x_1 = self.conv1(x)
+        x_2 = self.conv2(x)
+        x_1 = self.m(x_1)
+        x = torch.cat((x_1, x_2), dim=1)
+        return self.conv3(x)
+
+class CSPDarknet(nn.Module):
+    def __init__(self, dep_mul, wid_mul, out_features=("dark3", "dark4", "dark5"), depthwise=False, act="silu",):
+        super().__init__()
+        assert out_features, "please provide output features of Darknet"
+        self.out_features = out_features
+        Conv = DWConv if depthwise else BaseConv
+
+        base_channels   = int(wid_mul * 64)  # 64
+        base_depth      = max(round(dep_mul * 3), 1)  # 3
+
+        self.stem = Focus(3, base_channels, ksize=3, act=act)
+
+        self.dark2 = nn.Sequential(
+            Conv(base_channels, base_channels * 2, 3, 2, act=act),
+            CSPLayer(base_channels * 2, base_channels * 2, n=base_depth, depthwise=depthwise, act=act),
         )
 
+        self.dark3 = nn.Sequential(
+            Conv(base_channels * 2, base_channels * 4, 3, 2, act=act),
+            CSPLayer(base_channels * 4, base_channels * 4, n=base_depth * 3, depthwise=depthwise, act=act),
+        )
 
-@wraps(Conv2D)
-def DarknetConv2D(*args, **kwargs):
-    # darknet_conv_kwargs = {'kernel_regularizer': l2(5e-4)}
-    darknet_conv_kwargs = {'kernel_initializer' : RandomNormal(stddev=0.02)}
-    darknet_conv_kwargs['padding'] = 'valid' if kwargs.get('strides')==(2,2) else 'same'
-    darknet_conv_kwargs.update(kwargs)
-    return Conv2D(*args, **darknet_conv_kwargs)
+        self.dark4 = nn.Sequential(
+            Conv(base_channels * 4, base_channels * 8, 3, 2, act=act),
+            CSPLayer(base_channels * 8, base_channels * 8, n=base_depth * 3, depthwise=depthwise, act=act),
+        )
 
-@wraps(Conv2D)
-def DarknetConv2D_withL2(*args, **kwargs):
-    darknet_conv_kwargs = {'kernel_initializer' : RandomNormal(stddev=0.02), 'kernel_regularizer' : l2(kwargs.get('weight_decay', 5e-4))}
-    darknet_conv_kwargs['padding'] = 'valid' if kwargs.get('strides')==(2, 2) else 'same'
-    try:
-        del kwargs['weight_decay']
-    except:
-        pass
-    darknet_conv_kwargs.update(kwargs)
-    return Conv2D(*args, **darknet_conv_kwargs)
+        self.dark5 = nn.Sequential(
+            Conv(base_channels * 8, base_channels * 16, 3, 2, act=act),
+            SPPBottleneck(base_channels * 16, base_channels * 16, activation=act),
+            CSPLayer(base_channels * 16, base_channels * 16, n=base_depth, shortcut=False, depthwise=depthwise, act=act),
+        )
 
-
-#DarknetConv2D + BatchNormalization + Mish
-def DarknetConv2D_BN_Mish(*args, **kwargs):
-    no_bias_kwargs = {'use_bias': False}
-    no_bias_kwargs.update(kwargs)
-    return compose(
-        DarknetConv2D(*args, **no_bias_kwargs),
-        BatchNormalization(),
-        Mish())
-
-def DarknetConv2D_BN_SiLU(*args, **kwargs):
-    no_bias_kwargs = {'use_bias':False}
-    no_bias_kwargs.update(kwargs)
-    if "name" in kwargs.keys():
-        no_bias_kwargs['name'] = kwargs['name'] + '.conv'
-    return compose(
-        DarknetConv2D_withL2(*args, **no_bias_kwargs),
-        BatchNormalization(momentum = 0.97, epsilon = 0.001, name = kwargs['name'] + '.bn'),
-        SiLU())
+    def forward(self, x):
+        outputs = {}
+        x = self.stem(x)
+        outputs["stem"] = x
+        x = self.dark2(x)
+        outputs["dark2"] = x
+        x = self.dark3(x)
+        outputs["dark3"] = x
+        x = self.dark4(x)
+        outputs["dark4"] = x
+        x = self.dark5(x)
+        outputs["dark5"] = x
+        return {k: v for k, v in outputs.items() if k in self.out_features}
 
 
-
-#CSPdarknet结构块
-def resblock_body(x, num_filters, num_blocks, all_narrow=True):
-    preconv1 = ZeroPadding2D(((1,0),(1,0)))(x)
-    preconv1 = DarknetConv2D_BN_Mish(num_filters, (3,3), strides=(2,2))(preconv1)
-    shortconv = DarknetConv2D_BN_Mish(num_filters//2 if all_narrow else num_filters, (1,1))(preconv1)
-    mainconv = DarknetConv2D_BN_Mish(num_filters//2 if all_narrow else num_filters, (1,1))(preconv1)
-    for i in range(num_blocks):
-        y = compose(
-                DarknetConv2D_BN_Mish(num_filters//2, (1,1)),
-                DarknetConv2D_BN_Mish(num_filters//2 if all_narrow else num_filters, (3,3)))(mainconv)
-        mainconv = Add()([mainconv,y])
-    postconv = DarknetConv2D_BN_Mish(num_filters//2 if all_narrow else num_filters, (1,1))(mainconv)
-    route = Concatenate()([postconv, shortconv])
-    return DarknetConv2D_BN_Mish(num_filters, (1,1))(route)
-
-# CSPDarknet主体
-def darknet_body(x):
-    x = DarknetConv2D_BN_Mish(32, (3,3))(x)
-    x = resblock_body(x, 64, 1, False)
-    x = resblock_body(x, 128, 2)
-    x = resblock_body(x, 256, 8)
-    feat1 = x
-    x = resblock_body(x, 512, 8)
-    feat2 = x
-    x = resblock_body(x, 1024, 4)
-    feat3 = x
-    return feat1,feat2,feat3
-
-# 以下是YOLOx的网络结构
-def SPPBottleneck(x, out_channels, weight_decay=5e-4, name=""):
-    # SPP结构：不同尺度池化后进行concat
-    x = DarknetConv2D_BN_SiLU(out_channels // 2, (1, 1), weight_decay=weight_decay, name = name + '.conv1')(x)
-    maxpool1 = MaxPooling2D(pool_size=(5, 5), strides=(1, 1), padding='same')(x)
-    maxpool2 = MaxPooling2D(pool_size=(9, 9), strides=(1, 1), padding='same')(x)
-    maxpool3 = MaxPooling2D(pool_size=(13, 13), strides=(1, 1), padding='same')(x)
-    x = Concatenate()([x, maxpool1, maxpool2, maxpool3])
-    x = DarknetConv2D_BN_SiLU(out_channels, (1, 1), weight_decay=weight_decay, name = name + '.conv2')(x)
-    return x
-
-
-def Bottleneck(x, out_channels, shortcut=True, weight_decay=5e-4, name=""):
-    y = compose(
-            DarknetConv2D_BN_SiLU(out_channels, (1, 1), weight_decay=weight_decay, name = name + '.conv1'),
-            DarknetConv2D_BN_SiLU(out_channels, (3, 3), weight_decay=weight_decay, name = name + '.conv2'))(x)
-    if shortcut:
-        y = Add()([x, y])
-    return y
-
-def CSPLayer(x, num_filters, num_blocks, shortcut=True, expansion=0.5, weight_decay=5e-4, name=""):
-    hidden_channels = int(num_filters * expansion)  # hidden channels
-    x_1 = DarknetConv2D_BN_SiLU(hidden_channels, (1, 1), weight_decay=weight_decay, name = name + '.conv1')(x)
-    x_2 = DarknetConv2D_BN_SiLU(hidden_channels, (1, 1), weight_decay=weight_decay, name = name + '.conv2')(x)
-    for i in range(num_blocks):
-        x_1 = Bottleneck(x_1, hidden_channels, shortcut=shortcut, weight_decay=weight_decay, name = name + '.m.' + str(i))
-    route = Concatenate()([x_1, x_2])
-    return DarknetConv2D_BN_SiLU(num_filters, (1, 1), weight_decay=weight_decay, name = name + '.conv3')(route)
-
-def resblock_body_yolox(x, num_filters, num_blocks, expansion=0.5, shortcut=True, last=False, weight_decay=5e-4, name = ""):
-    x = ZeroPadding2D(((1, 0),(1, 0)))(x)
-    x = DarknetConv2D_BN_SiLU(num_filters, (3, 3), strides = (2, 2), weight_decay=weight_decay, name = name + '.0')(x)
-    if last:
-        x = SPPBottleneck(x, num_filters, weight_decay=weight_decay, name = name + '.1')
-    return CSPLayer(x, num_filters, num_blocks, shortcut=shortcut, expansion=expansion, weight_decay=weight_decay, name = name + '.1' if not last else name + '.2')
-
-def darknet_body_yolox(x, dep_mul, wid_mul, weight_decay=5e-4):
-    base_channels   = int(wid_mul * 64)  # 64
-    base_depth      = max(round(dep_mul * 3), 1)  # 3
-    # 640, 640, 3 => 320, 320, 12
-    x = Focus()(x)
-    # 320, 320, 12 => 320, 320, 64
-    x = DarknetConv2D_BN_SiLU(base_channels, (3, 3), weight_decay=weight_decay, name = 'backbone.backbone.stem.conv')(x)
-    # 320, 320, 64 => 160, 160, 128
-    x = resblock_body_yolox(x, base_channels * 2, base_depth, weight_decay=weight_decay, name = 'backbone.backbone.dark2')
-    # 160, 160, 128 => 80, 80, 256
-    x = resblock_body_yolox(x, base_channels * 4, base_depth * 3, weight_decay=weight_decay, name = 'backbone.backbone.dark3')
-    feat1 = x
-    # 80, 80, 256 => 40, 40, 512
-    x = resblock_body_yolox(x, base_channels * 8, base_depth * 3, weight_decay=weight_decay, name = 'backbone.backbone.dark4')
-    feat2 = x
-    # 40, 40, 512 => 20, 20, 1024
-    x = resblock_body_yolox(x, base_channels * 16, base_depth, shortcut=False, last=True, weight_decay=weight_decay, name = 'backbone.backbone.dark5')
-    feat3 = x
-    return feat1,feat2,feat3
+if __name__ == '__main__':
+    print(CSPDarknet(1, 1))
