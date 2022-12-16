@@ -1,11 +1,4 @@
 '''
-将训练Tensorflow模型导出ONNX：
-1. 从权重模型导出pb模型
-2. 从权重模型导出ONNX模型
-3. 从pb模型导出成ONNX模型
-
-
-
 Tensorflow 模型命名规则：数据集（功能）_算法模型_版本.h5
 ONNX模型命名规则：数据集功能_算法模型_OP_输入维度_版本.onnx
 
@@ -25,7 +18,6 @@ def parse_arg():
     parser.add_argument('--saved_pb', action='store_true', help='save pb model to current directory')
     parser.add_argument('--saved_pb_dir', type=str, default='./save_model', help='save pb file if needed. Default:save_model')
     parser.add_argument('--yolo', type=str, help='YOLO algorithm.', choices=['yolov4', 'yolov4_tiny', 'yolov5', 'yolov5-v61', 'yolox', 'yolov7'], required=True)
-    parser.add_argument('--saved_model', type=str, help='Tensorflow saved_model', default='')
     parser.add_argument('--save_onnx', type=str, help='save onnx model name', required=True, default='')
     parser.add_argument('--opset', type=int, default=12, help='ONNX: opset version')
     return parser

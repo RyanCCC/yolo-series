@@ -1,4 +1,4 @@
-# YOLOSeries
+# YOLO目标检测算法
 
 本仓库主要实现`YOLO`目标检测算法，欢迎参与到本仓库的建设或者提issue。本仓库有两个分支，一个分支为`main`，主要是基于`Tensorflow`实现yolo算法，另一个分支是`pytorch`，主要是基于`pytorch`实现yolo算法。`main`分支当前算法实现基本情况如下：
 
@@ -10,7 +10,7 @@
 |    YOLOX    | Tensorflow-2.4 | 已实现，并通过测试 |
 |   YOLOV7    | Tensorflow-2.4 | 已实现，并通过测试 |
 
-本仓库主要是算法的训练和算法的验证，后续的工程化应用部署可以参考另一个仓库：[Deployment](https://github.com/RyanCCC/Deployment)。部署仓库包括模型的量化与压缩、`python`或者`C++`的部署代码以及`OpenCV`和`TensorRT`等推理，喜欢的话可以给个star或者一起参与建设仓库。
+本仓库主要是算法的训练和算法的验证，后续的工程化应用部署可以参考另一个仓库：[Deployment](https://github.com/RyanCCC/Deployment)。部署仓库包括模型的量化与压缩、`python`或者`C++`的部署代码以及`OpenCV`和`TensorRT`等推理，喜欢或者对您有用的话可以给个:star:或者一起参与建设仓库:hand:。
 
 ## 项目结构
 
@@ -42,7 +42,7 @@
 
 ## 数据集制作
 
-数据集的格式按照VOC格式的数据集。主要的文件架构如下所示：
+可按照`VOC`格式的数据集进行制作，主要的文件结构如下所示：
 
 ```
 +---Annotation： 数据标注,xml格式
@@ -52,7 +52,7 @@
 |---labels.names：类别标签文档
 ```
 
-当然你也可以自定义自己的数据集结构，训练的时候只需要修改路径即可。另外在`tools`文件夹下有一些关于数据集脚本：
+当然也可以根据实际情况自定义自己的数据集结构，训练的时候只需要修改路径即可。另外在`tools`文件夹下有一些关于数据集脚本：
 
 1. `splitDataset.py`：划分数据集，即产生`ImageSets/Main`下的txt文档
 2. `voc_annotation.py`：生成输入到网络的文档格式，如下所示：
@@ -67,19 +67,24 @@ your/dataset/root/path/pavilion_20210812155531.jpg 111,2,458,337,10
 
 ## 模型训练
 
-在模型开始训练之前，先在`cfg`文档下找到对应的算法配置文件进行修改，修改内容包括数据集路径、训练参数参数等。修改完之后执行：`python train.py --model YOLOX`。即可执行`YOLOX`算法的训练。其中`--model`参数默认为`YOLOV5`，可选的算法有`YOLOV4`，`YOLOV4-TINY`、`YOLOV5`、`YOLOX`，`YOLOV7`等。后续会继续优化，根据需要添加更多的算法参数。
+在模型开始训练之前，先在`cfg`文档下找到对应的算法配置文件进行修改，修改内容包括数据集路径、训练参数参数等。修改完之后执行：`python train.py --model YOLOX`。即可执行`YOLOX`算法的训练。其中`--model`参数默认为`YOLOV5`，可选的算法有`YOLOV4`，`YOLOV4-TINY`、`YOLOV5`、`YOLOX`，`YOLOV7`等。后续会继续优化，根据需要添加更多的算法参数。修改完相关配置，可在每个算法文件下的含有`train`命名的文件检查进一步检查训练参数，如`yolov5`下的`train_yolov5.py`文件的一些训练参数。
+
+当检查所有参数都没有错误后，可执行训练：
+
+```sh
+python train.py --model YOLOV5
+```
+
 
 ## 模型推理
 
 模型推理查看`predict.py`。参数说明：
-- model：选择推理算法
-- show：是否展示图像，不建议
-- save：是否保存推理结果
-- save_dir：保存推理结果的文件夹位置
-- img_dir：推理图像所在的文件夹，批量推理的形式
-- weights：算法权重
-- image：推理单张图像
-- model：批量文件夹推理还是单张图像推理，可取值有：`dir`和`image`
+- **yolo**：选择推理算法，如`YOLOV5`、`YOLOV5V61`等算法。
+- **show**：在进行文件夹推理的时候是否展示图像，此处不建议。
+- **save**：是否保存推理结果。
+- **save_dir**：保存推理结果的文件夹位置
+- **model**：具体算法模型，可以是算法的权重、ONNX模型。
+- **source**：待检测的对象，可以是单张图像，也可以是文件夹
 
 推理的示范：
 
@@ -104,9 +109,9 @@ python ./evaluate/get_gt_txt.py --testset ./VOC2017/ImageSets/Main/test.txt --an
 ```
 
 参数说明：
-- testset：划分测试数据集保存的`txt`文档
-- annotation：标注文件保存的文件夹
-- gt_folder：保存文件夹路径
+- **testset**：划分测试数据集保存的`txt`文档
+- **annotation**：标注文件保存的文件夹
+- **gt_folder**：保存文件夹路径
 
 
 2. **计算模型推理测试集的结果**
@@ -116,11 +121,11 @@ python ./evaluate/get_dr_txt.py --testset ./VOC2007/ImageSets/Main/test.txt --pr
 ```
 
 参数说明：
-- testset：划分测试数据集保存的`txt`文档
-- pr_folder：推理结果保存的文件夹，保存文件格式：`txt`。
-- model_path：推理模型的权重
-- image_path：图像路径
-- model：使用的算法模型
+- **testset**：划分测试数据集保存的`txt`文档
+- **pr_folder**：推理结果保存的文件夹，保存文件格式：`txt`。
+- **model_path**：推理模型的权重
+- **image_path**：图像路径
+- **model**：使用的算法模型
 
 3. **计算map的性能指标**
 
@@ -141,7 +146,7 @@ python ./evaluate/get_map.py --GT_PATH ./result/evaluate --DR_PATH ./result/pr_f
 
 ### FLOPs计算
 
-FLOPs：注意s小写，是floating point operations的缩写（s表复数），意指浮点运算数，理解为计算量。可以用来衡量算法/模型的复杂度。FLOPS：注意全大写，是floating point operations per second的缩写，意指每秒浮点运算次数，理解为计算速度。是一个衡量硬件性能的指标。
+**FLOPs**：注意`s`小写，是floating point operations的缩写（s表复数），意指浮点运算数，理解为计算量。可以用来衡量算法/模型的复杂度。**FLOPS**：注意全大写，是floating point operations per second的缩写，意指每秒浮点运算次数，理解为计算速度。是一个衡量硬件性能的指标。
 
 ### PARAMS计算
 
@@ -150,24 +155,20 @@ FLOPs：注意s小写，是floating point operations的缩写（s表复数），
 
 ## 模型转换
 
-在生产环境中需要进行模型转换，关于模型转换用了YOLOX作为例子，详情可以参考：[TF2ONNX](https://github.com/RyanCCC/Deployment/tree/main/ONNXDemo/Tensorflow)，当中有YOLOX转换成ONNX的例子。将模型转换成ONNX格式模型后就可以往后继续转换成其他的模型，比如需要部署到TensorRT或者Openvino中等都可以通过ONNX转换成对应的格式的模型。模型转换之后至于模型的性能，如精确度、速度等是否存在差异，在此没有做相应的测试，感兴趣的可以自行测评一下模型性能差异。
+在生产环境中需要进行模型转换，此处主要是将模型转换成ONNX格式模型。后续如果需要再转换成其他格式的模型，如`TensorRT`、`TFLite`等都可通过ONNX转换成对应的格式的模型。模型转换成ONNX的性能，如精确度、速度等是否与原模型存在差异，在此没有做相应的测试:dizzy_face:，感兴趣的可以自行测评一下模型性能差异。
 
 模型导出脚本：`export.py`，相关参数说明如下：
 
-- `weight`：YOLO模型的权重路径，用于从权重路径中导出pb模型或者ONNX模型
-- `saved_pb`：是否保存Tensorfow的PB模型，带上这个参数后需要指定`saved_pb_dir`参数，表示模型保存的路径。
-- `saved_pb_dir`：保存PB模型的路径。
-- `yolo`：选择需要导出的YOLO算法。
-- `saved_model`：该参数用于直接加载Tensorflow的PB模型，并导出成ONNX模型。
-- `save_onnx`：ONNX模型保存的路径。
-- `opset`：ONNX的算子类型，默认12
-- `flag`：带上这个参数表示从Tensorflow的PB模型进行导出，否则从权重中导出。
+- **model**：模型的权重路径
+- **saved_pb**：是否保存`pb`格式模型，带上这个参数后需要指定`saved_pb_dir`参数，表示模型保存的路径。
+- **saved_pb_dir**：保存`pb`模型的路径。
+- **yolo**：选择需要导出的YOLO算法。
+- **save_onnx**：ONNX模型保存的路径。
+- **opset**：ONNX的算子类型，默认12
 
 注意：使用权重模型的时候要在`cfg`目录下对应的配置文件中核实类别文件和anchor文件是否配置正确。另外后续需要导出成TensorRT的Engine模型或者Openvino的模型可以自行定义。当前的参数已经足以使用，后续假设㓟更多参数需求会持续更新优化。
 
 使用例子：
-
-1. 从Tensorflow模型导出：
 
 ``` sh
 python ./export.py --model ./model/VOC.h5 --yolo yolox --save_onnx 'voc_yolox_l_13_640_v1.onnx' 

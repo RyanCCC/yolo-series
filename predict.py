@@ -20,7 +20,6 @@ def parse_args():
         type=str)
     parser.add_argument('--show', action='store_true', help='show preidict result. Not recommended')
     parser.add_argument('--save', action='store_true', help='save result image.')
-    parser.add_argument('--img_dir', default='./samples', help='predict image dir')
     parser.add_argument('--model', help='model', required=True)
     parser.add_argument('--save_dir', default='./result', help='save_dir')
     parser.add_argument('--source', help='source,image file/dir')
@@ -57,7 +56,7 @@ if __name__=='__main__':
         from yolox import Inference_YOLOXModel
         yolo = Inference_YOLOXModel(YOLOXConfig, args.model)
         if os.path.isdir(source):
-            dir_inference(args.img_dir, yolo, args)
+            dir_inference(args.source, yolo, args)
         else:
             image = Image.open(source)
             img = yolo.detect(image)
@@ -69,7 +68,7 @@ if __name__=='__main__':
         from yolov4 import Inference_YOLOV4Model
         yolo = Inference_YOLOV4Model(YOLOV4Config, args.model)
         if os.path.isdir(source):
-            dir_inference(args.img_dir, yolo, args)
+            dir_inference(args.source, yolo, args)
         else:
             image = Image.open(source)
             img = yolo.detect(image)
@@ -81,7 +80,7 @@ if __name__=='__main__':
         from yolov4 import Inference_YOLOV4Model
         yolo = Inference_YOLOV4Model(YOLOV4Config, args.model)
         if os.path.isdir(source):
-            dir_inference(args.img_dir, yolo, args)
+            dir_inference(args.source, yolo, args)
         else:
             image = Image.open(source)
             img = yolo.detect(image)
@@ -93,7 +92,7 @@ if __name__=='__main__':
         from yolov5 import Inference_YOLOV5Model
         yolo = Inference_YOLOV5Model(YOLOV5Config, args.model)
         if os.path.isdir(source):
-            dir_inference(args.img_dir, yolo, args)
+            dir_inference(args.source, yolo, args)
         else:
             image = Image.open(source)
             img = yolo.detect(image)
@@ -106,7 +105,7 @@ if __name__=='__main__':
         from yolov5v61 import Inference_YOLOV5Model
         yolo = Inference_YOLOV5Model(YOLOV5Config, args.model)
         if os.path.isdir(source):
-            dir_inference(args.img_dir, yolo, args)
+            dir_inference(args.source, yolo, args)
         else:
             image = Image.open(source)
             img = yolo.detect(image)
@@ -119,7 +118,7 @@ if __name__=='__main__':
         from yolov7 import Inference_YOLOV7Model
         yolo = Inference_YOLOV7Model(YOLOV7Config, args.model)
         if os.path.isdir(source):
-            dir_inference(args.img_dir, yolo, args)
+            dir_inference(args.source, yolo, args)
         else:
             image = Image.open(source)
             img = yolo.detect(image)
@@ -131,7 +130,7 @@ if __name__=='__main__':
         from yolov7 import Inference_YOLOV7Model
         yolo = Inference_YOLOV7Model(YOLOV7Config, args.model)
         if os.path.isdir(source):
-            dir_inference(args.img_dir, yolo, args)
+            dir_inference(args.source, yolo, args)
         else:
             image = Image.open(source)
             img = yolo.detect(image)

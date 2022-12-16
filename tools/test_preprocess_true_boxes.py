@@ -3,8 +3,8 @@ from tools.tfrecord_create import main_create_tfrecord
 import numpy as np
 from yolov4.lib.dataloader import preprocess_true_boxes
 tfrecord_save_path= './validate.tfrecord'
-dataset_root = './villages'
-class_path = './villages/village.names'
+dataset_root = './VOC2007'
+class_path = './VOC2007/voc.names'
 dataset_type='val'
 
 # 测试preprocess_true_boxes

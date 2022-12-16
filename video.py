@@ -8,7 +8,7 @@ from cfg import *
 # 使用yolov7
 from yolov7 import Inference_YOLOV7Model
 
-yolox = Inference_YOLOXModel(YOLOXConfig, model_path='./model/village_yolox_202207.h5')
+yolox = Inference_YOLOXModel(YOLOXConfig, model_path='./model/VOC2007.h5')
 # yolov7 = Inference_YOLOV7Model(YOLOV7Config)
 
 '''

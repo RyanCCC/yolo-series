@@ -81,7 +81,7 @@ def load_data(path):
 if __name__ == '__main__':
     SIZE = 416
     anchors_num = 9
-    path = r'./village/Annotations'
+    path = r'./VOC2007/Annotations'
     data = load_data(path)
     
     # 使用k聚类算法

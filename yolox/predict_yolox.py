@@ -226,7 +226,7 @@ class YOLOX(object):
             with open(dr_txt_path, 'w') as f:
                 f.write("%s %s %s %s %s %s\n" % (predicted_class, str(score.numpy()), str(int(left)), str(int(top)), str(int(right)),str(int(bottom))))
 
-def Inference_YOLOXModel(YOLOXConfig, model_path = './model/village2022_yolox_s_20221017.h5', onnx = False):
+def Inference_YOLOXModel(YOLOXConfig, model_path, onnx = False):
     yolox = YOLOX(
         class_path = YOLOXConfig.classes_path,
         input_shape = YOLOXConfig.input_shape,
@@ -239,16 +239,3 @@ def Inference_YOLOXModel(YOLOXConfig, model_path = './model/village2022_yolox_s_
         onnx = onnx
     )
     return yolox
-
-# 创建yolox
-# model_path = './model/village_yolox.h5'
-# yolox = YOLOX(
-#     class_path = YOLOXConfig.classes_path,
-#     input_shape = YOLOXConfig.input_shape,
-#     confidence = YOLOXConfig.score,
-#     nms_iou = YOLOXConfig.iou,
-#     max_boxes=YOLOXConfig.max_boxes,
-#     letterbox_image = True,
-#     model_path = model_path,
-#     phi=YOLOXConfig.phi
-# )

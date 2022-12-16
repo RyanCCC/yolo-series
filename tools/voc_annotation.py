@@ -4,8 +4,8 @@ from tqdm import tqdm
 
 
 
-base_path = os.path.join(os.getcwd(), 'villages')
-class_file =os.path.join(base_path, 'village.names2022')
+base_path = os.path.join(os.getcwd(), 'VOC2007')
+class_file =os.path.join(base_path, 'voc.names')
 
 
 '''

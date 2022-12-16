@@ -20,6 +20,6 @@ class YOLOXConfig(Config):
     save_weight = f'{task}_yolox_{phi}_{time_str}.h5'
     score=0.5
     iou=0.5
-    pretrain_weight = './model/village_yolox_0510.h5'
+    pretrain_weight = './model/VOC2007_yolox_0510.h5'
     input_shape = [640, 640]
 

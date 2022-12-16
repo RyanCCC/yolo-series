@@ -216,7 +216,7 @@ def main_create_tfrecord(tfrecord_save_path, dataset_root, class_path, dataset_t
         annotation_xml = lxml.etree.fromstring(open(xml_path).read().encode('utf-8'))
         annotation = parse_xml(annotation_xml)['annotation']
         # 创建example
-        tf_example = create_tfrecord(annotation, class_map, data_dir='./villages')
+        tf_example = create_tfrecord(annotation, class_map, data_dir='./VOC2007')
         writer.write(tf_example.SerializeToString())
     writer.close()
     visual_dataset(tfrecord_save_path, class_path, 416, classes_name)

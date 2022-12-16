@@ -20,7 +20,7 @@ class YOLOV4Config(Config):
     learning_rate_freeze = 1e-3
     learning_rate_unfreeze = 1e-4
     pretrain_weight = './model/yolo4tf2_weight.h5'
-    save_weight = 'village_tf2.h5'
+    save_weight = 'VOC_yolov4_tf2.h5'
     anchors_path = './yolov4/data/yolo_anchors.txt'
     # Inference
     predict_weight = './model/yolo4_voc_weights.h5'

@@ -198,7 +198,7 @@ def yolox(config):
                     callbacks = callbacks)
         
         # 以Tensorflow格式保存模型
-        # model.save('./model/village_yolox', save_format='tf2')
+        # model.save('./model/VOC2007_yolox', save_format='tf2')
 
 
 
