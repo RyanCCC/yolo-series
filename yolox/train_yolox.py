@@ -98,8 +98,8 @@ def yolox(config):
 
     yolo_loss    = YOLOLoss(num_classes, fp16)
     if local_rank == 0:
-        time_str        = datetime.datetime.strftime(datetime.datetime.now(),'%Y_%m_%d_%H_%M_%S')
-        log_dir         = os.path.join(save_dir, "loss_" + str(time_str))
+        time_str = datetime.datetime.strftime(datetime.datetime.now(),'%Y_%m_%d_')
+        log_dir = save_dir
         loss_history    = LossHistory(log_dir, model, input_shape=input_shape)
     else:
         loss_history    = None
