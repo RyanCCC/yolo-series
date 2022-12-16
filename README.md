@@ -1,6 +1,6 @@
-# YOLOSeries
+# YOLO目标检测算法
 
-本仓库主要实现`YOLO`目标检测算法，欢迎参与到本仓库的建设或者提issue。当前算法实现基本情况如下：
+本仓库基于`Pytorch`实现`YOLO`目标检测算法，欢迎参与到本仓库的建设或者提issue。当前算法实现基本情况如下：
 
 |    算法     |    实现框架    |               备注                |
 | :---------: | :------------: | :-------------------------------: |
@@ -11,7 +11,7 @@
 |   YOLOV7    |   Torch-1.9    | 已实现，并通过测试。|
 |    YOLOP    |   Torch-1.9    | 已实现，未通过测试。 |
 
-本仓库主要是算法的训练和算法的验证，后续的工程化应用部署可以参考另一个仓库：[Deployment](https://github.com/RyanCCC/Deployment)。部署仓库包括模型的量化与压缩、`python`或者`C++`的部署代码以及`OpenCV`和`TensorRT`等推理，喜欢的话可以给个star或者一起参与建设仓库。
+关于YOLO算法的工程化应用部署可以参考另一个仓库：[Deployment](https://github.com/RyanCCC/Deployment)。部署仓库包括模型的量化与压缩、`python`或者`C++`的部署代码以及`OpenCV`和`TensorRT`等推理，喜欢的话可以给个:star:或者一起参与建设仓库:hand:。
 
 ## 项目结构
 
@@ -19,7 +19,6 @@
 +---cfg: 存放配置文件。
 |---tools:存放工具：包括生成训练文档、类别统计等。
 |---tracking：目标跟踪Deepsort算法
-|---doc：存放YOLO资料文档，包括backbone、后处理等算法文档
 |---evaluate：模型评估方法
 |---font：字体
 |---logs：存放训练日志的文档
@@ -43,7 +42,7 @@
 
 ## 数据集制作
 
-数据集的格式按照VOC格式的数据集。主要的文件架构如下所示：
+可按照`VOC`格式制作你的数据集，主要的文件结构如下所示：
 
 ```
 +---Annotation： 数据标注,xml格式
@@ -68,28 +67,45 @@ your/voc/root/path/JPEGImages/pavilion_20210812155531.jpg 111,2,458,337,10
 
 ## 模型训练
 
-在模型开始训练之前，先在`cfg`文档下找到对应的算法配置文件进行修改，修改内容包括数据集路径、训练参数参数等。修改完之后执行：`python train.py --model YOLOX`。即可执行`YOLOX`算法的训练。其中`--model`参数默认为`YOLOV5`，可选的算法有`YOLOV4`，`YOLOV4-TINY`、`YOLOV5`、`YOLOX`，`YOLOV7`等。后续会继续优化，根据需要添加更多的算法参数。
+在开始训练模型之前在`cfg`文档下找到对应的算法配置文件进行修改，修改内容包括数据集路径、训练参数参数等。修改完相关配置，可在每个算法文件下的含有`train`命名的文件进一步检查训练参数，如`yolov5`下的`train_yolov5.py`文件设置的训练参数。当确定好训练参数，数据集路径后，执行以下命令即可进行训练。
+
+```sh
+python train.py --model YOLOV5
+```
+
+参数说明：
+
+- **model**：表示训练的算法，如`YOLOV5`、`YOLOX`等。
+
+### 训练说明
+
+1. 训练前检查自己的图像格式。图像为`.jpg`格式，标签为`.xml`格式。图像在训练前的预处理会自动进行`resize`，灰度图会自动转换成RGB图像。
+2. 训练文档（每个算法下的含有`train`的文档）中的`distributed`参数是用于指定是否使用单机多卡分布式运行。设置该参数为`True`后，可以使用`sync_bn`。
+3. `fp16`参数是表示是否使用混合精度训练，可减少约一半的内存，但需要pytorch1.7.1以上。
+4. 关于数据增强的参数。`mosaic`表示是否需要马赛克增强，`mosaic_prob`每个step有多少概率使用mosaic数据增强，默认为0.5。`mixup`表示是否使用mixup数据增强，当使用mosaic时才有效，表示会对mosaic增强后的图像进行mixup处理。`mixup_prob`表示多少概率使用mixup增强，默认为0.5。`special_aug_ratio`：由于Mosaic生成的训练图片，远远脱离自然图片的真实分布。当`mosaic=True`时，`special_aug_ratio`范围内进行`mosaic`数据增强。
+5. 训练分为两个阶段，分别是冻结阶段和解冻阶段。设置冻结阶段是为了满足机器性能不足的训练需求。
+6. 关于优化器的参数`optimizer_type`可选的有adam、sgd。当使用Adam优化器时建议设置 `Init_lr=1e-3`，当使用SGD优化器时建议设置`Init_lr=1e-2`。`momentum`表示优化器内部使用到的momentum参数。`weight_decay`表示权值衰减，可防止过拟合。`adam`会导致`weight_decay`错误，使用`adam`优化器时建议设置为0。
+7. 关于验证参数`eval_flag`表示是否在训练时进行评估，评估对象为验证集。
 
 ## 模型推理
 
 模型推理查看`predict.py`。参数说明：
-- model：选择推理算法
-- show：是否展示图像，不建议
-- save：是否保存推理结果
-- save_dir：保存推理结果的文件夹位置
-- img_dir：推理图像所在的文件夹，批量推理的形式
-- weights：算法权重
-- image：推理单张图像
-- model：批量文件夹推理还是单张图像推理，可取值有：`dir`和`image`
+- **model**：选择推理算法
+- **save**：是否保存推理结果
+- **save_dir**：保存推理结果的文件夹位置
+- **weights**：算法权重
+- **source**：推理单张图像或者文件夹
 
-推理的示范：
+运行样例：
 
 ```sh
-python ./predict.py --model YOLOV5  --source ./samples --weights ./model/VOC2007_yolov5_l_20221013.h5 --save
+# dir inference
+python ./predict.py --model YOLOV7 --source ./samples/ --weights ./model/voc_2007.pt --save --save_dir ./result/ 
 ```
 
 ```sh
-python ./predict.py --model YOLOV7-TINY --source ./samples/1.jpg --weights ./model/VOC2007_yolov7_tiny_2022_10_28.pth --save
+# image inference
+python ./predict.py --model YOLOV5-V61 --source ./samples/images/1.jpg --weights ./model/voc_2007.onnx --save --save_dir ./result/
 ```
 
 ## 模型验证
@@ -103,9 +119,9 @@ python ./evaluate/get_gt_txt.py --testset ./VOC2017/ImageSets/Main/test.txt --an
 ```
 
 参数说明：
-- testset：划分测试数据集保存的`txt`文档
-- annotation：标注文件保存的文件夹
-- gt_folder：保存文件夹路径
+- **testset**：划分测试数据集保存的`txt`文档
+- **annotation**：标注文件保存的文件夹
+- **gt_folder**：保存文件夹路径
 
 
 2. **计算模型推理测试集的结果**
@@ -115,11 +131,11 @@ python ./evaluate/get_dr_txt.py --testset ./voc2007/ImageSets/Main/test.txt --pr
 ```
 
 参数说明：
-- testset：划分测试数据集保存的`txt`文档
-- pr_folder：推理结果保存的文件夹，保存文件格式：`txt`。
-- model_path：推理模型的权重
-- image_path：图像路径
-- model：使用的算法模型
+- **testset**：划分测试数据集保存的`txt`文档
+- **pr_folder**：推理结果保存的文件夹，保存文件格式：`txt`。
+- **model_path**：推理模型的权重
+- **image_path**：图像路径
+- **model**：使用的算法模型
 
 3. **计算map的性能指标**
 
@@ -140,7 +156,7 @@ python ./evaluate/get_map.py --GT_PATH ./result/evaluate --DR_PATH ./result/pr_f
 
 ### FLOPs计算
 
-FLOPs：注意s小写，是floating point operations的缩写（s表复数），意指浮点运算数，理解为计算量。可以用来衡量算法/模型的复杂度。FLOPS：注意全大写，是floating point operations per second的缩写，意指每秒浮点运算次数，理解为计算速度。是一个衡量硬件性能的指标。
+**FLOPs**：注意s小写，是floating point operations的缩写（s表复数），意指浮点运算数，理解为计算量。可以用来衡量算法/模型的复杂度。**FLOPS**：注意全大写，是floating point operations per second的缩写，意指每秒浮点运算次数，理解为计算速度。是一个衡量硬件性能的指标。
 
 ### PARAMS计算
 
@@ -149,7 +165,7 @@ FLOPs：注意s小写，是floating point operations的缩写（s表复数），
 
 ### 模型转换
 
-模型转换主要应用在生产环境中，关于模型转换用了YOLOX作为例子，详情可以参考：[TF2ONNX](https://github.com/RyanCCC/Deployment/tree/main/ONNXDemo/Tensorflow)，当中有YOLOX转换成ONNX的例子。将模型转换成ONNX格式模型后就可以往后继续转换成其他的模型，比如需要部署到TensorRT或者Openvino中等都可以通过ONNX转换成对应的格式的模型。模型转换之后至于模型的性能，如精确度、速度等是否存在差异，在此没有做相应的测试，感兴趣的可以自行测评一下模型性能差异。
+在生产环境中需要进行模型转换，此处主要是将模型转换成ONNX格式模型。后续如果需要再转换成其他格式的模型，如`TensorRT`、`TFLite`等都可通过ONNX转换成对应的格式的模型。模型转换成ONNX的性能，如精确度、速度等是否与原模型存在差异，在此没有做相应的测试😵，感兴趣的可以自行测评一下模型性能差异。
 
 模型导出脚本：`export.py`，相关参数说明如下：
 
@@ -160,13 +176,11 @@ FLOPs：注意s小写，是floating point operations的缩写（s表复数），
 - `opset`：ONNX的算子类型，默认12
 - `simplify`：ONNX简化模型，一般为不简化。
 
-注意：使用权重模型的时候要在`cfg`目录下对应的配置文件中核实类别文件和anchor文件是否配置正确。另外后续需要导出成TensorRT的Engine模型或者Openvino的模型可以自行定义。当前的参数已经足以使用，后续假设㓟更多参数需求会持续更新优化。
+**注意**：使用权重模型的时候要在`cfg`目录下对应的配置文件中核实类别文件和anchor文件是否配置正确。另外后续需要导出成TensorRT的Engine模型或者Openvino的模型可以自行定义。当前的参数已经足以使用，后续假设㓟更多参数需求会持续更新优化。
 
 使用例子：
 
 ```sh
-
 python ./export.py --weight ./voc_yolov5_l.pth --save_file ./yolov5_l_12.onnx --yolo yolov5
-
 ```
 
