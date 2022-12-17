@@ -1,5 +1,4 @@
 .history
-*.png
 __pycache__
 villages
 logs
