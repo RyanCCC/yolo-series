@@ -66,7 +66,7 @@ Darknet结合Resnet的特点在保证对特征进行超强表达的同时又避�
 
 pytorch的实现如下：
 
-1. 封装卷积
+**（1）封装卷积**
 
 ```python
 class Conv(nn.Module):
@@ -91,7 +91,7 @@ class Conv(nn.Module):
 		return self.conv(entry)
 ```
 
-2. 残差单元
+**（2）残差单元**
 
 ```python
 class ConvResidual(nn.Module):
@@ -112,7 +112,7 @@ class ConvResidual(nn.Module):
 # 采用 1*1 + 3*3 的形式加深网络深度，加强特征抽象
 ```
 
-3. 组装
+**（3）组装**
 
 ```python
 class Darknet53(nn.Module):
