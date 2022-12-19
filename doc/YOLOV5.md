@@ -84,15 +84,27 @@ Yolov5中采用其中的CIOU_Loss做Bounding box的损失函数。
 
 **（2）nms非极大值抑制**
 
-在目标检测的后处理过程中，针对很多目标框的筛选，通常需要nms操作。因为CIOU_Loss中包含影响因子v，涉及groudtruth的信息，而测试推理时，是没有groundtruth的。所以Yolov4在DIOU_Loss的基础上采用DIOU_nms的方式，而Yolov5中采用加权nms的方式。
+在目标检测的后处理过程中，针对很多目标框的筛选，通常需要`nms`操作。因为`CIOU_Loss`中包含影响因子v，涉及`groud Truth`的信息，而测试推理时，是没有`ground truth`的。所以Yolov4在`DIOU_Loss`的基础上采用`DIOU_nms`的方式，而Yolov5中采用加权nms的方式。
 
-**（3） Loss函数**
+**（3） 数据集**
+
+- 每一类别的图像建议超过1500张
+- 样本的多样性，比如在不同的时间段，如不同时间、季节、天气、气候等进行采样，保证数据的多样性
+- 数据一定要标注好
+- 背景图像：没有任何目标的背景图像，大概占比是0到百分之10，
+
+![](src/yolov5_dataset.png)
+
+**（4）训练参数的设置**
+
+- Epochs：开始可以设置epochs为300。假设训练参数过早过拟合，则可以减少训练步长。假设300以内都没有拟合，那么设置步长更大，如600,1200等
+- Image size：图像的尺寸也影响识别的效果，尤其是大目标与小目标的效果。图像尺寸较大的时候，如1180，那么小目标的识别效果较图像大小为640的尺寸要好。
+- Batch size：如果硬件条件允许的话，batch size越大越好，因为batchsize关系着BN层的参数。
 
 ### 参考
 
 1. [YOLOV5保姆级讲解](https://www.bilibili.com/video/BV1Dt4y1x7Fz/?spm_id_from=333.1007.top_right_bar_window_custom_collection.content.click)
 2. [深入浅出Yolo系列之Yolov5核心基础知识完整讲解](https://zhuanlan.zhihu.com/p/172121380)
-
 
 
 
