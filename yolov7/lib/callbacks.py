@@ -20,11 +20,11 @@ from .tools_map import get_coco_map, get_map
 
 class LossHistory():
     def __init__(self, log_dir, model, input_shape):
-        self.log_dir    = log_dir
-        self.losses     = []
-        self.val_loss   = []
-        
-        os.makedirs(self.log_dir)
+        self.log_dir = log_dir
+        self.losses = []
+        self.val_loss = []
+        if not os.path.exists(self.log_dir):
+            os.makedirs(self.log_dir)
         self.writer     = SummaryWriter(self.log_dir)
         try:
             dummy_input     = torch.randn(2, 3, input_shape[0], input_shape[1])
@@ -82,23 +82,23 @@ class EvalCallback():
             map_out_path=".temp_yolov7_map_out", max_boxes=100, confidence=0.05, nms_iou=0.5, letterbox_image=True, MINOVERLAP=0.5, eval_flag=True, period=1):
         super(EvalCallback, self).__init__()
         
-        self.net                = net
-        self.input_shape        = input_shape
-        self.anchors            = anchors
+        self.net = net
+        self.input_shape = input_shape
+        self.anchors = anchors
         self.anchors_mask       = anchors_mask
-        self.class_names        = class_names
+        self.class_names = class_names
         self.num_classes        = num_classes
-        self.val_lines          = val_lines
-        self.log_dir            = log_dir
-        self.cuda               = cuda
-        self.map_out_path       = map_out_path
-        self.max_boxes          = max_boxes
-        self.confidence         = confidence
-        self.nms_iou            = nms_iou
-        self.letterbox_image    = letterbox_image
-        self.MINOVERLAP         = MINOVERLAP
-        self.eval_flag          = eval_flag
-        self.period             = period
+        self.val_lines = val_lines
+        self.log_dir = log_dir
+        self.cuda = cuda
+        self.map_out_path = map_out_path
+        self.max_boxes = max_boxes
+        self.confidence = confidence
+        self.nms_iou = nms_iou
+        self.letterbox_image = letterbox_image
+        self.MINOVERLAP = MINOVERLAP
+        self.eval_flag = eval_flag
+        self.period = period
         
         self.bbox_util          = DecodeBox(self.anchors, self.num_classes, (self.input_shape[0], self.input_shape[1]), self.anchors_mask)
         

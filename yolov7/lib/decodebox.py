@@ -31,8 +31,8 @@ class DecodeBox():
             y = torch.sigmoid(prediction[..., 1])
             w = torch.sigmoid(prediction[..., 2]) 
             h = torch.sigmoid(prediction[..., 3]) 
-            conf        = torch.sigmoid(prediction[..., 4])
-            pred_cls    = torch.sigmoid(prediction[..., 5:])
+            conf = torch.sigmoid(prediction[..., 4])
+            pred_cls = torch.sigmoid(prediction[..., 5:])
 
             FloatTensor = torch.cuda.FloatTensor if x.is_cuda else torch.FloatTensor
             LongTensor  = torch.cuda.LongTensor if x.is_cuda else torch.LongTensor
@@ -47,7 +47,7 @@ class DecodeBox():
             anchor_h = FloatTensor(scaled_anchors).index_select(1, LongTensor([1]))
             anchor_w = anchor_w.repeat(batch_size, 1).repeat(1, 1, input_height * input_width).view(w.shape)
             anchor_h = anchor_h.repeat(batch_size, 1).repeat(1, 1, input_height * input_width).view(h.shape)
-            pred_boxes          = FloatTensor(prediction[..., :4].shape)
+            pred_boxes = FloatTensor(prediction[..., :4].shape)
             pred_boxes[..., 0]  = x.data * 2. - 0.5 + grid_x
             pred_boxes[..., 1]  = y.data * 2. - 0.5 + grid_y
             pred_boxes[..., 2]  = (w.data * 2) ** 2 * anchor_w
@@ -80,7 +80,7 @@ class DecodeBox():
         return boxes
 
     def non_max_suppression(self, prediction, num_classes, input_shape, image_shape, letterbox_image, conf_thres=0.5, nms_thres=0.4):
-        box_corner          = prediction.new(prediction.shape)
+        box_corner = prediction.new(prediction.shape)
         box_corner[:, :, 0] = prediction[:, :, 0] - prediction[:, :, 2] / 2
         box_corner[:, :, 1] = prediction[:, :, 1] - prediction[:, :, 3] / 2
         box_corner[:, :, 2] = prediction[:, :, 0] + prediction[:, :, 2] / 2
@@ -116,8 +116,8 @@ class DecodeBox():
                 output[i] = max_detections if output[i] is None else torch.cat((output[i], max_detections))
             
             if output[i] is not None:
-                output[i]           = output[i].cpu().numpy()
-                box_xy, box_wh      = (output[i][:, 0:2] + output[i][:, 2:4])/2, output[i][:, 2:4] - output[i][:, 0:2]
+                output[i] = output[i].cpu().numpy()
+                box_xy, box_wh = (output[i][:, 0:2] + output[i][:, 2:4])/2, output[i][:, 2:4] - output[i][:, 0:2]
                 output[i][:, :4]    = self.yolo_correct_boxes(box_xy, box_wh, input_shape, image_shape, letterbox_image)
         return output
     

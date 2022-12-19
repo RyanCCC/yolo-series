@@ -7,7 +7,6 @@ import torch
 import torch.nn as nn
 from PIL import ImageDraw, ImageFont
 
-from .nets.yolov7 import YoloBody
 from .lib.tools import cvtColor, get_anchors, get_classes, preprocess_input,resize_image, check_suffix
 from .lib.decodebox import DecodeBox
 
@@ -47,9 +46,12 @@ class YOLOV7(object):
         check_suffix(weights, suffixes)
         # backbend booleans
         self.pt, self.onnx = (suffix==x for x in suffixes)
-
+        if self.tiny:
+            from .nets.yolov7_tiny import YoloBody
+        else:
+            from .nets.yolov7 import YoloBody
         if self.pt:
-            self.net = YoloBody(self.anchors_mask, self.num_classes, self.phi)
+            self.net = YoloBody(self.anchors_mask, self.num_classes, phi = self.phi)
             device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
             self.net.load_state_dict(torch.load(self.model_path, map_location=device))
             self.net = self.net.fuse().eval()

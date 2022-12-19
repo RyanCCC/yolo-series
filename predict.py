@@ -22,7 +22,7 @@ def parse_args():
     parser.add_argument(
         '--model', 
         help='YOLOV4, YOLOV4-TINY, YOLOV5 or YOLOX', 
-        choices=['YOLOV4', 'YOLOV4-TINY', 'YOLOV5','YOLOV5-V61', 'YOLOX', 'YOLOV7', 'YOLOV7-TINY'],
+        choices=['YOLOV4', 'YOLOV4-TINY', 'YOLOV5','YOLOV5-V61', 'YOLOX', 'YOLOV7'],
         default='YOLOV5', 
         type=str)
     parser.add_argument('--save', action='store_true', help='save result image.')
@@ -173,21 +173,6 @@ if __name__=='__main__':
                     img.save(save_path)
 
     elif args.model.upper() == 'YOLOV7':
-        from yolov7 import Inference_YOLOV7Model
-        yolo = Inference_YOLOV7Model(YOLOV7Config, args.weights)
-        if webcam:
-            video_inference(source, yolo, args.save)
-        else:
-            if os.path.isdir(source):
-                dir_inference(args.source, yolo, args)
-            else:
-                image = Image.open(source)
-                img = yolo.detect(image)
-                img.show()
-                if args.save:
-                    save_path = os.path.join(args.save_dir, 'tmp.jpg')
-                    img.save(save_path)
-    elif args.model.upper() == 'YOLOV7-TINY':
         from yolov7 import Inference_YOLOV7Model
         yolo = Inference_YOLOV7Model(YOLOV7Config, args.weights)
         if webcam:
