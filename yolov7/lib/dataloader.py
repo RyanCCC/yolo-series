@@ -13,29 +13,29 @@ class YoloDataset(Dataset):
     def __init__(self, annotation_lines, input_shape, num_classes, anchors, anchors_mask, epoch_length, \
                         mosaic, mixup, mosaic_prob, mixup_prob, train, special_aug_ratio = 0.7):
         super(YoloDataset, self).__init__()
-        self.annotation_lines   = annotation_lines
-        self.input_shape        = input_shape
-        self.num_classes        = num_classes
-        self.anchors            = anchors
-        self.anchors_mask       = anchors_mask
-        self.epoch_length       = epoch_length
-        self.mosaic             = mosaic
-        self.mosaic_prob        = mosaic_prob
-        self.mixup              = mixup
-        self.mixup_prob         = mixup_prob
-        self.train              = train
+        self.annotation_lines = annotation_lines
+        self.input_shape = input_shape
+        self.num_classes = num_classes
+        self.anchors = anchors
+        self.anchors_mask = anchors_mask
+        self.epoch_length = epoch_length
+        self.mosaic = mosaic
+        self.mosaic_prob = mosaic_prob
+        self.mixup = mixup
+        self.mixup_prob = mixup_prob
+        self.train = train
         self.special_aug_ratio  = special_aug_ratio
 
-        self.epoch_now          = -1
-        self.length             = len(self.annotation_lines)
+        self.epoch_now = -1
+        self.length = len(self.annotation_lines)
         
-        self.bbox_attrs         = 5 + num_classes
+        self.bbox_attrs = 5 + num_classes
 
     def __len__(self):
         return self.length
 
     def __getitem__(self, index):
-        index       = index % self.length
+        index = index % self.length
 
 
         if self.mosaic and self.rand() < self.mosaic_prob and self.epoch_now < self.epoch_length * self.special_aug_ratio:
@@ -49,12 +49,12 @@ class YoloDataset(Dataset):
                 image_2, box_2  = self.get_random_data(lines[0], self.input_shape, random = self.train)
                 image, box      = self.get_random_data_with_MixUp(image, box, image_2, box_2)
         else:
-            image, box      = self.get_random_data(self.annotation_lines[index], self.input_shape, random = self.train)
+            image, box = self.get_random_data(self.annotation_lines[index], self.input_shape, random = self.train)
 
-        image       = np.transpose(preprocess_input(np.array(image, dtype=np.float32)), (2, 0, 1))
-        box         = np.array(box, dtype=np.float32)
+        image = np.transpose(preprocess_input(np.array(image, dtype=np.float32)), (2, 0, 1))
+        box = np.array(box, dtype=np.float32)
 
-        nL          = len(box)
+        nL = len(box)
         labels_out  = np.zeros((nL, 6))
         if nL:
 

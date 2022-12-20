@@ -9,9 +9,8 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 
-from .nets.yolov7 import YoloBody
-from .nets.loss import (ModelEMA, YOLOLoss, get_lr_scheduler,
-                                set_optimizer_lr, weights_init)
+
+from .nets.loss import ModelEMA, YOLOLoss, YOLOLoss_Tiny, get_lr_scheduler,set_optimizer_lr, weights_init
 from .lib.callbacks import EvalCallback, LossHistory, EarlyStopping
 from .lib.dataloader import YoloDataset, yolo_dataset_collate
 from .lib.tools import download_weights, get_anchors, get_classes, show_config
@@ -69,6 +68,8 @@ def yolov7(config):
     eval_flag = config.eval_flag
     eval_period = 10
     num_workers = 2
+    # 网络结构
+    tiny  = config.tiny
 
     # 数据集参数
     train_annotation_path = config.train_txt
@@ -95,13 +96,17 @@ def yolov7(config):
     if pretrained:
         if distributed:
             if local_rank == 0:
-                download_weights(phi, model_dir='./yolov7/checkpoints')  
+                download_weights(phi,tiny,  model_dir='./yolov7/checkpoints')  
             dist.barrier()
         else:
-            download_weights(phi, model_dir='./yolov7/checkpoints')
+            download_weights(phi,tiny, model_dir='./yolov7/checkpoints')
             
-
-    model = YoloBody(anchors_mask, num_classes, phi, pretrained=pretrained)
+    if tiny:
+        from .nets.yolov7_tiny import YoloBody
+        model = YoloBody(anchors_mask, num_classes, pretrained=pretrained)
+    else:
+        from .nets.yolov7 import YoloBody
+        model = YoloBody(anchors_mask, num_classes, phi, pretrained=pretrained)
     if not pretrained:
         weights_init(model)
     if model_path != '':
@@ -121,8 +126,10 @@ def yolov7(config):
         if local_rank == 0:
             print("\nSuccessful Load Key:", str(load_key)[:500], "……\nSuccessful Load Key Num:", len(load_key))
             print("\nFail To Load Key:", str(no_load_key)[:500], "……\nFail To Load Key num:", len(no_load_key))
-
-    yolo_loss = YOLOLoss(anchors, num_classes, input_shape, anchors_mask, label_smoothing)
+    if tiny:
+        yolo_loss = YOLOLoss_Tiny(anchors, num_classes, input_shape, anchors_mask, label_smoothing)
+    else:
+        yolo_loss = YOLOLoss(anchors, num_classes, input_shape, anchors_mask, label_smoothing)
     if local_rank == 0:
         log_dir = save_dir
         loss_history = LossHistory(log_dir, model, input_shape=input_shape)

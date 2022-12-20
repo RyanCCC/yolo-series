@@ -45,34 +45,27 @@ class YOLOV7Config(Config):
     # callback
     early_stopping = False
     eval_flag = True
-    '''
-    单机多卡分布式训练
-    DP模式：
-    设置 distributed = False
-    在终端中输入 CUDA_VISIBLE_DEVICES=0,1 python train.py
-    DDP模式：
-    设置 distributed = True
-    在终端中输入 CUDA_VISIBLE_DEVICES=0,1 python -m torch.distributed.launch --nproc_per_node=2 train.py
-    '''
+    # 分布式训练
     distributed = False
     # DDP模式多卡可用
     sync_bn = False
     fp16 = False
-    # 标签平滑。一般0.01以下。如0.01、0.005
     label_smoothing = 0
     # tiny: './yolov7/checkpoints/yolov7_tiny_weights.pth'
 
     # weight init
     # x or l
     phi= 'l'
-    pretrain_weight = './yolov7/checkpoints/yolov7_weights.pth'
+    
     time = str(datetime.datetime.strftime(datetime.datetime.now(),'%Y_%m_%d'))
     tiny =False
     if tiny:
+        pretrain_weight = './yolov7/checkpoints/yolov7_weights.pth'
         save_weight = f'{task}_yolov7_tiny_{time}.pth'
         best_weight = f'{task}_yolov7_tiny_{time}_best.pth'
         logdir = f'./yolov7/logs/yolov7tiny_{time}'
     else:
+        pretrain_weight = './yolov7/checkpoints/yolov7_tiny_weights.pth'
         save_weight = f'{task}_yolov7_{phi}_{time}.pth'
         best_weight = f'{task}_yolov7_{phi}_{time}_best.pth'
         logdir = f'./yolov7/logs/yolov7{phi}_{time}'

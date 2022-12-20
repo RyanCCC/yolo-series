@@ -21,8 +21,8 @@ def resize_image(image, size, letterbox_image):
     w, h    = size
     if letterbox_image:
         scale   = min(w/iw, h/ih)
-        nw      = int(iw*scale)
-        nh      = int(ih*scale)
+        nw = int(iw*scale)
+        nh = int(ih*scale)
 
         image   = image.resize((nw,nh), Image.BICUBIC)
         new_image = Image.new('RGB', size, (128,128,128))
@@ -62,15 +62,20 @@ def show_config(**kwargs):
         print('|%25s | %40s|' % (str(key), str(value)))
     print('-' * 70)
         
-def download_weights(phi, model_dir="./model_data"):
+def download_weights(phi, Tiny, model_dir):
     import os
     from torch.hub import load_state_dict_from_url
-    
-    download_urls = {
-        "l" : 'https://github.com/RyanCCC/YOLOSeries/releases/download/v1.0.0/yolov7_backbone_weights.pth',
-        "x" : 'https://github.com/RyanCCC/YOLOSeries/releases/download/v1.0.0/yolov7_x_backbone_weights.pth',
-    }
-    url = download_urls[phi]
+    if Tiny:
+        url = 'https://github.com/RyanCCC/YOLOSeries/releases/download/v1.0.0/yolov7_tiny_backbone_weights.pth'
+        if not os.path.exists(model_dir):
+            os.makedirs(model_dir)
+        load_state_dict_from_url(url, model_dir)
+    else:
+        download_urls = {
+            "l" : 'https://github.com/RyanCCC/YOLOSeries/releases/download/v1.0.0/yolov7_backbone_weights.pth',
+            "x" : 'https://github.com/RyanCCC/YOLOSeries/releases/download/v1.0.0/yolov7_x_backbone_weights.pth',
+        }
+        url = download_urls[phi]
     
     if not os.path.exists(model_dir):
         os.makedirs(model_dir)
