@@ -1,7 +1,7 @@
 import colorsys
 import os
 import time
-from .lib.utils import letterbox_image
+from .lib.tools import letterbox_image
 import numpy as np
 import tensorflow as tf
 from PIL import Image, ImageDraw, ImageFont

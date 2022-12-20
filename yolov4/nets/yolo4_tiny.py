@@ -6,7 +6,7 @@ from tensorflow.keras.initializers import RandomNormal
 from tensorflow.keras.layers import (BatchNormalization, Concatenate, Conv2D,
                                      LeakyReLU, UpSampling2D)
 from tensorflow.keras.models import Model
-from yolov4.lib.utils import compose
+from yolov4.lib.tools import compose
 
 from Attention.attention import cbam_block, eca_block, se_block
 from yolov4.nets.CSPdarknet53_tiny import darknet_body

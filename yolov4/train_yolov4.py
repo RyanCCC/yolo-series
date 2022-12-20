@@ -1,294 +1,277 @@
-from functools import partial
+import datetime
+import os
 
 import numpy as np
-import tensorflow as tf
-from tensorflow.keras.callbacks import (EarlyStopping, ReduceLROnPlateau,
-                                        TensorBoard)
-from tensorflow.keras.layers import Input, Lambda
-from tensorflow.keras.models import Model
-from tensorflow.keras.optimizers import Adam
-from tqdm import tqdm
+import torch
+import torch.backends.cudnn as cudnn
+import torch.distributed as dist
+import torch.nn as nn
+import torch.optim as optim
+from torch import nn
+from torch.utils.data import DataLoader
 
-
-from yolov4 import yolo_body, yolo_loss, ModelCheckpoint, WarmUpCosineDecayScheduler, data_generator, get_classes, get_anchors
-from tools.tfrecord_create import load_tfrecord_dataset, transform_dataset
-from tqdm import tqdm
-
-# 防止bug
-def get_train_step_fn():
-    @tf.function
-    def train_step(imgs, yolo_loss, targets, net, optimizer, regularization, normalize):
-        with tf.GradientTape() as tape:
-            # 计算loss
-            P5_output, P4_output, P3_output = net(imgs, training=True)
-            args = [P5_output, P4_output, P3_output] + targets
-            loss_value = yolo_loss(args,anchors,num_classes,label_smoothing=label_smoothing,normalize=normalize)
-            if regularization:
-                # 加入正则化损失
-                loss_value = tf.reduce_sum(net.losses) + loss_value
-        grads = tape.gradient(loss_value, net.trainable_variables)
-        optimizer.apply_gradients(zip(grads, net.trainable_variables))
-        return loss_value
-    return train_step
-
-def fit_one_epoch(net, yolo_loss, optimizer, epoch, epoch_size, epoch_size_val, gen, genval, Epoch, anchors, 
-                        num_classes, label_smoothing, regularization=False, train_step=None):
-    loss = 0
-    val_loss = 0
-    print('Start Train')
-    with tqdm(total=epoch_size,desc=f'Epoch {epoch + 1}/{Epoch}',postfix=dict,mininterval=0.3) as pbar:
-        for iteration, batch in enumerate(gen):
-            if iteration>=epoch_size:
-                break
-            images, target0, target1, target2 = batch[0], batch[1], batch[2], batch[3]
-            targets = [target0, target1, target2]
-            targets = [tf.convert_to_tensor(target) for target in targets]
-            loss_value = train_step(images, yolo_loss, targets, net, optimizer, regularization, normalize)
-            loss = loss + loss_value
-
-            pbar.set_postfix(**{'total_loss': float(loss) / (iteration + 1), 
-                                'lr'        : optimizer._decayed_lr(tf.float32).numpy()})
-            pbar.update(1)
-            
-    print('Start Validation')
-    with tqdm(total=epoch_size_val, desc=f'Epoch {epoch + 1}/{Epoch}',postfix=dict,mininterval=0.3) as pbar:
-        for iteration, batch in enumerate(genval):
-            if iteration>=epoch_size_val:
-                break
-            # 计算验证集loss
-            images, target0, target1, target2 = batch[0], batch[1], batch[2], batch[3]
-            targets = [target0, target1, target2]
-            targets = [tf.convert_to_tensor(target) for target in targets]
-
-            P5_output, P4_output, P3_output = net(images)
-            args = [P5_output, P4_output, P3_output] + targets
-            loss_value = yolo_loss(args,anchors,num_classes,label_smoothing=label_smoothing, normalize=normalize)
-            if regularization:
-                # 加入正则化损失
-                loss_value = tf.reduce_sum(net.losses) + loss_value
-            # 更新验证集loss
-            val_loss = val_loss + loss_value
-
-            pbar.set_postfix(**{'total_loss': float(val_loss)/ (iteration + 1)})
-            pbar.update(1)
-
-    logs = {'loss': loss.numpy()/(epoch_size+1), 'val_loss': val_loss.numpy()/(epoch_size_val+1)}
-    print('Finish Validation')
-    print('Epoch:'+ str(epoch+1) + '/' + str(Epoch))
-    print('Total Loss: %.4f || Val Loss: %.4f ' % (loss/(epoch_size+1),val_loss/(epoch_size_val+1)))
-    net.save_weights('logs/Epoch%d-Total_Loss%.4f-Val_Loss%.4f.h5'%((epoch+1),loss/(epoch_size+1),val_loss/(epoch_size_val+1)))
-
-gpus = tf.config.experimental.list_physical_devices(device_type='GPU')
-for gpu in gpus:
-    tf.config.experimental.set_memory_growth(gpu, True)
+from .nets.yolo4 import YoloBody
+from .nets.loss import YOLOLoss, get_lr_scheduler, set_optimizer_lr,weights_init
+from .lib.callbacks import EvalCallback, LossHistory
+from .lib.dataloader import YoloDataset, yolo_dataset_collate
+from .lib.tools import get_anchors, get_classes, show_config
+from .lib.tools_fit import fit_one_epoch
 
 
 def yolov4(config):
-    train_txt = config.train_txt
-    log_dir = config.logdir
-    classes_path = config.classes_path
-    anchors_path = config.anchors_path
-    weights_path = config.pretrain_weight
-    save_weight = config.save_weight
-    input_shape = (config.imagesize,config.imagesize)
-    anchor_mask = config.ANCHOR_MASK
-    eager = config.eager
-    normalize = config.normalize
-
-    class_names = get_classes(classes_path)
-    anchors     = get_anchors(anchors_path)
-    num_classes = len(class_names)
-    num_anchors = len(anchors)
-
+    Cuda = config.cuda
+    distributed = config.distributed
+    #---------------------------------------------------------------------#
+    #   sync_bn     是否使用sync_bn，DDP模式多卡可用
+    #---------------------------------------------------------------------#
+    sync_bn = config.distributed
+    fp16 = False
+    classes_path    = config.classes_path
+    anchors_path    = config.anchors_path
+    anchors_mask    = [[6, 7, 8], [3, 4, 5], [0, 1, 2]]
+    model_path = config.pretrain_weight
+    input_shape = [config.imagesize, config.imagesize]
+    pretrained = False
+    # 数据增强
     mosaic = config.mosaic
-    Cosine_scheduler = config.Cosine_scheduler
+    mosaic_prob = config.mosaic_prob
+    mixup = config.mixup
+    mixup_prob = config.mixup_prob
+    special_aug_ratio   = 0.7
     label_smoothing = config.label_smoothing
 
-    regularization = config.regularization
+    Init_Epoch = config.Init_epoch
+    Freeze_Epoch = config.Freeze_epoch
+    Freeze_batch_size   = config.batch_size
+    UnFreeze_Epoch = config.epoch
+    Unfreeze_batch_size = Freeze_batch_size //2
+    Freeze_Train = config.Freeze_Train
 
-    image_input = Input(shape=(None, None, 3))
-    h, w = input_shape
-    model_body = yolo_body(image_input, num_anchors//3, num_classes, config.ATTENTION)
-    print('加载权重')
-    model_body.load_weights(weights_path, by_name=True, skip_mismatch=True)
+    Init_lr = config.learning_rate
+    Min_lr = Init_lr * 0.01
+    optimizer_type      = "sgd"
+    momentum = 0.937
+    weight_decay = 5e-4
+    #------------------------------------------------------------------#
+    #   lr_decay_type   使用到的学习率下降方式，可选的有step、cos
+    #------------------------------------------------------------------#
+    lr_decay_type = "cos"
+   
+    focal_loss = False
+    focal_alpha = 0.25
+    focal_gamma = 2
+    iou_type = config.iou
+    save_period = config.save_period
+    save_dir = config.logdir
+    eval_flag = True
+    eval_period = 10
+    # 多线程加载数据
+    num_workers = 2
+
+    train_annotation_path   = config.train_txt
+    val_annotation_path     = config.val_txt
+
+    ngpus_per_node  = torch.cuda.device_count()
+    if distributed:
+        dist.init_process_group(backend="nccl")
+        local_rank  = int(os.environ["LOCAL_RANK"])
+        rank        = int(os.environ["RANK"])
+        device      = torch.device("cuda", local_rank)
+        if local_rank == 0:
+            print(f"[{os.getpid()}] (rank = {rank}, local_rank = {local_rank}) training...")
+            print("Gpu Device Count : ", ngpus_per_node)
+    else:
+        device          = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        local_rank      = 0
     
-
-    # 将模型的输出作为loss
-    y_true = [Input(shape=(h//{0:32, 1:16, 2:8}[l], w//{0:32, 1:16, 2:8}[l], \
-        num_anchors//3, num_classes+5)) for l in range(3)]
-    loss_input = [*model_body.output, *y_true]
-    model_loss = Lambda(yolo_loss, output_shape=(1,), name='yolo_loss',
-        arguments={'anchors': anchors, 'num_classes': num_classes, 'ignore_thresh': 0.5, 'label_smoothing': label_smoothing})(loss_input)
-
-    model = Model([model_body.input, *y_true], model_loss)
-
-
-    logging = TensorBoard(log_dir=log_dir)
-    checkpoint = ModelCheckpoint(log_dir+save_weight, save_weights_only=True, save_best_only=True, period=1)
-    early_stopping = EarlyStopping(min_delta=0, patience=10, verbose=1)
-
-    val_split = 0.1
-    with open(train_txt) as f:
-        lines = f.readlines()
-    np.random.seed(10101)
-    np.random.shuffle(lines)
-    np.random.seed(None)
-    num_val = int(len(lines)*val_split)
-    num_train = len(lines) - num_val
+    class_names, num_classes = get_classes(classes_path)
+    anchors, num_anchors     = get_anchors(anchors_path)
     
-    freeze_layers = config.freeze_layers
-    for i in range(freeze_layers): model_body.layers[i].trainable = False
-    print('Freeze the first {} layers of total {} layers.'.format(freeze_layers, len(model_body.layers)))
-
-    if True:
-        Init_epoch = config.Init_epoch
-        Freeze_epoch = config.Freeze_epoch
-        batch_size = config.batch_size
-        learning_rate_freeze  = config.learning_rate_freeze
+    model = YoloBody(anchors_mask, num_classes, pretrained = pretrained)
+    if not pretrained:
+        weights_init(model)
+    if model_path != '':
+    
+        if local_rank == 0:
+            print('Load weights {}.'.format(model_path))
         
-        epoch_size = num_train // batch_size
-        epoch_size_val = num_val // batch_size
-
-        if epoch_size == 0 or epoch_size_val == 0:
-            raise ValueError("数据集过小，无法进行训练，请扩充数据集。")
-
-
-        # # 加载训练集、验证集
-        # train_dataset = load_tfrecord_dataset('./train.tfrecord', classes_path, input_shape)
-        # # 对数据集进行打乱
-        # train_dataset = train_dataset.shuffle(buffer_size=512)
-        # # 设置batch size
-        # train_dataset = train_dataset.batch(batch_size)
-        # # 数据预处理
-        # # for x, y in tqdm(train_dataset):
-        # #     transform_dataset(x, input_shape),
-        # #     preprocess_true_boxes(y, input_shape, anchors, num_classes)
-        # train_dataset = train_dataset.map(lambda x, y:(
-        #     transform_dataset(x, input_shape),
-        #     preprocess_true_boxes_tf(y, input_shape, anchors, num_classes)
-        # ))
-        # # 管道
-        # train_dataset = train_dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
-
-        # # 加载训练集、验证集
-        # val_dataset = load_tfrecord_dataset('./validate.tfrecord', classes_path, input_shape)
-        # # 对数据集进行打乱
-        # val_dataset = val_dataset.shuffle(buffer_size=512)
-        # # 设置batch size
-        # val_dataset = val_dataset.batch(batch_size)
-        # # 数据预处理
-        # val_dataset = val_dataset.map(lambda x, y:(
-        #     transform_dataset(x, input_shape),
-        #     preprocess_true_boxes_tf(y, input_shape, anchors, num_classes)
-        # ))
+        model_dict      = model.state_dict()
+        pretrained_dict = torch.load(model_path, map_location = device)
+        load_key, no_load_key, temp_dict = [], [], {}
+        for k, v in pretrained_dict.items():
+            if k in model_dict.keys() and np.shape(model_dict[k]) == np.shape(v):
+                temp_dict[k] = v
+                load_key.append(k)
+            else:
+                no_load_key.append(k)
+        model_dict.update(temp_dict)
+        model.load_state_dict(model_dict)
         
+        if local_rank == 0:
+            print("\nSuccessful Load Key:", str(load_key)[:500], "……\nSuccessful Load Key Num:", len(load_key))
+            print("\nFail To Load Key:", str(no_load_key)[:500], "……\nFail To Load Key num:", len(no_load_key))
+            print("\n\033[1;33;44m温馨提示，head部分没有载入是正常现象，Backbone部分没有载入是错误的。\033[0m")
 
-        if eager:
-            gen = tf.data.Dataset.from_generator(partial(data_generator, annotation_lines = lines[:num_train], batch_size = batch_size,
-                input_shape = input_shape, anchors = anchors, num_classes = num_classes, mosaic=mosaic, random=True), (tf.float32, tf.float32, tf.float32, tf.float32))
-            gen_val = tf.data.Dataset.from_generator(partial(data_generator, annotation_lines = lines[num_train:], batch_size = batch_size, 
-                input_shape = input_shape, anchors = anchors, num_classes = num_classes, mosaic=False, random=False), (tf.float32, tf.float32, tf.float32, tf.float32))
-
-            gen = gen.shuffle(buffer_size=batch_size).prefetch(buffer_size=batch_size)
-            gen_val = gen_val.shuffle(buffer_size=batch_size).prefetch(buffer_size=batch_size)
-
-            if Cosine_scheduler:
-                lr_schedule = tf.keras.experimental.CosineDecayRestarts(
-                    initial_learning_rate = learning_rate_freeze, first_decay_steps = 5 * epoch_size, t_mul = 1.0, alpha = 1e-2)
-            else:
-                lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
-                    initial_learning_rate=learning_rate_freeze, decay_steps=epoch_size, decay_rate=0.92, staircase=True)
-            
-            optimizer = tf.keras.optimizers.Adam(learning_rate=lr_schedule)
-        else:
-            if Cosine_scheduler:
-                warmup_epoch = int((Freeze_epoch-Init_epoch)*0.2)
-                total_steps = int((Freeze_epoch-Init_epoch) * num_train / batch_size)
-                warmup_steps = int(warmup_epoch * num_train / batch_size)
-                reduce_lr = WarmUpCosineDecayScheduler(learning_rate_base=learning_rate_freeze, total_steps=total_steps,
-                                                            warmup_learning_rate=1e-4, warmup_steps=warmup_steps,
-                                                            hold_base_rate_steps=num_train, min_learn_rate=1e-6)
-                model.compile(optimizer=Adam(), loss={'yolo_loss': lambda y_true, y_pred: y_pred})
-            else:
-                reduce_lr       = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=3, verbose=1)
-                model.compile(optimizer=Adam(learning_rate_freeze), loss={'yolo_loss': lambda y_true, y_pred: y_pred})
-
-        print('Train on {} samples, val on {} samples, with batch size {}.'.format(num_train, num_val, batch_size))
-        if eager:
-            for epoch in range(Init_epoch,Freeze_epoch):
-                fit_one_epoch(model_body, yolo_loss, optimizer, epoch, epoch_size, epoch_size_val,gen, gen_val, 
-                            Freeze_epoch, anchors, num_classes, label_smoothing, regularization, get_train_step_fn())
-        else:
-            model.fit(data_generator(lines[:num_train], batch_size, input_shape, anchors, num_classes, mosaic=mosaic, random=True, eager=False),
-                    steps_per_epoch=epoch_size,
-                    validation_data=data_generator(lines[num_train:], batch_size, input_shape, anchors, num_classes, mosaic=False, random=False, eager=False),
-                    validation_steps=epoch_size_val,
-                    epochs=Freeze_epoch,
-                    initial_epoch=Init_epoch,
-                    callbacks=[logging, checkpoint, reduce_lr, early_stopping])
-
-    for i in range(freeze_layers): model_body.layers[i].trainable = True
-
-    # Transfer Learning
-    if True:
-        Freeze_epoch = config.Freeze_epoch
-        Epoch = config.epoch
-        batch_size = config.batch_size
-        learning_rate_unfreeze  = config.learning_rate_unfreeze
-
-        epoch_size = num_train // batch_size
-        epoch_size_val  = num_val // batch_size
-
-        if epoch_size == 0 or epoch_size_val == 0:
-            raise ValueError("数据集过小，无法进行训练，请扩充数据集。")
-
-        if eager:
-            gen     = tf.data.Dataset.from_generator(partial(data_generator, annotation_lines = lines[:num_train], batch_size = batch_size,
-                input_shape = input_shape, anchors = anchors, num_classes = num_classes, mosaic=mosaic, random=True), (tf.float32, tf.float32, tf.float32, tf.float32))
-            gen_val = tf.data.Dataset.from_generator(partial(data_generator, annotation_lines = lines[num_train:], batch_size = batch_size, 
-                input_shape = input_shape, anchors = anchors, num_classes = num_classes, mosaic=False, random=False), (tf.float32, tf.float32, tf.float32, tf.float32))
-
-            gen     = gen.shuffle(buffer_size=batch_size).prefetch(buffer_size=batch_size)
-            gen_val = gen_val.shuffle(buffer_size=batch_size).prefetch(buffer_size=batch_size)
-
-            if Cosine_scheduler:
-                lr_schedule = tf.keras.experimental.CosineDecayRestarts(
-                    initial_learning_rate = learning_rate_unfreeze, first_decay_steps = 5 * epoch_size, t_mul = 1.0, alpha = 1e-2)
-            else:
-                lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
-                    initial_learning_rate=learning_rate_unfreeze, decay_steps=epoch_size, decay_rate=0.92, staircase=True)
-            
-            optimizer = tf.keras.optimizers.Adam(learning_rate=lr_schedule)
-        else:
-            if Cosine_scheduler:
-                warmup_epoch = int((Epoch-Freeze_epoch)*0.2)
-                total_steps = int((Epoch-Freeze_epoch) * num_train / batch_size)
-                warmup_steps = int(warmup_epoch * num_train / batch_size)
-                reduce_lr = WarmUpCosineDecayScheduler(learning_rate_base=learning_rate_unfreeze, total_steps=total_steps,
-                                                            warmup_learning_rate=1e-4, warmup_steps=warmup_steps,
-                                                            hold_base_rate_steps=num_train, min_learn_rate=1e-6)
-                model.compile(optimizer=Adam(), loss={'yolo_loss': lambda y_true, y_pred: y_pred})
-            else:
-                reduce_lr       = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=3, verbose=1)
-                model.compile(optimizer=Adam(learning_rate_unfreeze), loss={'yolo_loss': lambda y_true, y_pred: y_pred})
-
-        print('Train on {} samples, val on {} samples, with batch size {}.'.format(num_train, num_val, batch_size))
-        if eager:
-            for epoch in range(Freeze_epoch,Epoch):
-                fit_one_epoch(model_body, yolo_loss, optimizer, epoch, epoch_size, epoch_size_val,gen, gen_val, 
-                            Epoch, anchors, num_classes, label_smoothing, regularization, get_train_step_fn())
-        else:
-            model.fit(data_generator(lines[:num_train], batch_size, input_shape, anchors, num_classes, mosaic=mosaic, random=True, eager=False),
-                    steps_per_epoch=epoch_size,
-                    validation_data=data_generator(lines[num_train:], batch_size, input_shape, anchors, num_classes, mosaic=False, random=False, eager=False),
-                    validation_steps=epoch_size_val,
-                    epochs=Epoch,
-                    initial_epoch=Freeze_epoch,
-                    callbacks=[logging, checkpoint, reduce_lr, early_stopping])
+    yolo_loss    = YOLOLoss(anchors, num_classes, input_shape, Cuda, anchors_mask, label_smoothing, focal_loss, focal_alpha, focal_gamma, iou_type)
+    if local_rank == 0:
+        time_str        = datetime.datetime.strftime(datetime.datetime.now(),'%Y_%m_%d_%H_%M_%S')
+        log_dir         = os.path.join(save_dir, "loss_" + str(time_str))
+        loss_history    = LossHistory(log_dir, model, input_shape=input_shape)
+    else:
+        loss_history    = None
     
-    
+    if fp16:
+        from torch.cuda.amp import GradScaler as GradScaler
+        scaler = GradScaler()
+    else:
+        scaler = None
 
+    model_train     = model.train()
+    if sync_bn and ngpus_per_node > 1 and distributed:
+        model_train = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model_train)
+    elif sync_bn:
+        print("Sync_bn is not support in one gpu or not distributed.")
+
+    if Cuda:
+        if distributed:
+
+            model_train = model_train.cuda(local_rank)
+            model_train = torch.nn.parallel.DistributedDataParallel(model_train, device_ids=[local_rank], find_unused_parameters=True)
+        else:
+            model_train = torch.nn.DataParallel(model)
+            cudnn.benchmark = True
+            model_train = model_train.cuda()
+    with open(train_annotation_path, encoding='utf-8') as f:
+        train_lines = f.readlines()
+    with open(val_annotation_path, encoding='utf-8') as f:
+        val_lines   = f.readlines()
+    num_train   = len(train_lines)
+    num_val     = len(val_lines)
+
+    if local_rank == 0:
+        show_config(
+            classes_path = classes_path, anchors_path = anchors_path, anchors_mask = anchors_mask, model_path = model_path, input_shape = input_shape, \
+            Init_Epoch = Init_Epoch, Freeze_Epoch = Freeze_Epoch, UnFreeze_Epoch = UnFreeze_Epoch, Freeze_batch_size = Freeze_batch_size, Unfreeze_batch_size = Unfreeze_batch_size, Freeze_Train = Freeze_Train, \
+            Init_lr = Init_lr, Min_lr = Min_lr, optimizer_type = optimizer_type, momentum = momentum, lr_decay_type = lr_decay_type, \
+            save_period = save_period, save_dir = save_dir, num_workers = num_workers, num_train = num_train, num_val = num_val
+        )
+    
+        wanted_step = 5e4 if optimizer_type == "sgd" else 1.5e4
+        total_step  = num_train // Unfreeze_batch_size * UnFreeze_Epoch
+        if total_step <= wanted_step:
+            if num_train // Unfreeze_batch_size == 0:
+                raise ValueError('数据集过小，无法进行训练，请扩充数据集。')
+            wanted_epoch = wanted_step // (num_train // Unfreeze_batch_size) + 1
+            print("\n\033[1;33;44m[Warning] 使用%s优化器时，建议将训练总步长设置到%d以上。\033[0m"%(optimizer_type, wanted_step))
+            print("\033[1;33;44m[Warning] 本次运行的总训练数据量为%d，Unfreeze_batch_size为%d，共训练%d个Epoch，计算出总训练步长为%d。\033[0m"%(num_train, Unfreeze_batch_size, UnFreeze_Epoch, total_step))
+            print("\033[1;33;44m[Warning] 由于总训练步长为%d，小于建议总步长%d，建议设置总世代为%d。\033[0m"%(total_step, wanted_step, wanted_epoch))
+
+    UnFreeze_flag = False
+       
+    if Freeze_Train:
+        for param in model.backbone.parameters():
+            param.requires_grad = False
+
+    batch_size = Freeze_batch_size if Freeze_Train else Unfreeze_batch_size
+
+    nbs = 64
+    lr_limit_max    = 1e-3 if optimizer_type in ['adam', 'adamw'] else 5e-2
+    lr_limit_min    = 3e-4 if optimizer_type in ['adam', 'adamw'] else 5e-4
+    Init_lr_fit     = min(max(batch_size / nbs * Init_lr, lr_limit_min), lr_limit_max)
+    Min_lr_fit      = min(max(batch_size / nbs * Min_lr, lr_limit_min * 1e-2), lr_limit_max * 1e-2)
+
+    pg0, pg1, pg2 = [], [], []  
+    for k, v in model.named_modules():
+        if hasattr(v, "bias") and isinstance(v.bias, nn.Parameter):
+            pg2.append(v.bias)    
+        if isinstance(v, nn.BatchNorm2d) or "bn" in k:
+            pg0.append(v.weight)    
+        elif hasattr(v, "weight") and isinstance(v.weight, nn.Parameter):
+            pg1.append(v.weight)   
+    optimizer = {
+        'adam'  : optim.Adam(pg0, Init_lr_fit, betas = (momentum, 0.999)),
+        'adamw' : optim.AdamW(pg0, Init_lr_fit, betas = (momentum, 0.999)),
+        'sgd'   : optim.SGD(pg0, Init_lr_fit, momentum = momentum, nesterov=True)
+    }[optimizer_type]
+    optimizer.add_param_group({"params": pg1, "weight_decay": weight_decay})
+    optimizer.add_param_group({"params": pg2})
+
+    lr_scheduler_func = get_lr_scheduler(lr_decay_type, Init_lr_fit, Min_lr_fit, UnFreeze_Epoch)
         
+    epoch_step      = num_train // batch_size
+    epoch_step_val  = num_val // batch_size
+        
+    if epoch_step == 0 or epoch_step_val == 0:
+        raise ValueError("数据集过小，无法继续进行训练，请扩充数据集。")
 
+    train_dataset   = YoloDataset(train_lines, input_shape, num_classes, epoch_length = UnFreeze_Epoch, \
+                                        mosaic=mosaic, mixup=mixup, mosaic_prob=mosaic_prob, mixup_prob=mixup_prob, train=True, special_aug_ratio=special_aug_ratio)
+    val_dataset     = YoloDataset(val_lines, input_shape, num_classes, epoch_length = UnFreeze_Epoch, \
+                                        mosaic=False, mixup=False, mosaic_prob=0, mixup_prob=0, train=False, special_aug_ratio=0)
+        
+    if distributed:
+        train_sampler   = torch.utils.data.distributed.DistributedSampler(train_dataset, shuffle=True,)
+        val_sampler     = torch.utils.data.distributed.DistributedSampler(val_dataset, shuffle=False,)
+        batch_size      = batch_size // ngpus_per_node
+        shuffle         = False
+    else:
+        train_sampler   = None
+        val_sampler     = None
+        shuffle         = True
 
+    gen = DataLoader(train_dataset, shuffle = shuffle, batch_size = batch_size, num_workers = num_workers, pin_memory=True,
+                                    drop_last=True, collate_fn=yolo_dataset_collate, sampler=train_sampler)
+    gen_val = DataLoader(val_dataset  , shuffle = shuffle, batch_size = batch_size, num_workers = num_workers, pin_memory=True, 
+                                    drop_last=True, collate_fn=yolo_dataset_collate, sampler=val_sampler)
 
+    if local_rank == 0:
+        eval_callback   = EvalCallback(model, input_shape, anchors, anchors_mask, class_names, num_classes, val_lines, log_dir, Cuda, \
+                                            eval_flag=eval_flag, period=eval_period)
+    else:
+        eval_callback   = None
+        
+    for epoch in range(Init_Epoch, UnFreeze_Epoch):
+        if epoch >= Freeze_Epoch and not UnFreeze_flag and Freeze_Train:
+            batch_size = Unfreeze_batch_size
+
+            nbs = 64
+            lr_limit_max    = 1e-3 if optimizer_type in ['adam', 'adamw'] else 5e-2
+            lr_limit_min    = 3e-4 if optimizer_type in ['adam', 'adamw'] else 5e-4
+            Init_lr_fit     = min(max(batch_size / nbs * Init_lr, lr_limit_min), lr_limit_max)
+            Min_lr_fit      = min(max(batch_size / nbs * Min_lr, lr_limit_min * 1e-2), lr_limit_max * 1e-2)
+            lr_scheduler_func = get_lr_scheduler(lr_decay_type, Init_lr_fit, Min_lr_fit, UnFreeze_Epoch)
+                
+            for param in model.backbone.parameters():
+                param.requires_grad = True
+
+            epoch_step      = num_train // batch_size
+            epoch_step_val  = num_val // batch_size
+
+            if epoch_step == 0 or epoch_step_val == 0:
+                raise ValueError("数据集过小，无法继续进行训练，请扩充数据集。")
+
+            if distributed:
+                batch_size = batch_size // ngpus_per_node
+                    
+            gen = DataLoader(train_dataset, shuffle = shuffle, batch_size = batch_size, num_workers = num_workers, pin_memory=True,
+                                            drop_last=True, collate_fn=yolo_dataset_collate, sampler=train_sampler)
+            gen_val = DataLoader(val_dataset  , shuffle = shuffle, batch_size = batch_size, num_workers = num_workers, pin_memory=True, 
+                                            drop_last=True, collate_fn=yolo_dataset_collate, sampler=val_sampler)
+
+            UnFreeze_flag = True
+
+        gen.dataset.epoch_now       = epoch
+        gen_val.dataset.epoch_now   = epoch
+
+        if distributed:
+            train_sampler.set_epoch(epoch)
+
+        set_optimizer_lr(optimizer, lr_scheduler_func, epoch)
+
+        fit_one_epoch(model_train, model, yolo_loss, loss_history, eval_callback, optimizer, epoch, epoch_step, epoch_step_val, gen, gen_val, UnFreeze_Epoch, Cuda, fp16, scaler, save_period, save_dir, local_rank)
+                        
+        if distributed:
+            dist.barrier()
+
+    if local_rank == 0:
+        loss_history.writer.close()
