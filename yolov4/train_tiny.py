@@ -18,7 +18,7 @@ from .lib.tools import get_anchors, get_classes, show_config
 from .lib.tools_fit import fit_one_epoch
 
 
-def yolov4(config):
+def yolov4_tiny(config):
     Cuda = config.cuda
     distributed = config.distributed
     sync_bn = config.distributed

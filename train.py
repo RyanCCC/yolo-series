@@ -22,8 +22,8 @@ if __name__ == '__main__':
         from yolov4 import yolov4
         yolov4(cfg.YOLOV4Config)
     elif args.model.upper() == 'YOLOV4-TINY':
-        from yolov4 import yolov4tiny
-        yolov4tiny(cfg.YOLOV4Config)
+        from yolov4 import yolov4_tiny
+        yolov4_tiny(cfg.YOLOV4TinyConfig)
     elif args.model.upper() == 'YOLOV5':
         from yolov5 import yolov5
         yolov5(cfg.YOLOV5Config)
