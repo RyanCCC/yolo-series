@@ -24,9 +24,9 @@ def yolov4(config):
     # DPP模式可用
     sync_bn = config.distributed
     fp16 = False
-    classes_path    = config.classes_path
-    anchors_path    = config.anchors_path
-    anchors_mask    = [[6, 7, 8], [3, 4, 5], [0, 1, 2]]
+    classes_path = config.classes_path
+    anchors_path = config.anchors_path
+    anchors_mask = [[6, 7, 8], [3, 4, 5], [0, 1, 2]]
     model_path = config.pretrain_weight
     input_shape = [config.imagesize, config.imagesize]
     pretrained = False
@@ -50,9 +50,7 @@ def yolov4(config):
     optimizer_type      = "sgd"
     momentum = 0.937
     weight_decay = 5e-4
-    #------------------------------------------------------------------#
-    #   lr_decay_type   使用到的学习率下降方式，可选的有step、cos
-    #------------------------------------------------------------------#
+    # 学习率下降方式，可选的有step、cos
     lr_decay_type = "cos"
    
     focal_loss = False
@@ -79,11 +77,11 @@ def yolov4(config):
             print(f"[{os.getpid()}] (rank = {rank}, local_rank = {local_rank}) training...")
             print("Gpu Device Count : ", ngpus_per_node)
     else:
-        device          = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        local_rank      = 0
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        local_rank = 0
     
     class_names, num_classes = get_classes(classes_path)
-    anchors, num_anchors     = get_anchors(anchors_path)
+    anchors, num_anchors = get_anchors(anchors_path)
     
     model = YoloBody(anchors_mask, num_classes, pretrained = pretrained)
     if not pretrained:
@@ -110,13 +108,13 @@ def yolov4(config):
             print("\nFail To Load Key:", str(no_load_key)[:500], "……\nFail To Load Key num:", len(no_load_key))
             print("\n\033[1;33;44m温馨提示，head部分没有载入是正常现象，Backbone部分没有载入是错误的。\033[0m")
 
-    yolo_loss    = YOLOLoss(anchors, num_classes, input_shape, Cuda, anchors_mask, label_smoothing, focal_loss, focal_alpha, focal_gamma, iou_type)
+    yolo_loss = YOLOLoss(anchors, num_classes, input_shape, Cuda, anchors_mask, label_smoothing, focal_loss, focal_alpha, focal_gamma, iou_type)
     if local_rank == 0:
-        time_str        = datetime.datetime.strftime(datetime.datetime.now(),'%Y_%m_%d_%H_%M_%S')
-        log_dir         = os.path.join(save_dir, "loss_" + str(time_str))
-        loss_history    = LossHistory(log_dir, model, input_shape=input_shape)
+        time_str = datetime.datetime.strftime(datetime.datetime.now(),'%Y_%m_%d_%H_%M_%S')
+        log_dir = os.path.join(save_dir, "loss_" + str(time_str))
+        loss_history = LossHistory(log_dir, model, input_shape=input_shape)
     else:
-        loss_history    = None
+        loss_history = None
     
     if fp16:
         from torch.cuda.amp import GradScaler as GradScaler
@@ -124,7 +122,7 @@ def yolov4(config):
     else:
         scaler = None
 
-    model_train     = model.train()
+    model_train = model.train()
     if sync_bn and ngpus_per_node > 1 and distributed:
         model_train = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model_train)
     elif sync_bn:
@@ -132,7 +130,6 @@ def yolov4(config):
 
     if Cuda:
         if distributed:
-
             model_train = model_train.cuda(local_rank)
             model_train = torch.nn.parallel.DistributedDataParallel(model_train, device_ids=[local_rank], find_unused_parameters=True)
         else:
@@ -173,10 +170,10 @@ def yolov4(config):
     batch_size = Freeze_batch_size if Freeze_Train else Unfreeze_batch_size
 
     nbs = 64
-    lr_limit_max    = 1e-3 if optimizer_type in ['adam', 'adamw'] else 5e-2
-    lr_limit_min    = 3e-4 if optimizer_type in ['adam', 'adamw'] else 5e-4
-    Init_lr_fit     = min(max(batch_size / nbs * Init_lr, lr_limit_min), lr_limit_max)
-    Min_lr_fit      = min(max(batch_size / nbs * Min_lr, lr_limit_min * 1e-2), lr_limit_max * 1e-2)
+    lr_limit_max = 1e-3 if optimizer_type in ['adam', 'adamw'] else 5e-2
+    lr_limit_min = 3e-4 if optimizer_type in ['adam', 'adamw'] else 5e-4
+    Init_lr_fit = min(max(batch_size / nbs * Init_lr, lr_limit_min), lr_limit_max)
+    Min_lr_fit = min(max(batch_size / nbs * Min_lr, lr_limit_min * 1e-2), lr_limit_max * 1e-2)
 
     pg0, pg1, pg2 = [], [], []  
     for k, v in model.named_modules():
@@ -196,26 +193,26 @@ def yolov4(config):
 
     lr_scheduler_func = get_lr_scheduler(lr_decay_type, Init_lr_fit, Min_lr_fit, UnFreeze_Epoch)
         
-    epoch_step      = num_train // batch_size
+    epoch_step = num_train // batch_size
     epoch_step_val  = num_val // batch_size
         
     if epoch_step == 0 or epoch_step_val == 0:
         raise ValueError("数据集过小，无法继续进行训练，请扩充数据集。")
 
-    train_dataset   = YoloDataset(train_lines, input_shape, num_classes, epoch_length = UnFreeze_Epoch, \
+    train_dataset = YoloDataset(train_lines, input_shape, num_classes, epoch_length = UnFreeze_Epoch, \
                                         mosaic=mosaic, mixup=mixup, mosaic_prob=mosaic_prob, mixup_prob=mixup_prob, train=True, special_aug_ratio=special_aug_ratio)
-    val_dataset     = YoloDataset(val_lines, input_shape, num_classes, epoch_length = UnFreeze_Epoch, \
+    val_dataset = YoloDataset(val_lines, input_shape, num_classes, epoch_length = UnFreeze_Epoch, \
                                         mosaic=False, mixup=False, mosaic_prob=0, mixup_prob=0, train=False, special_aug_ratio=0)
         
     if distributed:
-        train_sampler   = torch.utils.data.distributed.DistributedSampler(train_dataset, shuffle=True,)
-        val_sampler     = torch.utils.data.distributed.DistributedSampler(val_dataset, shuffle=False,)
-        batch_size      = batch_size // ngpus_per_node
-        shuffle         = False
+        train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset, shuffle=True,)
+        val_sampler = torch.utils.data.distributed.DistributedSampler(val_dataset, shuffle=False,)
+        batch_size = batch_size // ngpus_per_node
+        shuffle = False
     else:
-        train_sampler   = None
-        val_sampler     = None
-        shuffle         = True
+        train_sampler = None
+        val_sampler = None
+        shuffle = True
 
     gen = DataLoader(train_dataset, shuffle = shuffle, batch_size = batch_size, num_workers = num_workers, pin_memory=True,
                                     drop_last=True, collate_fn=yolo_dataset_collate, sampler=train_sampler)

@@ -3,7 +3,7 @@ from .base import Config
 import datetime
 
 class YOLOV5Config(Config):
-    task = 'village_detection'
+    task = 'VOC2007'
     logdir = './yolov5/logs/'
 
     # Dataset

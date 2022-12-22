@@ -14,24 +14,24 @@ class YoloDataset(Dataset):
                         mosaic, mixup, mosaic_prob, mixup_prob, train, special_aug_ratio = 0.7):
         super(YoloDataset, self).__init__()
         self.annotation_lines   = annotation_lines
-        self.input_shape        = input_shape
-        self.num_classes        = num_classes
-        self.epoch_length       = epoch_length
-        self.mosaic             = mosaic
-        self.mosaic_prob        = mosaic_prob
-        self.mixup              = mixup
-        self.mixup_prob         = mixup_prob
-        self.train              = train
+        self.input_shape = input_shape
+        self.num_classes = num_classes
+        self.epoch_length = epoch_length
+        self.mosaic = mosaic
+        self.mosaic_prob = mosaic_prob
+        self.mixup = mixup
+        self.mixup_prob = mixup_prob
+        self.train = train
         self.special_aug_ratio  = special_aug_ratio
 
-        self.epoch_now          = -1
-        self.length             = len(self.annotation_lines)
+        self.epoch_now = -1
+        self.length = len(self.annotation_lines)
 
     def __len__(self):
         return self.length
 
     def __getitem__(self, index):
-        index       = index % self.length
+        index = index % self.length
         if self.mosaic and self.rand() < self.mosaic_prob and self.epoch_now < self.epoch_length * self.special_aug_ratio:
             lines = sample(self.annotation_lines, 3)
             lines.append(self.annotation_lines[index])
@@ -39,14 +39,14 @@ class YoloDataset(Dataset):
             image, box  = self.get_random_data_with_Mosaic(lines, self.input_shape)
             
             if self.mixup and self.rand() < self.mixup_prob:
-                lines           = sample(self.annotation_lines, 1)
+                lines = sample(self.annotation_lines, 1)
                 image_2, box_2  = self.get_random_data(lines[0], self.input_shape, random = self.train)
                 image, box      = self.get_random_data_with_MixUp(image, box, image_2, box_2)
         else:
-            image, box      = self.get_random_data(self.annotation_lines[index], self.input_shape, random = self.train)
+            image, box = self.get_random_data(self.annotation_lines[index], self.input_shape, random = self.train)
 
-        image       = np.transpose(preprocess_input(np.array(image, dtype=np.float32)), (2, 0, 1))
-        box         = np.array(box, dtype=np.float32)
+        image = np.transpose(preprocess_input(np.array(image, dtype=np.float32)), (2, 0, 1))
+        box = np.array(box, dtype=np.float32)
         if len(box) != 0:
             box[:, [0, 2]] = box[:, [0, 2]] / self.input_shape[1]
             box[:, [1, 3]] = box[:, [1, 3]] / self.input_shape[0]

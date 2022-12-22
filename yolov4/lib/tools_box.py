@@ -29,8 +29,8 @@ class DecodeBox():
             y = torch.sigmoid(prediction[..., 1])
             w = prediction[..., 2]
             h = prediction[..., 3]
-            conf        = torch.sigmoid(prediction[..., 4])
-            pred_cls    = torch.sigmoid(prediction[..., 5:])
+            conf = torch.sigmoid(prediction[..., 4])
+            pred_cls = torch.sigmoid(prediction[..., 5:])
 
             FloatTensor = torch.cuda.FloatTensor if x.is_cuda else torch.FloatTensor
             LongTensor  = torch.cuda.LongTensor if x.is_cuda else torch.LongTensor
@@ -45,7 +45,7 @@ class DecodeBox():
             anchor_w = anchor_w.repeat(batch_size, 1).repeat(1, 1, input_height * input_width).view(w.shape)
             anchor_h = anchor_h.repeat(batch_size, 1).repeat(1, 1, input_height * input_width).view(h.shape)
 
-            pred_boxes          = FloatTensor(prediction[..., :4].shape)
+            pred_boxes = FloatTensor(prediction[..., :4].shape)
             pred_boxes[..., 0]  = x.data + grid_x
             pred_boxes[..., 1]  = y.data + grid_y
             pred_boxes[..., 2]  = torch.exp(w.data) * anchor_w
@@ -81,7 +81,7 @@ class DecodeBox():
 
     def non_max_suppression(self, prediction, num_classes, input_shape, image_shape, letterbox_image, conf_thres=0.5, nms_thres=0.4):
         
-        box_corner          = prediction.new(prediction.shape)
+        box_corner = prediction.new(prediction.shape)
         box_corner[:, :, 0] = prediction[:, :, 0] - prediction[:, :, 2] / 2
         box_corner[:, :, 1] = prediction[:, :, 1] - prediction[:, :, 3] / 2
         box_corner[:, :, 2] = prediction[:, :, 0] + prediction[:, :, 2] / 2
@@ -117,26 +117,10 @@ class DecodeBox():
                 )
                 max_detections = detections_class[keep]
                 
-                # # 按照存在物体的置信度排序
-                # _, conf_sort_index = torch.sort(detections_class[:, 4]*detections_class[:, 5], descending=True)
-                # detections_class = detections_class[conf_sort_index]
-                # # 进行非极大抑制
-                # max_detections = []
-                # while detections_class.size(0):
-                #     # 取出这一类置信度最高的，一步一步往下判断，判断重合程度是否大于nms_thres，如果是则去除掉
-                #     max_detections.append(detections_class[0].unsqueeze(0))
-                #     if len(detections_class) == 1:
-                #         break
-                #     ious = bbox_iou(max_detections[-1], detections_class[1:])
-                #     detections_class = detections_class[1:][ious < nms_thres]
-                # # 堆叠
-                # max_detections = torch.cat(max_detections).data
-                
-                # Add max detections to outputs
                 output[i] = max_detections if output[i] is None else torch.cat((output[i], max_detections))
             
             if output[i] is not None:
-                output[i]           = output[i].cpu().numpy()
-                box_xy, box_wh      = (output[i][:, 0:2] + output[i][:, 2:4])/2, output[i][:, 2:4] - output[i][:, 0:2]
-                output[i][:, :4]    = self.yolo_correct_boxes(box_xy, box_wh, input_shape, image_shape, letterbox_image)
+                output[i] = output[i].cpu().numpy()
+                box_xy, box_wh = (output[i][:, 0:2] + output[i][:, 2:4])/2, output[i][:, 2:4] - output[i][:, 0:2]
+                output[i][:, :4] = self.yolo_correct_boxes(box_xy, box_wh, input_shape, image_shape, letterbox_image)
         return output

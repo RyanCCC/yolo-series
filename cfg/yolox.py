@@ -3,7 +3,7 @@ import os
 import datetime
 
 class YOLOXConfig(Config):
-    task = 'village_detection'
+    task = 'VOC2007'
     # dataset
     logdir = './yolox/logs/'
     dataset_base_path = r'./VOC2007'

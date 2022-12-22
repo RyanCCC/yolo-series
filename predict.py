@@ -21,8 +21,8 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Custom Input')
     parser.add_argument(
         '--model', 
-        help='YOLOV4, YOLOV4-TINY, YOLOV5 or YOLOX', 
-        choices=['YOLOV4', 'YOLOV4-TINY', 'YOLOV5','YOLOV5-V61', 'YOLOX', 'YOLOV7'],
+        help='YOLOV4, YOLOV4-Tiny, YOLOV5 or YOLOX', 
+        choices=['YOLOV4', 'YOLOV4-Tiny', 'YOLOV5','YOLOV5-V61', 'YOLOX', 'YOLOV7'],
         default='YOLOV5', 
         type=str)
     parser.add_argument('--save', action='store_true', help='save result image.')
@@ -127,7 +127,7 @@ if __name__=='__main__':
                     img.save(save_path)
     elif args.model.upper() == 'YOLOV4-TINY':
         from yolov4 import Inference_YOLOV4Model
-        yolo = Inference_YOLOV4Model(YOLOV4Config, args.weights)
+        yolo = Inference_YOLOV4Model(YOLOV4TinyConfig, args.weights)
         if webcam:
             video_inference(source, yolo, args.save)
         else:
@@ -188,4 +188,4 @@ if __name__=='__main__':
                     save_path = os.path.join(args.save_dir, 'tmp.jpg')
                     img.save(save_path)
     else:
-        pass
+        print(args.model)

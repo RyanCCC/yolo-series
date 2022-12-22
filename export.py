@@ -18,7 +18,7 @@ Usage:
 
 def parse_arg():
     parser = argparse.ArgumentParser(description="Export YOLO model")
-    parser.add_argument('--weight', type=str, help='model weight', default='./model/yolov5/village_detection_yolov5v61_s_2022_12_12.pth')
+    parser.add_argument('--weight', type=str, help='model weight', required=True)
     parser.add_argument('--yolo', type=str, help='YOLO algorithm.', choices=['yolov5', 'yolov5-v61', 'yolov7', 'yolox'], default='yolov5-v61')
     parser.add_argument('--save_file', type=str, help='save onnx model name', default='./test.onnx')
     parser.add_argument('--dynamic', action='store_true', help='ONNX: dynamic axes')

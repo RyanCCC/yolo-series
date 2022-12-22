@@ -25,13 +25,14 @@ class YOLOV4(object):
             "attention" : kwargs["attention"],
             "result":'./result',
             "pr_folder_name":'tmp',
-            "anchors_mask" : [[6, 7, 8], [3, 4, 5], [0, 1, 2]],
+            "anchors_mask" : kwargs['anchors_mask'],
+            "phi":kwargs["phi"],
             "cuda":False
         }
         self.__dict__.update(self._params)
         # 初始化颜色
         self.class_names, self.num_classes  = get_classes(self.classes_path)
-        self.anchors, self.num_anchors      = get_anchors(self.anchor_path)
+        self.anchors, self.num_anchors = get_anchors(self.anchor_path)
         self.bbox_util = DecodeBox(self.anchors, self.num_classes, (self.input_size[0], self.input_size[1]), self.anchors_mask)
         hsv_tuples = [(x / self.num_classes, 1., 1.) for x in range(self.num_classes)]
         self.colors = list(map(lambda x: colorsys.hsv_to_rgb(*x), hsv_tuples))
@@ -47,10 +48,11 @@ class YOLOV4(object):
         self.pt, self.onnx = (suffix==x for x in suffixes)
         if self.istiny:
             from .nets.yolo4_tiny import YoloBody
+            self.net = YoloBody(self.anchors_mask, self.num_classes)
         else:
             from .nets.yolo4 import YoloBody
+            self.net = YoloBody(self.anchors_mask, self.num_classes, self.phi)
         if self.pt:
-            self.net = YoloBody(self.anchors_mask, self.num_classes)
             device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
             self.net.load_state_dict(torch.load(self.model_path, map_location=device))
             self.net = self.net.eval()
@@ -72,7 +74,7 @@ class YOLOV4(object):
         istrack：是否目标跟踪返回数据的标志
         '''
         image_shape = np.array(np.shape(image)[0:2])
-        image       = cvtColor(image)
+        image = cvtColor(image)
         image_data  = resize_image(image, (self.input_size[1],self.input_size[0]), self.letterbox_image)
         image_data  = np.expand_dims(np.transpose(preprocess_input(np.array(image_data, dtype='float32')), (2, 0, 1)), 0)
          # 推理
@@ -132,7 +134,7 @@ class YOLOV4(object):
             top, left, bottom, right = box
 
             top = max(0, np.floor(top).astype('int32'))
-            left    = max(0, np.floor(left).astype('int32'))
+            left = max(0, np.floor(left).astype('int32'))
             bottom  = min(image.size[1], np.floor(bottom).astype('int32'))
             right   = min(image.size[0], np.floor(right).astype('int32'))
 
@@ -159,7 +161,7 @@ class YOLOV4(object):
     def getdrtxt(self, image,map_out_path, image_id):
         f = open(os.path.join(map_out_path, "detection-results/"+image_id+".txt"),"w") 
         image_shape = np.array(np.shape(image)[0:2])
-        image       = cvtColor(image)
+        image = cvtColor(image)
         image_data  = resize_image(image, (self.input_shape[1],self.input_shape[0]), self.letterbox_image)
         
         image_data  = np.expand_dims(np.transpose(preprocess_input(np.array(image_data, dtype='float32')), (2, 0, 1)), 0)
@@ -182,8 +184,8 @@ class YOLOV4(object):
 
         for i, c in list(enumerate(top_label)):
             predicted_class = self.class_names[int(c)]
-            box             = top_boxes[i]
-            score           = str(top_conf[i])
+            box = top_boxes[i]
+            score = str(top_conf[i])
 
             top, left, bottom, right = box
             if predicted_class not in self.class_names:
@@ -196,7 +198,8 @@ class YOLOV4(object):
 
 
     
-def Inference_YOLOV4Model(YOLOV4Config, model_path):
+def Inference_YOLOV4Model(YOLOV4Config, model_path, phi = None):
+    print(YOLOV4Config.anchors_path)
     yolov4 = YOLOV4(
         class_path = YOLOV4Config.classes_path,
         input_size = (YOLOV4Config.imagesize, YOLOV4Config.imagesize),
@@ -208,7 +211,10 @@ def Inference_YOLOV4Model(YOLOV4Config, model_path):
         istiny=YOLOV4Config.ISTINY,
         attention = YOLOV4Config.ATTENTION,
         anchor_path = YOLOV4Config.anchors_path,
-        classes_path = YOLOV4Config.classes_path
+        classes_path = YOLOV4Config.classes_path,
+        anchors_mask  = YOLOV4Config.ANCHOR_MASK,
+        phi = phi
+
     )
     return yolov4
     
