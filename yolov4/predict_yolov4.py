@@ -1,14 +1,11 @@
 import colorsys
 import os
-import time
 
 import numpy as np
 import torch
 import torch.nn as nn
 from PIL import ImageDraw, ImageFont
-
-from .nets.yolo4 import YoloBody
-from .lib.tools import cvtColor, get_anchors, get_classes, preprocess_input,resize_image, show_config, check_suffix
+from .lib.tools import cvtColor, get_anchors, get_classes, preprocess_input,resize_image, check_suffix
 from .lib.tools_box import DecodeBox
 from pathlib import Path
 
@@ -19,8 +16,8 @@ class YOLOV4(object):
             "model_path" : kwargs['model_path'],
             "anchor_path" : kwargs['anchor_path'],
             "classes_path" : kwargs['classes_path'],
-            "confidence" : kwargs['score'],
-            "nms_iou" : kwargs['iou'],
+            "confidence" : kwargs['confidence'],
+            "nms_iou" : kwargs['nms_iou'],
             "max_boxes" : kwargs['max_boxes'],
             "input_size" : kwargs['input_size'],
             "letterbox_image" : kwargs['letterbox_image'],
@@ -29,14 +26,13 @@ class YOLOV4(object):
             "result":'./result',
             "pr_folder_name":'tmp',
             "anchors_mask" : [[6, 7, 8], [3, 4, 5], [0, 1, 2]],
+            "cuda":False
         }
         self.__dict__.update(self._params)
-        self._class_names = self.get_classes()
-        self._anchors = self.get_anchors()
         # 初始化颜色
         self.class_names, self.num_classes  = get_classes(self.classes_path)
-        self.anchors, self.num_anchors      = get_anchors(self.anchors_path)
-        self.bbox_util                      = DecodeBox(self.anchors, self.num_classes, (self.input_shape[0], self.input_shape[1]), self.anchors_mask)
+        self.anchors, self.num_anchors      = get_anchors(self.anchor_path)
+        self.bbox_util = DecodeBox(self.anchors, self.num_classes, (self.input_size[0], self.input_size[1]), self.anchors_mask)
         hsv_tuples = [(x / self.num_classes, 1., 1.) for x in range(self.num_classes)]
         self.colors = list(map(lambda x: colorsys.hsv_to_rgb(*x), hsv_tuples))
         self.colors = list(map(lambda x: (int(x[0] * 255), int(x[1] * 255), int(x[2] * 255)), self.colors))
@@ -49,15 +45,15 @@ class YOLOV4(object):
         check_suffix(weights, suffixes)
         # backbend booleans
         self.pt, self.onnx = (suffix==x for x in suffixes)
-        if self.tiny:
+        if self.istiny:
             from .nets.yolo4_tiny import YoloBody
         else:
             from .nets.yolo4 import YoloBody
         if self.pt:
-            self.net = YoloBody(self.anchors_mask, self.num_classes, phi = self.phi)
+            self.net = YoloBody(self.anchors_mask, self.num_classes)
             device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
             self.net.load_state_dict(torch.load(self.model_path, map_location=device))
-            self.net = self.net.fuse().eval()
+            self.net = self.net.eval()
             print('{} model, and classes loaded.'.format(self.model_path))
             if self.cuda:
                 self.net = nn.DataParallel(self.net)
@@ -77,7 +73,7 @@ class YOLOV4(object):
         '''
         image_shape = np.array(np.shape(image)[0:2])
         image       = cvtColor(image)
-        image_data  = resize_image(image, (self.input_shape[1],self.input_shape[0]), self.letterbox_image)
+        image_data  = resize_image(image, (self.input_size[1],self.input_size[0]), self.letterbox_image)
         image_data  = np.expand_dims(np.transpose(preprocess_input(np.array(image_data, dtype='float32')), (2, 0, 1)), 0)
          # 推理
         if self.pt:
@@ -87,7 +83,7 @@ class YOLOV4(object):
                     images = images.cuda()
                 outputs = self.net(images)
                 outputs = self.bbox_util.decode_box(outputs)
-                results = self.bbox_util.non_max_suppression(torch.cat(outputs, 1), self.num_classes, self.input_shape, 
+                results = self.bbox_util.non_max_suppression(torch.cat(outputs, 1), self.num_classes, self.input_size, 
                         image_shape, self.letterbox_image, conf_thres = self.confidence, nms_thres = self.nms_iou)
                                                     
                 if results[0] is None: 
@@ -112,7 +108,7 @@ class YOLOV4(object):
 
         # 结果展示
         font = ImageFont.truetype(font='./font/simhei.ttf', size=np.floor(3e-2 * image.size[1] + 0.5).astype('int32'))
-        thickness   = int(max((image.size[0] + image.size[1]) // np.mean(self.input_shape), 1))
+        thickness   = int(max((image.size[0] + image.size[1]) // np.mean(self.input_size), 1))
         if crop:
             for i, c in list(enumerate(top_boxes)):
                 top, left, bottom, right = top_boxes[i]
@@ -212,8 +208,7 @@ def Inference_YOLOV4Model(YOLOV4Config, model_path):
         istiny=YOLOV4Config.ISTINY,
         attention = YOLOV4Config.ATTENTION,
         anchor_path = YOLOV4Config.anchors_path,
-        classes_path = YOLOV4Config.classes_path,
-        confidence = YOLOV4Config.score,
+        classes_path = YOLOV4Config.classes_path
     )
     return yolov4
     

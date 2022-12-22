@@ -21,9 +21,7 @@ from .lib.tools_fit import fit_one_epoch
 def yolov4(config):
     Cuda = config.cuda
     distributed = config.distributed
-    #---------------------------------------------------------------------#
-    #   sync_bn     是否使用sync_bn，DDP模式多卡可用
-    #---------------------------------------------------------------------#
+    # DPP模式可用
     sync_bn = config.distributed
     fp16 = False
     classes_path    = config.classes_path
@@ -60,7 +58,7 @@ def yolov4(config):
     focal_loss = False
     focal_alpha = 0.25
     focal_gamma = 2
-    iou_type = config.iou
+    iou_type = config.iou_type
     save_period = config.save_period
     save_dir = config.logdir
     eval_flag = True

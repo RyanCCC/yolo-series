@@ -15,7 +15,7 @@ from PIL import Image
 from tqdm import tqdm
 from .tools import cvtColor, preprocess_input, resize_image
 from .tools_box import DecodeBox
-from .utils_map import get_coco_map, get_map
+from .utils_map import  get_map
 
 
 class LossHistory():

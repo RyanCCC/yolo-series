@@ -27,7 +27,7 @@ class YOLOV4Config(Config):
     learning_rate = 1e-3
     pretrained = False
     pretrain_weight = './yolov4/checkpoints/yolo4tf2_weight.pth'
-    save_weight = 'village_tf2.h5'
+    save_weight = 'voc.pth'
     anchors_path = './yolov4/data/yolo_anchors.txt'
     # Inference
     predict_weight = './model/yolo4_voc_weights.pth'
@@ -39,7 +39,7 @@ class YOLOV4Config(Config):
     # 标签平滑。一般0.01以下。如0.01、0.005。
     label_smoothing = 0
     # ciou or siou
-    iou = 'ciou'
+    iou_type = 'ciou'
     save_period = 10
     # Env
     cuda =False

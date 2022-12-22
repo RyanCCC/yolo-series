@@ -81,7 +81,7 @@ class Backbone(nn.Module):
         )
         
         if pretrained:
-            url = 'https://github.com/bubbliiiing/yolov7-tiny-pytorch/releases/download/v1.0/yolov7_tiny_backbone_weights.pth'
+            url = 'https://github.com/RyanCCC/yolo-series/releases/download/v1.0.0/yolov7_tiny_backbone_weights.pth'
             checkpoint = torch.hub.load_state_dict_from_url(url=url, map_location="cpu", model_dir="./model_data")
             self.load_state_dict(checkpoint, strict=False)
             print("Load weights from " + url.split('/')[-1])
