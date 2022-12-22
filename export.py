@@ -19,7 +19,7 @@ Usage:
 def parse_arg():
     parser = argparse.ArgumentParser(description="Export YOLO model")
     parser.add_argument('--weight', type=str, help='model weight', required=True)
-    parser.add_argument('--yolo', type=str, help='YOLO algorithm.', choices=['yolov5', 'yolov5-v61', 'yolov7', 'yolox'], default='yolov5-v61')
+    parser.add_argument('--yolo', type=str, help='YOLO algorithm.', choices=['yolov5', 'yolov5-v61', 'yolov7', 'yolox', 'yolov4', 'yolov4-tiny'], default='yolov5')
     parser.add_argument('--save_file', type=str, help='save onnx model name', default='./test.onnx')
     parser.add_argument('--dynamic', action='store_true', help='ONNX: dynamic axes')
     parser.add_argument('--train', action='store_true', help='model.train() mode')
@@ -53,6 +53,12 @@ def main(args):
     elif yolo_type == 'yolox':
         from yolox import export_model
         export_model(weights=weight, save_file=onnx_save_path, simplify=simplify, train=train, dynamic=dynamic, opset=opset)
+    elif yolo_type == 'yolov4':
+        from yolov4 import export_model
+        export_model(weights=weight, save_file=onnx_save_path, simplify=simplify, train=train, dynamic=dynamic, opset=opset)
+    elif yolo_type == 'yolov4-tiny':
+        from yolov4 import export_model
+        export_model(weights=weight, save_file=onnx_save_path, simplify=simplify, train=train, dynamic=dynamic, opset=opset, istiny=True)
 if __name__ == '__main__':
     parser = parse_arg()
     args = parser.parse_args()
