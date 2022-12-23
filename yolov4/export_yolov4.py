@@ -1,5 +1,5 @@
 """
-Export a YOLOV5 Pytorch model to ONNX
+Export a YOLOV4 Pytorch model to ONNX
 """
 import os
 import subprocess
