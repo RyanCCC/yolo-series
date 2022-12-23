@@ -13,7 +13,6 @@ from cfg import YOLOV5Config
 
 
 def export_onnx(model, file, opset, train, dynamic, simplify, prefix='\033[91m'):
-    # YOLOv5 ONNX export
     try:
         import onnx
         print(f'\n{prefix} starting export with onnx {onnx.__version__}...')

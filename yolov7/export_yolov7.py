@@ -12,7 +12,6 @@ from .predict_yolov7 import Inference_YOLOV7Model
 from cfg import YOLOV7Config
 
 def export_onnx(model, file, opset, train, dynamic, simplify, prefix='\033[91m'):
-    # YOLOv5 ONNX export
     try:
         import onnx
         print(f'\n{prefix} starting export with onnx {onnx.__version__}...')
