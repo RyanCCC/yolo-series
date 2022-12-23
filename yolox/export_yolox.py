@@ -11,12 +11,6 @@ import torch.nn as nn
 from .predict_yolox import Inference_YOLOXModel
 from cfg import YOLOXConfig
 
-FILE = Path(__file__).resolve()
-ROOT = FILE.parents[0]
-if str(ROOT) not in sys.path:
-    sys.path.append(str(ROOT))
-ROOT = Path(os.path.relpath(ROOT, Path.cwd()))
-
 def export_onnx(model, file, opset, train, dynamic, simplify, prefix='\033[91m'):
     # YOLOv5 ONNX export
     try:

@@ -84,29 +84,22 @@ class YOLOV4(object):
                 if self.cuda:
                     images = images.cuda()
                 outputs = self.net(images)
-                outputs = self.bbox_util.decode_box(outputs)
-                results = self.bbox_util.non_max_suppression(torch.cat(outputs, 1), self.num_classes, self.input_size, 
-                        image_shape, self.letterbox_image, conf_thres = self.confidence, nms_thres = self.nms_iou)
-                                                    
-                if results[0] is None: 
-                    return image
-
-                top_label = np.array(results[0][:, 6], dtype = 'int32')
-                top_conf = results[0][:, 4] * results[0][:, 5]
-                top_boxes = results[0][:, :4]
+                
         if self.onnx:
             print('ONNNX Inference...')
             outputs = torch.tensor(self.net.run([self.net.get_outputs()[0].name], {self.net.get_inputs()[0].name: image_data}))
-            outputs = self.bbox_util.decode_box(outputs)
-            results = self.bbox_util.non_max_suppression(torch.cat(outputs, 1), self.num_classes, self.input_size, 
-                        image_shape, self.letterbox_image, conf_thres = self.confidence, nms_thres = self.nms_iou)
+        
+        # 后处理
+        outputs = self.bbox_util.decode_box(outputs)
+        results = self.bbox_util.non_max_suppression(torch.cat(outputs, 1), self.num_classes, self.input_size, 
+                    image_shape, self.letterbox_image, conf_thres = self.confidence, nms_thres = self.nms_iou)
                                                     
-            if results[0] is None: 
-                return image
+        if results[0] is None: 
+            return image
 
-            top_label = np.array(results[0][:, 6], dtype = 'int32')
-            top_conf = results[0][:, 4] * results[0][:, 5]
-            top_boxes = results[0][:, :4]
+        top_label = np.array(results[0][:, 6], dtype = 'int32')
+        top_conf = results[0][:, 4] * results[0][:, 5]
+        top_boxes = results[0][:, :4]
 
         # 结果展示
         font = ImageFont.truetype(font='./font/simhei.ttf', size=np.floor(3e-2 * image.size[1] + 0.5).astype('int32'))
