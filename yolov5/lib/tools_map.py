@@ -811,11 +811,7 @@ def preprocess_gt(gt_path, class_names):
         image['file_name'] = image_id + '.jpg'
         image['width']     = 1
         image['height']    = 1
-        #-----------------------------------------------------------------#
-        #   感谢 多学学英语吧 的提醒
-        #   解决了'Results do not correspond to current coco set'问题
-        #-----------------------------------------------------------------#
-        image['id']        = str(image_id)
+        image['id'] = str(image_id)
 
         for line in lines_list:
             difficult = 0 

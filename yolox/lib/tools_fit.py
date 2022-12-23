@@ -7,7 +7,7 @@ from .tools import get_lr
 
 
 def fit_one_epoch(model_train, model, ema, yolo_loss, loss_history, eval_callback, optimizer, epoch, epoch_step, epoch_step_val, gen, gen_val, Epoch, cuda, fp16, scaler, save_period, save_dir, local_rank=0):
-    loss        = 0
+    loss = 0
     val_loss    = 0
 
     if local_rank == 0:

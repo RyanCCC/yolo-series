@@ -330,9 +330,9 @@ def draw_plot_func(dictionary, n_classes, window_title, plot_title, x_label, out
     plt.close()
 
 def get_map(MINOVERLAP, draw_plot, score_threhold=0.5, path = './map_out'):
-    GT_PATH             = os.path.join(path, 'ground-truth')
-    DR_PATH             = os.path.join(path, 'detection-results')
-    IMG_PATH            = os.path.join(path, 'images-optional')
+    GT_PATH = os.path.join(path, 'ground-truth')
+    DR_PATH = os.path.join(path, 'detection-results')
+    IMG_PATH = os.path.join(path, 'images-optional')
     TEMP_FILES_PATH     = os.path.join(path, '.temp_files')
     RESULTS_FILES_PATH  = os.path.join(path, 'results')
 
@@ -867,11 +867,7 @@ def preprocess_gt(gt_path, class_names):
         image['file_name'] = image_id + '.jpg'
         image['width']     = 1
         image['height']    = 1
-        #-----------------------------------------------------------------#
-        #   感谢 多学学英语吧 的提醒
-        #   解决了'Results do not correspond to current coco set'问题
-        #-----------------------------------------------------------------#
-        image['id']        = str(image_id)
+        image['id'] = str(image_id)
 
         for line in lines_list:
             difficult = 0 
