@@ -18,14 +18,14 @@ from .tools_map import get_coco_map, get_map
 
 class LossHistory():
     def __init__(self, log_dir, model, input_shape):
-        self.log_dir    = log_dir
-        self.losses     = []
-        self.val_loss   = []
+        self.log_dir = log_dir
+        self.losses = []
+        self.val_loss = []
         if not os.path.exists(self.log_dir):
             os.makedirs(self.log_dir)
-        self.writer     = SummaryWriter(self.log_dir)
+        self.writer = SummaryWriter(self.log_dir)
         try:
-            dummy_input     = torch.randn(2, 3, input_shape[0], input_shape[1])
+            dummy_input = torch.randn(2, 3, input_shape[0], input_shape[1])
             self.writer.add_graph(model, dummy_input)
         except:
             pass
@@ -131,7 +131,7 @@ class EvalCallback():
             top_conf    = results[0][:, 4] * results[0][:, 5]
             top_boxes   = results[0][:, :4]
 
-        top_100     = np.argsort(top_conf)[::-1][:self.max_boxes]
+        top_100 = np.argsort(top_conf)[::-1][:self.max_boxes]
         top_boxes   = top_boxes[top_100]
         top_conf    = top_conf[top_100]
         top_label   = top_label[top_100]

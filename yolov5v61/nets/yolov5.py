@@ -49,13 +49,13 @@ class YoloBody(nn.Module):
         P4 = self.conv3_for_upsample1(P4)
 
         # 40, 40, 512 -> 40, 40, 256
-        P4          = self.conv_for_feat2(P4)
+        P4 = self.conv_for_feat2(P4)
         # 40, 40, 256 -> 80, 80, 256
         P4_upsample = self.upsample(P4)
         # 80, 80, 256 cat 80, 80, 256 -> 80, 80, 512
-        P3          = torch.cat([P4_upsample, feat1], 1)
+        P3 = torch.cat([P4_upsample, feat1], 1)
         # 80, 80, 512 -> 80, 80, 256
-        P3          = self.conv3_for_upsample2(P3)
+        P3 = self.conv3_for_upsample2(P3)
         
         # 80, 80, 256 -> 40, 40, 256
         P3_downsample = self.down_sample1(P3)

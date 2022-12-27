@@ -13,24 +13,24 @@ class YoloDataset(Dataset):
     def __init__(self, annotation_lines, input_shape, num_classes, anchors, anchors_mask, epoch_length, \
                         mosaic, mixup, mosaic_prob, mixup_prob, train, special_aug_ratio = 0.7):
         super(YoloDataset, self).__init__()
-        self.annotation_lines   = annotation_lines
-        self.input_shape        = input_shape
-        self.num_classes        = num_classes
-        self.anchors            = anchors
-        self.anchors_mask       = anchors_mask
-        self.epoch_length       = epoch_length
-        self.mosaic             = mosaic
-        self.mosaic_prob        = mosaic_prob
-        self.mixup              = mixup
-        self.mixup_prob         = mixup_prob
-        self.train              = train
+        self.annotation_lines = annotation_lines
+        self.input_shape = input_shape
+        self.num_classes = num_classes
+        self.anchors = anchors
+        self.anchors_mask = anchors_mask
+        self.epoch_length = epoch_length
+        self.mosaic = mosaic
+        self.mosaic_prob = mosaic_prob
+        self.mixup = mixup
+        self.mixup_prob = mixup_prob
+        self.train = train
         self.special_aug_ratio  = special_aug_ratio
 
-        self.epoch_now          = -1
-        self.length             = len(self.annotation_lines)
+        self.epoch_now = -1
+        self.length = len(self.annotation_lines)
         
-        self.bbox_attrs         = 5 + num_classes
-        self.threshold          = 4
+        self.bbox_attrs = 5 + num_classes
+        self.threshold = 4
 
     def __len__(self):
         return self.length
@@ -38,10 +38,7 @@ class YoloDataset(Dataset):
     def __getitem__(self, index):
         index       = index % self.length
 
-        #---------------------------------------------------#
-        #   训练时进行数据的随机增强
-        #   验证时不进行数据的随机增强
-        #---------------------------------------------------#
+        # 马赛克数据增强
         if self.mosaic and self.rand() < self.mosaic_prob and self.epoch_now < self.epoch_length * self.special_aug_ratio:
             lines = sample(self.annotation_lines, 3)
             lines.append(self.annotation_lines[index])
@@ -49,25 +46,22 @@ class YoloDataset(Dataset):
             image, box  = self.get_random_data_with_Mosaic(lines, self.input_shape)
             
             if self.mixup and self.rand() < self.mixup_prob:
-                lines           = sample(self.annotation_lines, 1)
+                lines = sample(self.annotation_lines, 1)
                 image_2, box_2  = self.get_random_data(lines[0], self.input_shape, random = self.train)
-                image, box      = self.get_random_data_with_MixUp(image, box, image_2, box_2)
+                image, box = self.get_random_data_with_MixUp(image, box, image_2, box_2)
         else:
-            image, box      = self.get_random_data(self.annotation_lines[index], self.input_shape, random = self.train)
+            image, box = self.get_random_data(self.annotation_lines[index], self.input_shape, random = self.train)
 
-        image       = np.transpose(preprocess_input(np.array(image, dtype=np.float32)), (2, 0, 1))
-        box         = np.array(box, dtype=np.float32)
+        image = np.transpose(preprocess_input(np.array(image, dtype=np.float32)), (2, 0, 1))
+        box = np.array(box, dtype=np.float32)
         if len(box) != 0:
-            #---------------------------------------------------#
-            #   对真实框进行归一化，调整到0-1之间
-            #---------------------------------------------------#
             box[:, [0, 2]] = box[:, [0, 2]] / self.input_shape[1]
             box[:, [1, 3]] = box[:, [1, 3]] / self.input_shape[0]
-            #---------------------------------------------------#
-            #   序号为0、1的部分，为真实框的中心
-            #   序号为2、3的部分，为真实框的宽高
-            #   序号为4的部分，为真实框的种类
-            #---------------------------------------------------#
+            '''
+            0, 1: 真实框中心
+            2,3: 真实框宽高
+            4: 种类
+            '''
             box[:, 2:4] = box[:, 2:4] - box[:, 0:2]
             box[:, 0:2] = box[:, 0:2] + box[:, 2:4] / 2
         y_true = self.get_target(box)
@@ -77,21 +71,12 @@ class YoloDataset(Dataset):
         return np.random.rand()*(b-a) + a
 
     def get_random_data(self, annotation_line, input_shape, jitter=.3, hue=.1, sat=0.7, val=0.4, random=True):
-        line    = annotation_line.split()
-        #------------------------------#
-        #   读取图像并转换成RGB图像
-        #------------------------------#
-        image   = Image.open(line[0])
-        image   = cvtColor(image)
-        #------------------------------#
-        #   获得图像的高宽与目标高宽
-        #------------------------------#
+        line = annotation_line.split()
+        image = Image.open(line[0])
+        image = cvtColor(image)
         iw, ih  = image.size
-        h, w    = input_shape
-        #------------------------------#
-        #   获得预测框
-        #------------------------------#
-        box     = np.array([np.array(list(map(int,box.split(',')))) for box in line[1:]])
+        h, w = input_shape
+        box = np.array([np.array(list(map(int,box.split(',')))) for box in line[1:]])
 
         if not random:
             scale = min(w/iw, h/ih)
@@ -100,17 +85,11 @@ class YoloDataset(Dataset):
             dx = (w-nw)//2
             dy = (h-nh)//2
 
-            #---------------------------------#
-            #   将图像多余的部分加上灰条
-            #---------------------------------#
-            image       = image.resize((nw,nh), Image.BICUBIC)
-            new_image   = Image.new('RGB', (w,h), (128,128,128))
+            image = image.resize((nw,nh), Image.BICUBIC)
+            new_image = Image.new('RGB', (w,h), (128,128,128))
             new_image.paste(image, (dx, dy))
             image_data  = np.array(new_image, np.float32)
 
-            #---------------------------------#
-            #   对真实框进行调整
-            #---------------------------------#
             if len(box)>0:
                 np.random.shuffle(box)
                 box[:, [0,2]] = box[:, [0,2]]*nw/iw + dx
@@ -124,9 +103,6 @@ class YoloDataset(Dataset):
 
             return image_data, box
                 
-        #------------------------------------------#
-        #   对图像进行缩放并且进行长和宽的扭曲
-        #------------------------------------------#
         new_ar = iw/ih * self.rand(1-jitter,1+jitter) / self.rand(1-jitter,1+jitter)
         scale = self.rand(.25, 2)
         if new_ar < 1:
@@ -137,35 +113,19 @@ class YoloDataset(Dataset):
             nh = int(nw/new_ar)
         image = image.resize((nw,nh), Image.BICUBIC)
 
-        #------------------------------------------#
-        #   将图像多余的部分加上灰条
-        #------------------------------------------#
         dx = int(self.rand(0, w-nw))
         dy = int(self.rand(0, h-nh))
         new_image = Image.new('RGB', (w,h), (128,128,128))
         new_image.paste(image, (dx, dy))
         image = new_image
 
-        #------------------------------------------#
-        #   翻转图像
-        #------------------------------------------#
         flip = self.rand()<.5
         if flip: image = image.transpose(Image.FLIP_LEFT_RIGHT)
 
         image_data      = np.array(image, np.uint8)
-        #---------------------------------#
-        #   对图像进行色域变换
-        #   计算色域变换的参数
-        #---------------------------------#
-        r               = np.random.uniform(-1, 1, 3) * [hue, sat, val] + 1
-        #---------------------------------#
-        #   将图像转到HSV上
-        #---------------------------------#
+        r = np.random.uniform(-1, 1, 3) * [hue, sat, val] + 1
         hue, sat, val   = cv2.split(cv2.cvtColor(image_data, cv2.COLOR_RGB2HSV))
         dtype           = image_data.dtype
-        #---------------------------------#
-        #   应用变换
-        #---------------------------------#
         x       = np.arange(0, 256, dtype=r.dtype)
         lut_hue = ((x * r[0]) % 180).astype(dtype)
         lut_sat = np.clip(x * r[1], 0, 255).astype(dtype)
@@ -173,10 +133,6 @@ class YoloDataset(Dataset):
 
         image_data = cv2.merge((cv2.LUT(hue, lut_hue), cv2.LUT(sat, lut_sat), cv2.LUT(val, lut_val)))
         image_data = cv2.cvtColor(image_data, cv2.COLOR_HSV2RGB)
-
-        #---------------------------------#
-        #   对真实框进行调整
-        #---------------------------------#
         if len(box)>0:
             np.random.shuffle(box)
             box[:, [0,2]] = box[:, [0,2]]*nw/iw + dx
@@ -246,36 +202,15 @@ class YoloDataset(Dataset):
         box_datas   = []
         index       = 0
         for line in annotation_line:
-            #---------------------------------#
-            #   每一行进行分割
-            #---------------------------------#
             line_content = line.split()
-            #---------------------------------#
-            #   打开图片
-            #---------------------------------#
             image = Image.open(line_content[0])
             image = cvtColor(image)
-            
-            #---------------------------------#
-            #   图片的大小
-            #---------------------------------#
             iw, ih = image.size
-            #---------------------------------#
-            #   保存框的位置
-            #---------------------------------#
             box = np.array([np.array(list(map(int,box.split(',')))) for box in line_content[1:]])
-            
-            #---------------------------------#
-            #   是否翻转图片
-            #---------------------------------#
             flip = self.rand()<.5
             if flip and len(box)>0:
                 image = image.transpose(Image.FLIP_LEFT_RIGHT)
                 box[:, [0,2]] = iw - box[:, [2,0]]
-
-            #------------------------------------------#
-            #   对图像进行缩放并且进行长和宽的扭曲
-            #------------------------------------------#
             new_ar = iw/ih * self.rand(1-jitter,1+jitter) / self.rand(1-jitter,1+jitter)
             scale = self.rand(.4, 1)
             if new_ar < 1:
@@ -286,9 +221,6 @@ class YoloDataset(Dataset):
                 nh = int(nw/new_ar)
             image = image.resize((nw, nh), Image.BICUBIC)
 
-            #-----------------------------------------------#
-            #   将图片进行放置，分别对应四张分割图片的位置
-            #-----------------------------------------------#
             if index == 0:
                 dx = int(w*min_offset_x) - nw
                 dy = int(h*min_offset_y) - nh
@@ -308,9 +240,6 @@ class YoloDataset(Dataset):
 
             index = index + 1
             box_data = []
-            #---------------------------------#
-            #   对box进行重新处理
-            #---------------------------------#
             if len(box)>0:
                 np.random.shuffle(box)
                 box[:, [0,2]] = box[:, [0,2]]*nw/iw + dx
@@ -326,10 +255,6 @@ class YoloDataset(Dataset):
             
             image_datas.append(image_data)
             box_datas.append(box_data)
-
-        #---------------------------------#
-        #   将图片分割，放在一起
-        #---------------------------------#
         cutx = int(w * min_offset_x)
         cuty = int(h * min_offset_y)
 
@@ -339,31 +264,17 @@ class YoloDataset(Dataset):
         new_image[cuty:, cutx:, :] = image_datas[2][cuty:, cutx:, :]
         new_image[:cuty, cutx:, :] = image_datas[3][:cuty, cutx:, :]
 
-        new_image       = np.array(new_image, np.uint8)
-        #---------------------------------#
-        #   对图像进行色域变换
-        #   计算色域变换的参数
-        #---------------------------------#
-        r               = np.random.uniform(-1, 1, 3) * [hue, sat, val] + 1
-        #---------------------------------#
-        #   将图像转到HSV上
-        #---------------------------------#
+        new_image = np.array(new_image, np.uint8)
+        r = np.random.uniform(-1, 1, 3) * [hue, sat, val] + 1
         hue, sat, val   = cv2.split(cv2.cvtColor(new_image, cv2.COLOR_RGB2HSV))
-        dtype           = new_image.dtype
-        #---------------------------------#
-        #   应用变换
-        #---------------------------------#
-        x       = np.arange(0, 256, dtype=r.dtype)
+        dtype = new_image.dtype
+        x = np.arange(0, 256, dtype=r.dtype)
         lut_hue = ((x * r[0]) % 180).astype(dtype)
         lut_sat = np.clip(x * r[1], 0, 255).astype(dtype)
         lut_val = np.clip(x * r[2], 0, 255).astype(dtype)
 
         new_image = cv2.merge((cv2.LUT(hue, lut_hue), cv2.LUT(sat, lut_sat), cv2.LUT(val, lut_val)))
         new_image = cv2.cvtColor(new_image, cv2.COLOR_HSV2RGB)
-
-        #---------------------------------#
-        #   对框进行进一步的处理
-        #---------------------------------#
         new_boxes = self.merge_bboxes(box_datas, cutx, cuty)
 
         return new_image, new_boxes
@@ -391,9 +302,6 @@ class YoloDataset(Dataset):
             return [[0, 0], [1, 0], [0, -1]]
 
     def get_target(self, targets):
-        #-----------------------------------------------------------#
-        #   一共有三个特征层数
-        #-----------------------------------------------------------#
         num_layers  = len(self.anchors_mask)
         
         input_shape = np.array(self.input_shape, dtype='int32')
@@ -405,13 +313,10 @@ class YoloDataset(Dataset):
             return y_true
         
         for l in range(num_layers):
-            in_h, in_w      = grid_shapes[l]
-            anchors         = np.array(self.anchors) / {0:32, 1:16, 2:8, 3:4}[l]
+            in_h, in_w = grid_shapes[l]
+            anchors = np.array(self.anchors) / {0:32, 1:16, 2:8, 3:4}[l]
             
             batch_target = np.zeros_like(targets)
-            #-------------------------------------------------------#
-            #   计算出正样本在特征层上的中心点
-            #-------------------------------------------------------#
             batch_target[:, [0,2]]  = targets[:, [0,2]] * in_w
             batch_target[:, [1,3]]  = targets[:, [1,3]] * in_h
             batch_target[:, 4]      = targets[:, 4]
@@ -436,19 +341,11 @@ class YoloDataset(Dataset):
             max_ratios           = np.max(ratios, axis = -1)
             
             for t, ratio in enumerate(max_ratios):
-                #-------------------------------------------------------#
-                #   ratio : 9
-                #-------------------------------------------------------#
                 over_threshold = ratio < self.threshold
                 over_threshold[np.argmin(ratio)] = True
                 for k, mask in enumerate(self.anchors_mask[l]):
                     if not over_threshold[mask]:
                         continue
-                    #----------------------------------------#
-                    #   获得真实框属于哪个网格点
-                    #   x  1.25     => 1
-                    #   y  3.75     => 3
-                    #----------------------------------------#
                     i = int(np.floor(batch_target[t, 0]))
                     j = int(np.floor(batch_target[t, 1]))
                     
@@ -465,24 +362,14 @@ class YoloDataset(Dataset):
                                 y_true[l][k, local_j, local_i, :] = 0
                             else:
                                 continue
-                            
-                        #----------------------------------------#
-                        #   取出真实框的种类
-                        #----------------------------------------#
-                        c = int(batch_target[t, 4])
 
-                        #----------------------------------------#
-                        #   tx、ty代表中心调整参数的真实值
-                        #----------------------------------------#
+                        c = int(batch_target[t, 4])
                         y_true[l][k, local_j, local_i, 0] = batch_target[t, 0]
                         y_true[l][k, local_j, local_i, 1] = batch_target[t, 1]
                         y_true[l][k, local_j, local_i, 2] = batch_target[t, 2]
                         y_true[l][k, local_j, local_i, 3] = batch_target[t, 3]
                         y_true[l][k, local_j, local_i, 4] = 1
                         y_true[l][k, local_j, local_i, c + 5] = 1
-                        #----------------------------------------#
-                        #   获得当前先验框最好的比例
-                        #----------------------------------------#
                         box_best_ratio[l][k, local_j, local_i] = ratio[mask]
                         
         return y_true
