@@ -6,18 +6,18 @@ from torchvision.ops import nms
 class DecodeBox():
     def __init__(self, anchors, num_classes, input_shape, anchors_mask = [[6,7,8], [3,4,5], [0,1,2]]):
         super(DecodeBox, self).__init__()
-        self.anchors        = anchors
-        self.num_classes    = num_classes
-        self.bbox_attrs     = 5 + num_classes
-        self.input_shape    = input_shape
-        self.anchors_mask   = anchors_mask
+        self.anchors = anchors
+        self.num_classes = num_classes
+        self.bbox_attrs = 5 + num_classes
+        self.input_shape = input_shape
+        self.anchors_mask = anchors_mask
 
     def decode_box(self, inputs):
         outputs = []
         for i, input in enumerate(inputs):
-            batch_size      = input.size(0)
-            input_height    = input.size(2)
-            input_width     = input.size(3)
+            batch_size = input.size(0)
+            input_height = input.size(2)
+            input_width = input.size(3)
 
             stride_h = self.input_shape[0] / input_height
             stride_w = self.input_shape[1] / input_width
@@ -47,7 +47,7 @@ class DecodeBox():
             anchor_w = anchor_w.repeat(batch_size, 1).repeat(1, 1, input_height * input_width).view(w.shape)
             anchor_h = anchor_h.repeat(batch_size, 1).repeat(1, 1, input_height * input_width).view(h.shape)
 
-            pred_boxes          = FloatTensor(prediction[..., :4].shape)
+            pred_boxes = FloatTensor(prediction[..., :4].shape)
             pred_boxes[..., 0]  = x.data * 2. - 0.5 + grid_x
             pred_boxes[..., 1]  = y.data * 2. - 0.5 + grid_y
             pred_boxes[..., 2]  = (w.data * 2) ** 2 * anchor_w
@@ -69,21 +69,21 @@ class DecodeBox():
         if letterbox_image:
 
             new_shape = np.round(image_shape * np.min(input_shape/image_shape))
-            offset  = (input_shape - new_shape)/2./input_shape
-            scale   = input_shape/new_shape
+            offset = (input_shape - new_shape)/2./input_shape
+            scale = input_shape/new_shape
 
             box_yx  = (box_yx - offset) * scale
             box_hw *= scale
 
-        box_mins    = box_yx - (box_hw / 2.)
-        box_maxes   = box_yx + (box_hw / 2.)
+        box_mins = box_yx - (box_hw / 2.)
+        box_maxes = box_yx + (box_hw / 2.)
         boxes  = np.concatenate([box_mins[..., 0:1], box_mins[..., 1:2], box_maxes[..., 0:1], box_maxes[..., 1:2]], axis=-1)
         boxes *= np.concatenate([image_shape, image_shape], axis=-1)
         return boxes
 
     def non_max_suppression(self, prediction, num_classes, input_shape, image_shape, letterbox_image, conf_thres=0.5, nms_thres=0.4):
 
-        box_corner          = prediction.new(prediction.shape)
+        box_corner = prediction.new(prediction.shape)
         box_corner[:, :, 0] = prediction[:, :, 0] - prediction[:, :, 2] / 2
         box_corner[:, :, 1] = prediction[:, :, 1] - prediction[:, :, 3] / 2
         box_corner[:, :, 2] = prediction[:, :, 0] + prediction[:, :, 2] / 2
@@ -120,9 +120,9 @@ class DecodeBox():
                 output[i] = max_detections if output[i] is None else torch.cat((output[i], max_detections))
             
             if output[i] is not None:
-                output[i]           = output[i].cpu().numpy()
-                box_xy, box_wh      = (output[i][:, 0:2] + output[i][:, 2:4])/2, output[i][:, 2:4] - output[i][:, 0:2]
-                output[i][:, :4]    = self.yolo_correct_boxes(box_xy, box_wh, input_shape, image_shape, letterbox_image)
+                output[i] = output[i].cpu().numpy()
+                box_xy, box_wh = (output[i][:, 0:2] + output[i][:, 2:4])/2, output[i][:, 2:4] - output[i][:, 0:2]
+                output[i][:, :4] = self.yolo_correct_boxes(box_xy, box_wh, input_shape, image_shape, letterbox_image)
         return output
     
 
