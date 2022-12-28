@@ -148,7 +148,7 @@ if __name__ == "__main__":
         w = torch.sigmoid(prediction[..., 2]) 
         h = torch.sigmoid(prediction[..., 3]) 
 
-        conf        = torch.sigmoid(prediction[..., 4])
+        conf = torch.sigmoid(prediction[..., 4])
         pred_cls    = torch.sigmoid(prediction[..., 5:])
 
         FloatTensor = torch.cuda.FloatTensor if x.is_cuda else torch.FloatTensor
@@ -166,7 +166,7 @@ if __name__ == "__main__":
         anchor_w = anchor_w.repeat(batch_size, 1).repeat(1, 1, input_height * input_width).view(w.shape)
         anchor_h = anchor_h.repeat(batch_size, 1).repeat(1, 1, input_height * input_width).view(h.shape)
 
-        pred_boxes          = FloatTensor(prediction[..., :4].shape)
+        pred_boxes = FloatTensor(prediction[..., :4].shape)
         pred_boxes[..., 0]  = x.data * 2. - 0.5 + grid_x
         pred_boxes[..., 1]  = y.data * 2. - 0.5 + grid_y
         pred_boxes[..., 2]  = (w.data * 2) ** 2 * anchor_w
